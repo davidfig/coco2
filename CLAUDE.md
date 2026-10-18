@@ -5,8 +5,8 @@ the window, with a strip of the tube's black border), showing the CoCo's VDG scr
 shader with curved glass and glare. TypeScript, Vite, no runtime dependencies. Sister project to the *-geometry games
 (`../sword-geometry`, `../space-geometry`, `../astronaut-geometry`); it may never go online, but it follows their rules.
 
-Commands: `pnpm dev` (port 5196, `.claude/launch.json`) · `pnpm typecheck` · `pnpm check:size` · `pnpm build`.
-Run `typecheck` and `check:size` before finishing any change. Design notes: `docs/design.md`.
+Commands: `pnpm dev` (port 5196, `.claude/launch.json`) · `pnpm typecheck` · `pnpm check:size` · `pnpm test` · `pnpm build`.
+Run `typecheck`, `check:size` and `test` before finishing any change. Design notes: `docs/design.md`.
 
 @../server-geometry/claude/games.md
 
@@ -20,6 +20,16 @@ Run `typecheck` and `check:size` before finishing any change. Design notes: `doc
 - No online play and no dependency on `../server-geometry` (only its `claude/games.md` rules, above). If it goes
   online, add `server-geometry-client`, an entry in `../server-geometry/src/games.ts`, and copy astronaut-geometry's
   `net/roomClient.ts`.
+
+## Tests
+
+- `pnpm test` runs every `src/**/*.test.ts` in Node through Vite (`scripts/test.mjs`; TypeScript and `?raw` work), no page
+  and no GPU; `pnpm test ADVENT` runs only the cases whose name contains "ADVENT". No framework: `test` / `expect` come
+  from `src/test/check.ts`. localStorage is an empty in-memory one per run, so a CSAVE leaves nothing behind.
+- `HeadlessCoco` (`coco/headless.ts`) is the machine without the page: keyboard → BASIC → screen. `type('RUN\n')` (or
+  `keys([...])`, `break()`) runs until BASIC settles at OK or an INPUT (a program looping on INKEY$ runs out
+  `maxSeconds` instead); `output()` / `text()` are what that typing showed, `transcript()` everything since boot (scrolled
+  off and CLSed rows too), `lines()` the screen now. Test BASIC and the tapes here rather than in the Browser pane.
 
 ## Playtesting
 
@@ -56,13 +66,15 @@ Run `typecheck` and `check:size` before finishing any change. Design notes: `doc
 ## Folder map
 
 ```
+src/test/check.ts     the test kit (test, expect, run); test files sit beside their code as *.test.ts
 src/main.ts           wires keyboard → BASIC → screen → VDG → TV, ?instant
 src/engine/           engine (loop, canvas size), keyboard (typed-key queue), gpu (programs, full-screen triangle, textures)
 src/game/
   debug/              playtesting only: the F2 menu (debugMenu + debugStyle) and checkpoints (story flags in order, jump points)
   vdg/                the MC6847: charset (the 64-glyph ROM, ASCII → screen byte), palette, vdg (512 bytes → 256×192 RGBA)
   coco/               screen (video memory at $0400, print/scroll, the blinking cursor), blocks (SET/RESET/POINT dots),
-                      basic (boot message; the keyboard side: line editor, INPUT replies, INKEY$ keys, BREAK)
+                      basic (boot message; the keyboard side: line editor, INPUT replies, INKEY$ keys, BREAK),
+                      headless (the machine with no page, for `pnpm test`)
   basic/              the Color BASIC language:
                         tokens (crunching keywords, Cursor), values (errors, number formatting), vars (2-letter names, arrays),
                         expr (precedence), functions (ABS…TIMER), program (numbered lines, DATA), tape (the cassette's

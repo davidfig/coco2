@@ -22,11 +22,16 @@ export class TextScreen {
   private missteps: number[] = [];
   private blinkTimer = 0;
 
+  /** Called with each row as it leaves the screen, by scrolling or CLS (the headless harness keeps a transcript). */
+  onLostRow?: (row: Uint8Array) => void;
+
   /** Video memory changed (or the cursor stepped) since the last `takeDirty`. */
   private dirty = true;
 
   /** Clear to spaces, or fill with any screen byte (CLS 3 fills with blue blocks). */
   cls(code = SPACE): void {
+    const rows = Math.floor(Math.min(this.pos, this.vram.length - 1) / COLS) + 1;
+    for (let r = 0; r < rows && this.onLostRow; r++) this.onLostRow(this.vram.slice(r * COLS, (r + 1) * COLS));
     this.vram.fill(code);
     this.pos = 0;
     this.tampered.clear();
@@ -121,6 +126,7 @@ export class TextScreen {
 
   /** Move everything up a line and clear the bottom one; the cursor moves up with it. */
   private scroll(): void {
+    this.onLostRow?.(this.vram.slice(0, COLS));
     this.vram.copyWithin(0, COLS);
     this.vram.fill(SPACE, this.vram.length - COLS);
     this.tampered.scroll();

@@ -31,6 +31,11 @@ export class ColorBasic {
     if (fastTape) this.interp.deck.speed = Infinity;
   }
 
+  /** Keys typed ahead are still waiting their turn (for the tape, or for the OK). */
+  get typing(): boolean {
+    return this.backlog.length > 0;
+  }
+
   boot(): void {
     this.screen.cls();
     this.screen.print(BOOT_MESSAGE);
