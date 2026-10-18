@@ -27,7 +27,7 @@ Run `typecheck` and `check:size` before finishing any change. Design notes: `doc
   and then drops itself from the URL (`src/clear.ts`, imported first in `main.ts`).
 - **Debug menu** (`game/debug/`): F2 in dev builds, `?debug` opens it at start (in any build). Checkpoints jump to a
   place in the story (they set exactly that flag list, in order, keep a name, and type `NEW`, `CLS` and the right CLOAD
-  plus fixes at the CoCo), single flags tick on and off, and there are controls for the name, notebook wear, hints, the
+  plus fixes at the CoCo), single flags tick on and off, and there are controls for the name, notebook wear, the
   TV hooks and resets. It changes the live game, but story timers already running carry on, so reload for a clean run.
   A new story flag goes in `STORY_FLAGS` (`debug/checkpoints.ts`), and a new beat gets a checkpoint there.
 - `?instant&nosound` is the usual test URL. `?instant` skips the tube warm-up and makes the cassette instant (CLOAD / CSAVE normally take tape time).
@@ -75,7 +75,7 @@ src/game/
                       (one function per puzzle, ticks a flag), watcher (feeds it the interpreter's `BasicEvent`s; see docs/puzzles.md)
   tapes/              Rainbow On Tape, the cassette in the recorder: index (tape order) and one .bas file per program
   magazine/           the RAINBOW: book (state, slide-in, GPU pass), bookShader (page-turn), bookLayout (TV/book split), bookInput
-                      (TAB, PAGE UP/DOWN, wheel zoom, toolbar), pages (the ordered list of page ids; `pageNo(id)` gives a page's number), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May issue so far: its COMING SOON cover and the editor's notice), articles, letters, extras (hints/type-in), learn (tutorials), classifieds, scratch + foil (scratch-off), ads + adsColor (parody ads)
+                      (TAB, PAGE UP/DOWN, wheel zoom, toolbar), pages (the ordered list of page ids; `pageNo(id)` gives a page's number), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May issue so far: its COMING SOON cover and the editor's notice), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner (parody ads)
   tv/                 tv (uploads the VDG frame, uniforms, power-on, `broadcast`), tvShader (uniforms, main: room → cabinet → tube),
                       pictureShader (the beam: RF colour smear, scanlines, warm-up and switch-off, jolts, roll, herringbone,
                       a far station), glassShader (reflections, fingerprints, dust), cabinetShader (room, wood, panel,
@@ -131,12 +131,12 @@ src/game/
   turning leaf in perspective. Window split: TV left / book right (top / bottom when tall); the ⤢ button (reading mode) shrinks the TV to a strip.
 - The TV pulls back as the book opens: `Tv.draw(..., rect, frame)` takes the rectangle it fits in and how much of the set shows.
 - **Never write a page number by hand.** Name a page by id and ask `pageNo(id)` (`magazine/pages.ts`): contents, editorial,
-  letters, hints, the cover's "page N" and the notebook's pointers all do, so reordering `PAGE_IDS` fixes every
+  letters, the cover's "page N" and the notebook's pointers all do, so reordering `PAGE_IDS` fixes every
   reference. To add a page: add its id there, a draw function in `issue.ts`'s table, and (if it should be listed) a
   contents entry.
 - It is the player's guide: `COMMANDS` in `data.ts` is the single source for the "how to play" page. The story calls
-  `magazine.setFlag(name)` to record progress (`bookSave.ts`: flags, scratched hints, and the page the book is open to, by id, plus whether it is out, persist in localStorage; the CoCo itself starts cold on reload); the player's notebook (`notes/`) shows it.
-  Hints are scratch-off panels (hotspots returned by `drawPage`): scrub across one and the foil comes off only where you scratch (`foil.ts` is the cover and its ragged wear, `scratch.ts` the input); the hint shows through the worn strips, and past 85% cleared the last flecks fall away. Clicks only leave a dot; half-scratched panels are not saved. Typing still goes to the CoCo while it is open; TAB opens/closes.
+  `magazine.setFlag(name)` to record progress (`bookSave.ts`: flags and the page the book is open to, by id, plus whether it is out, persist in localStorage; the CoCo itself starts cold on reload); the player's notebook (`notes/`) shows it.
+  There are no hints in the book (the scratch-off page became the HEAD CASE ad). Typing still goes to the CoCo while it is open; TAB opens/closes.
 - **Illustrations** (covers, painted ads, art inside the pages) look like a skilled 1980s illustrator's airbrush and gouache: true lines, hand-painted light and shade, brushwork, print grain; never vector-perfect and never wobbly. Paint pass before type, type stays crisp. Read `docs/illustration.md` before drawing any.
 
 ## Known debt

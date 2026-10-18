@@ -1,5 +1,4 @@
 import type { Magazine } from './book';
-import { scratch } from './scratch';
 import { ISSUE_DATE, type IssueId } from './pages';
 
 /** Clicks and drags shorter than this (CSS px) are clicks. */
@@ -13,7 +12,7 @@ const HINT_KEY = 'coco2.rainbow.hint';
 /**
  * Everything the reader does to the magazine, handled like paper rather than a document viewer: drag a page across
  * the spine to turn it (let go early and it falls back), click a page to put it away (at reading size, to turn it), double-click to lean in on it (drag
- * to move about, double-click to lean back), scroll or swipe to flip, pinch to zoom, click a scratch panel. TAB puts it
+ * to move about, double-click to lean back), scroll or swipe to flip, pinch to zoom. TAB puts it
  * away, PAGE UP/DOWN turn. Only a bare corner pair of buttons remains. Typing is left alone so the CoCo keeps listening
  * while the magazine is open.
  */
@@ -32,8 +31,6 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
   let clickTimer = 0;
   /** The view in the hand, sliding to the other page of the same spread: which way, where it started and was grabbed. */
   let slide: { dir: 1 | -1; from: number; x0: number; t: number; vel: number; lastX: number; lastT: number } | null = null;
-  /** The hint panel this drag started on: dragging over it scratches it instead of turning the page. */
-  let scratching: string | null = null;
 
   canvas.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
@@ -41,8 +38,6 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
     const [nx, ny] = norm(e);
     if (pointers.size === 1) {
       down = { x: e.clientX, y: e.clientY, moved: false };
-      scratching = mag.open ? mag.hotspotAt(...mag.toBook(nx, ny)) : null;
-      if (scratching) scratch(mag, scratching, ...mag.toBook(nx, ny));
     }
     if (pointers.size === 2) pinch = spread();
     if (mag.open || mag.inRect(mag.book, nx, ny)) canvas.setPointerCapture(e.pointerId);
@@ -66,7 +61,6 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
       return;
     }
     if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > CLICK_SLOP) down.moved = true;
-    if (scratching && down?.moved) return scratch(mag, scratching, ...mag.toBook(nx, ny));
     if (down?.moved && mag.open && mag.zoom > 1.02) {
       panBy(-dx, dy);
     } else if (down?.moved && mag.open && pointers.size === 1) {
@@ -111,7 +105,6 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
   const release = (e: PointerEvent) => {
     if (!pointers.delete(e.pointerId)) return;
     if (pointers.size > 0) return;
-    scratching = null;
     const wasClick = down && !down.moved;
     down = null;
     if (hold) {
@@ -146,8 +139,6 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
     if (mag.inRect(mag.tv, nx, ny)) return mag.close();
     if (!mag.inRect(mag.book, nx, ny)) return;
     const [px, py] = mag.toBook(nx, ny);
-    const spot = mag.hotspotAt(px, py);
-    if (spot) return;
     if (mag.zoom > 1.05) return;
     clearTimeout(clickTimer);
     // Wait a moment: a second click is a double-click, which leans in instead.
@@ -168,8 +159,6 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
     const [nx, ny] = norm(e);
     if (!mag.open || !mag.inRect(mag.book, nx, ny)) return;
     clearTimeout(clickTimer);
-    const [px, py] = mag.toBook(nx, ny);
-    if (mag.hotspotAt(px, py)) return;
     mag.lean(nx, ny);
     heardTurn();
   });

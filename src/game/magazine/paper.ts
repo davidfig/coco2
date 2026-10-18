@@ -18,15 +18,6 @@ export const PENCIL = 'Caveat, "Bradley Hand", "Comic Sans MS", cursive';
 
 export type Ctx = CanvasRenderingContext2D;
 
-/** A region of a page that reacts to a click (a scratch-off hint, say), in page texels. */
-export interface Hotspot {
-  id: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
 export function rng(seed: number): () => number {
   let a = seed >>> 0;
   return () => {

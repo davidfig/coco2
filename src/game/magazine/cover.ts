@@ -92,7 +92,7 @@ export function drawCover(ctx: Ctx): void {
   text(ctx, 'Our Adventure', STRIP + 235, 392, `italic 44px ${SCRIPT}`, '#f4e24a', 'center');
   text(ctx, 'Special Edition', STRIP + 235, 446, `italic bold 52px ${SCRIPT}`, '#f4e24a', 'center');
   // Cover lines: yellow on the right, red and pale blue alternating on the left.
-  line(ctx, 'Hints Inside!', PAGE_W - 40, 540, '#f4e24a', 40, 'right');
+  line(ctx, 'Now With', PAGE_W - 40, 540, '#f4e24a', 40, 'right');
   line(ctx, '3 Easy-To-Read', PAGE_W - 40, 590, '#f4e24a', 40, 'right');
   line(ctx, 'Pages Of Ads!', PAGE_W - 40, 640, '#f4e24a', 40, 'right');
   const left: [string, string][] = [
@@ -102,7 +102,7 @@ export function drawCover(ctx: Ctx): void {
     ['Text Adventures', '#dfe8ff'],
     ['Your Own Adventure', '#ee4036'],
     ['Classified Ads', '#ee4036'],
-    ['A Scratch-Off Hint Page', '#dfe8ff'],
+    ['Clean Tape Heads', '#dfe8ff'],
     ['More Than One', '#ee4036'],
     ['Very Funny Ad', '#ee4036'],
   ];

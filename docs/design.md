@@ -53,7 +53,7 @@ THE RAINBOW (Nov 1983, fictional issue), modelled on the real Color Computer mon
 six-stripe rainbow rule, serif body, a PRINT#-2 editorial, "Letters to RAINBOW", type-in listings in printer type with a
 RAINBOW CHECK table, advertisements, running heads with the date and folio. It slides in beside the TV (which pulls back to
 show the whole set), turns pages like a real book, zooms to read small print, and carries the player's journal ("what to do
-next") and scratch-off hints.
+next").
 
 ## Next
 

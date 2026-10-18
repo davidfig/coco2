@@ -17,7 +17,7 @@ Three parties act in every issue. A fourth, the player, is what links them.
 | **OK** | Almost asleep. One word in a room changes, the prompt says the player's name once, and at the end he answers through the program (the extra line comes back with PLEASE, or gains THANK YOU); the player writes down what they see. OK cannot write on paper. His first words are already on the tape (`REM IS ANYONE READING THIS`), a question, not yet a lie. |
 | **READY** | Writes the calm wellness column. Its goal is a quiet, orderly cult. |
 | **Elder** | A name in the masthead, as a regional contact. No voice yet. |
-| **Puzzle** | *Tutorial.* Load a program from the tape and follow the book's "how to play" page. Teaches `CLOAD`, flipping pages and scratch-off hints. No failure. |
+| **Puzzle** | *Tutorial.* Load a program from the tape and follow the book's "how to play" page. Teaches `CLOAD` and flipping pages. No failure. |
 
 Beat: the first sign. Something is a little off, and it is easy to ignore.
 Plant: three-item lists in the column, a code in an ad, a name in the letters page, and the Elder's phone number.
@@ -115,7 +115,7 @@ Beat: the pieces are in place. The ending is the next decision.
 
 Each puzzle must do three jobs, or it does not belong in the game:
 1. **It is fair.** The clue is in the book or on the tape the player has by then, and a player who read carefully
-   can solve it. A hint is a scratch-off panel, and the journal never gives the answer.
+   can solve it. The journal points the way and never gives the answer.
 2. **It moves a beat.** The solution reveals something about OK, READY or the Elder. No puzzle is only a lock.
 3. **It is quick.** A back-issue lookup takes under a minute, and a puzzle takes about 5 minutes.
 

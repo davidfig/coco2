@@ -9,8 +9,8 @@ Status: draft for discussion. Nothing here is built.
 - The player does real programming. The magazine teaches it, and the first puzzle is hand-coding a small program.
 - **Puzzles gate the story.** The player must work it out before moving on. So the teaching has to come first and the
   feedback has to be good: every wrong try gives a readable BASIC error or an OK reaction.
-- Scratch-off hints stay as an optional extra, but no puzzle may *need* one. If playtesting shows a hint is needed,
-  the article or the feedback is what to fix.
+- There is no hints page (the scratch-off one was cut for an ad). If playtesting shows a puzzle needs a hint, the
+  article, the notebook or the feedback is what to fix.
 - Solving a puzzle ticks a flag (`magazine.setFlag`). The notebook's open questions say where to look, never the answer.
 
 ## Skill ladder (issue 1 teaches rungs A–D)
@@ -70,7 +70,7 @@ order. Nothing in the magazine is needed beyond the map. The four numbers, one s
 3. *Gallery, wordplay* (`EXAMINE MIRROR`): in the dust on the glass, `NEVES`, SEVEN backwards. **7**.
 4. *Cellar, an object* (a key for a box): the cellar's iron box is locked; the key is in the study desk (`EXAMINE DESK`,
    `TAKE KEY`), and `USE KEY` (or `OPEN BOX`) in the cellar shows a card, the nine of clubs. **9**. The map page's own text
-   ("when you come back with a key, you will know where to use it") and the hints page point at this.
+   ("when you come back with a key, you will know where to use it") points at this.
 
 **The order** is the map read like a page: top row left to right (tower, chapel), then the next rows (gallery, then cellar).
 Code **6279**. A wrong four-digit code says how many wheels clicked (right digit, right place), so a player with the four

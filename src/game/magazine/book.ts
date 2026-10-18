@@ -3,10 +3,10 @@ import { BOOK_FRAG } from './bookShader';
 import { CAM_DIST, Flip, PAGE_FIT_H, PAGE_FIT_W, PAGE_UNIT_H, Rect, TILT, View, clamp, layoutAt, lerp, screenToBook, smooth, spreadView } from './bookLayout';
 import { IssueState, newState } from './data';
 import { MAX_PAGES, drawPage } from './issue';
-import { ISSUES, ISSUE_ORDER, pageIndex, type AnyPageId, type IssueId } from './pages';
+import { ISSUES, ISSUE_ORDER, type AnyPageId, type IssueId } from './pages';
 import { readSave, writeSave } from './bookSave';
 import { loadFonts } from './fonts';
-import { Hotspot, PAGE_H, PAGE_W } from './paper';
+import { PAGE_H, PAGE_W } from './paper';
 
 const FLIP_SECONDS = 0.8;
 const MAX_ZOOM = 4;
@@ -55,9 +55,8 @@ export class Magazine {
   private readonly tex: WebGLTexture;
   private readonly paint = document.createElement('canvas');
   private readonly pctx: CanvasRenderingContext2D;
-  /** Pages painted onto the GPU, and each page's clickable panels (`scratch.ts` reads and clears these). */
+  /** Pages painted onto the GPU. */
   readonly have = new Set<number>();
-  readonly spots: Hotspot[][] = [];
   private preload = 0;
   private fontsReady = false;
   private savedView = ''; // `viewKey()` (page, open, reading) as last saved; `update` saves when it changes
@@ -104,7 +103,6 @@ export class Magazine {
     this.pagesAt[this.issue] = this.pageId(this.pageGoal);
     [this.issue, this.preload, this.flip, this.zoomGoal] = [id, 0, null, 1];
     this.have.clear();
-    this.spots.length = 0;
     const at = this.pagesAt[id];
     this.place(at ? (ISSUES[id] as readonly AnyPageId[]).indexOf(at) : 0);
     this.save();
@@ -202,24 +200,6 @@ export class Magazine {
     // The May issue comes in the mail: it is the one on the table now.
     if (flag === 'issue2-waiting') this.setIssue('may');
     this.save();
-  }
-
-  reveal(id: string): void {
-    this.state.revealed.add(id);
-    this.save();
-    if (this.issue === 'march') this.have.delete(pageIndex('hints'));
-  }
-
-  /** The hotspot under book point (px, py) on a resting page, if any. */
-  hotspotAt(px: number, py: number): string | null {
-    if (this.flip || Math.abs(py) > PAGE_UNIT_H / 2) return null;
-    const page = px >= 0 ? this.spread * 2 : this.spread * 2 - 1;
-    if (px < -1 || px > 1 || page < 0 || page >= this.count) return null;
-    this.ensure(page);
-    const x = (px >= 0 ? px : px + 1) * PAGE_W;
-    const y = (0.5 - py / PAGE_UNIT_H) * PAGE_H;
-    const hit = this.spots[page]?.find((s) => x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h);
-    return hit?.id ?? null;
   }
 
   /** Book-space point under a screen point (window fractions, origin bottom-left). */
@@ -362,7 +342,7 @@ export class Magazine {
   private ensure(i: number): void {
     if (this.have.has(i)) return;
     const gl = this.gl;
-    this.spots[i] = drawPage(this.issue, i, this.pctx, this.state);
+    drawPage(this.issue, i, this.pctx, this.state);
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tex);
     gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, PAGE_W, PAGE_H, 1, gl.RGBA, gl.UNSIGNED_BYTE, this.paint);
     gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
@@ -375,17 +355,16 @@ export class Magazine {
 
   save(): void {
     this.savedView = this.viewKey();
-    const { flags, revealed } = this.state;
+    const { flags } = this.state;
     const page = this.pageId(this.pageGoal) ?? ISSUES[this.issue][0];
     this.pagesAt[this.issue] = page;
-    writeSave({ flags: [...flags], revealed: [...revealed], issue: this.issue, pages: { ...this.pagesAt }, page, open: this.open, reading: this.reading });
+    writeSave({ flags: [...flags], issue: this.issue, pages: { ...this.pagesAt }, page, open: this.open, reading: this.reading });
   }
 
   /** Restore the journal, and the book where the reader left it: already out and on that page, no slide or page-turn. */
   private load(): void {
     const s = readSave();
     for (const f of s.flags ?? []) this.state.flags.add(f);
-    for (const r of s.revealed ?? []) this.state.revealed.add(r);
     Object.assign(this.pagesAt, s.pages);
     // A save from before issues could be switched, made after May came, opens on May.
     const issue = s.issue ?? (this.state.flags.has('issue2-waiting') ? 'may' : 'march');

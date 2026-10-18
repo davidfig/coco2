@@ -1,51 +1,12 @@
-import type { IssueState } from './data';
 import { houseAd } from './ads';
-import { foil } from './foil';
 import { checkSum } from '../basic/checksum';
 import { FIRST_PROGRAM, GUESS_PRINTED } from '../puzzles';
 import { pageNo } from './pages';
-import { Ctx, Hotspot, INK, MARGIN, MONO, PAGE_W, SANS, SERIF, banner, colWidth, flow, headline, rowsFor, text } from './paper';
+import { Ctx, INK, MARGIN, MONO, PAGE_W, SANS, SERIF, banner, colWidth, flow, rowsFor, text } from './paper';
 
 const W = PAGE_W - MARGIN * 2;
 const GAP = 24;
 const CW = colWidth(W, 3, GAP);
-
-/** The hints page is printed on pink paper. */
-export const HINT_STOCK = '#f2cfcf';
-
-/** three hints, each under a scratch-off panel. */
-export function drawHints(ctx: Ctx, s: IssueState): Hotspot[] {
-  let y = headline(ctx, 'Scratch & See', ['Hints, hidden until you ask . . .', 'Try for ten minutes first . . .'], null);
-  const hints: [string, string, string][] = [
-    ['hint:prompt', 'The machine seems to ignore me.', 'It is waiting for ENTER. Nothing is understood until you press it at the end of the line.'],
-    ['hint:sn', 'I keep getting ?SN ERROR.', 'Check the spelling, and check the quote marks come in pairs. If it says IN and a number, the mistake is in that line of the program: LIST it, read it slowly, and type it again with its number. Page ' + pageNo('program') + ' has more.'],
-    ['hint:key', 'There is a door and I cannot open it.', 'Some locks want a key you can carry: EXAMINE everything. A lock with wheels wants a number for each, and the rooms hold them, one only in the program’s lines (page ' + pageNo('stopping') + ').'],
-    ['hint:dark', 'It is too dark to see anything.', 'You cannot see or move in the dark. Feel around: EXAMINE what you can feel, and TAKE anything that might give light.'],
-    ['hint:lost', 'I am lost and nothing makes sense.', 'Type LOOK, read slowly, and write the room’s name on your map. Try every direction in turn.'],
-  ];
-  const spots: Hotspot[] = [];
-  for (const [id, q, a] of hints) {
-    const h = 168;
-    text(ctx, q, MARGIN, y + 26, `bold 28px ${SANS}`);
-    const box = { id, x: MARGIN, y: y + 42, w: W, h: 118 };
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.fillRect(box.x, box.y, box.w, box.h);
-    const sc = s.scratch[id];
-    if (s.revealed.has(id) || sc) {
-      const rows = rowsFor(ctx, [{ text: a, font: `25px ${SERIF}`, lh: 31, align: 'left', before: 0, color: INK }], W - 40);
-      flow(ctx, rows, box.x + 20, box.y + 12, box.w - 40, box.h - 12);
-    }
-    if (!s.revealed.has(id)) {
-      ctx.drawImage(sc?.cover ?? foil(box.w, box.h), box.x, box.y);
-      spots.push(box);
-    }
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(box.x, box.y, box.w, box.h);
-    y += h + 20;
-  }
-  return spots;
-}
 
 /** A type-in page: heading, intro, the listing (32 characters to a row, as on the CoCo) and its RAINBOW CHECK table. */
 interface TypeIn {

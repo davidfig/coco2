@@ -1,6 +1,6 @@
 /**
  * The pages of the issue, in the order they are bound. This is the only place that says which page is which: the
- * contents, the editor's column, the letters, the hints and the notebook all name a page by id and ask `pageNo` for
+ * contents, the editor's column, the letters, the cover and the notebook all name a page by id and ask `pageNo` for
  * its number, so reordering this list (or adding a page) fixes every "see page N" in the magazine at once.
  * It has no imports, so any module may use it.
  */
@@ -13,7 +13,7 @@ export const PAGE_IDS = [
   'screen',
   'words',
   'map',
-  'hints',
+  'cleanerAd',
   'typeIn',
   'program',
   'stopping',

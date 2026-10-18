@@ -48,7 +48,6 @@ export function drawContents(ctx: Ctx): void {
   y = entry('Letters To Rainbow', 'Our Readers', no('letters'), null, y);
   y = entry('PRINT #-2', 'Margaret Hale', no('editorial'), null, y);
   y = entry('Classified', 'Our Readers', no('classifieds'), null, y);
-  y = entry('Scratch & See', 'The Staff', no('hints'), null, y);
   y += 24;
   const box = rowsFor(
     ctx,
@@ -93,7 +92,7 @@ export function drawEditorial(ctx: Ctx): void {
       { text: 'Some of you have written to say you bought a CoCo, switched it on, saw the word OK and then sat very still. Welcome. Everybody does that the first time, and the machine is perfectly happy to wait.', before: 0 },
       { text: 'This month is our Adventure Issue. An adventure is a story that you walk through by typing. The computer tells you where you are, you tell it what to do, and it tells you what happened. There is no joystick and nothing to shoot. There is only reading, thinking and a pencil.' },
       { text: 'We have laid out this issue as a field guide. Keep it beside the set. Read how the screen works, learn the handful of words the adventure understands, and draw a map as you go.' },
-      { text: 'If you get stuck, turn to the hints on page ' + pageNo('hints') + '. They are covered over, so you cannot spoil your own fun by accident. Try for ten minutes first. Then scratch.' },
+      { text: 'If you get stuck, go back to your map and read each room again, slowly. Everything you need is in the game, or in these pages. Try for ten minutes. Then try for ten more.' },
       { text: 'Here is what is in the issue. On pages ' + pageNo('screen') + ' and ' + pageNo('words') + ' Dale Wick explains the screen and the words, which is everything you need before your first command. Priya Rao shows how to map a place so that you never walk in a circle without noticing. On page ' + pageNo('typeIn') + ' Tom Brannigan has a short program for you to type, with the RAINBOW CHECK to prove you typed it right, and on pages ' + pageNo('program') + ' and ' + pageNo('stopping') + ' Dale explains how programs work and what to do when one stops or goes wrong.' },
       { text: 'Turn to page ' + pageNo('letters') + ' for the mail. We are told this is the part of the magazine people read first, and that some of you skip our columns to get to it. We do not mind. We read it first, too.' },
       { text: 'And please, read the advertisements. Our advertisers are the reason this magazine costs as little as it does, and some of them are very, very sure of themselves. A few have made claims that we have not tested, and do not intend to.' },

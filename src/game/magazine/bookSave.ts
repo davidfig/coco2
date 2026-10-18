@@ -3,13 +3,12 @@ import { ISSUES, type AnyPageId, type IssueId } from './pages';
 const SAVE_KEY = 'coco2.rainbow';
 
 /**
- * What a reload brings back of the magazine: the notebook's flags, the scratched hints, and the page the reader was on
+ * What a reload brings back of the magazine: the notebook's flags and the page the reader was on
  * (by id, so a reordered issue still opens on the same page) with whether the book was out. The CoCo itself starts
  * cold, as the real one did.
  */
 export interface Save {
   flags: string[];
-  revealed: string[];
   /** The issue on the table, and the page each issue was last left open at. */
   issue: IssueId;
   pages: Partial<Record<IssueId, AnyPageId>>;

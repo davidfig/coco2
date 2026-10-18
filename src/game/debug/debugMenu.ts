@@ -81,7 +81,6 @@ export class DebugMenu {
         'Player',
         el('label', { className: 'row' }, 'Name ', this.nameInput, button('Keep', () => writeName(this.nameInput.value.trim().toUpperCase().slice(0, 12)))),
         el('label', { className: 'row' }, 'Notebook wear ', this.wearInput, button('Set', () => this.setWear(Number(this.wearInput.value))), button('0', () => this.setWear(0)), button('60', () => this.setWear(60))),
-        el('div', { className: 'row' }, button('Cover every hint again', () => this.coverHints())),
       ),
       section(
         'TV',
@@ -180,12 +179,6 @@ export class DebugMenu {
     this.h.notebook.handled = handled;
     saveHandled(handled);
     this.wearInput.value = String(handled);
-  }
-
-  private coverHints(): void {
-    this.h.magazine.state.revealed.clear();
-    this.h.magazine.save();
-    this.h.magazine.have.clear();
   }
 
   private forget(key: string, reload = true): void {
