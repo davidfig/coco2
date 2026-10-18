@@ -100,8 +100,15 @@ export const NOTES: readonly Note[] = [
   { id: 'night2', when: 'issue2-done', text: 'Enough for tonight. Switch it off', mood: 0.35, ask: true, solved: 'issue2-closed' },
 ];
 
+/** The reply as the sheet worker (`sheetWorker.ts`) was told it: it has no localStorage. */
+let told: string | null = null;
+export function tellReply(reply: string): void {
+  told = reply;
+}
+
 /** What the player answered ORACLE (`oracle-answered` keeps it). */
-function savedReply(): string {
+export function savedReply(): string {
+  if (told !== null) return told;
   try {
     return localStorage.getItem(REPLY_KEY) ?? '';
   } catch {

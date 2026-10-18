@@ -197,6 +197,12 @@ export function paginate(flags: ReadonlySet<string>): Entry[][] {
   return sheets;
 }
 
+/** What each sheet shows, one string a sheet: one whose string hasn't changed needn't be written again. */
+export function sheetSigs(flags: ReadonlySet<string>, handled: number): string[] {
+  const sheets = paginate(flags);
+  return sheets.map((s) => JSON.stringify([handled, sheets.length > 1, s.map((e) => [e.note.id, e.solved, e.lines])]));
+}
+
 /**
  * Draw one sheet of the notebook (0 = the first; by default the newest) for the flags the player has set, worn by
  * `handled` readings (see wear.ts). Returns its page references and how many sheets there are.

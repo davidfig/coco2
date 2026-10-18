@@ -24,7 +24,7 @@ function load(): Saved {
 }
 
 /** This run's offset for every wear seed: made the first time, then kept so the page looks the same on each reload. */
-const pageSeed = ((): number => {
+let pageSeed = ((): number => {
   const saved = load();
   const n = Number(saved.seed);
   if (Number.isInteger(n)) return n;
@@ -36,6 +36,12 @@ const pageSeed = ((): number => {
   }
   return seed;
 })();
+
+/** The offset, for the sheet worker (`sheetWorker.ts`), which has no localStorage and is told it with `useWearSeed`. */
+export const wearSeed = (): number => pageSeed;
+export function useWearSeed(seed: number): void {
+  pageSeed = seed;
+}
 
 /** A generator for one mark, its own `k` shifted by this run's seed. */
 const seeded = (k: number): Rand => rand(pageSeed + k);

@@ -82,7 +82,8 @@ src/game/
   handwriting/        the player's pen, no font: glyphs (stroke skeletons, some letters with two forms), hand (rebuilds every
                       letter on each use with its own size, tilt, slant, shaken points, pressure; `mood` loosens it all)
   notes/              the notebook page that peeks up from the bottom-left: notes (what the player has worked out, one per
-                      flag, open questions that point at a page or tape), sheet (ruled paper + the writing), note (GL quads,
+                      flag, open questions that point at a page or tape), sheet (ruled paper + the writing), sheetPainter + sheetWorker
+                      (sheets written off the main thread, only those that changed), note (GL quads,
                       one texture per sheet; hover/click, drag a held-up sheet aside to send it under, input captured before the book's)
                       + noteShader (the screen's light dims through each sheet behind) + pile (where each sheet lies, the turn animation) + onDesk (the pile lying on the table, in perspective), wear (the page ages with each reading and note:
                       yellowing, folds, coffee rings, pen blots; `handled` in localStorage) + stains (the marks), doodles (what the pen draws in the

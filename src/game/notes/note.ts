@@ -1,11 +1,12 @@
-import { FULLSCREEN_VERT, Program, createTexture, linkProgram } from '../../engine';
+import { FULLSCREEN_VERT, Program, linkProgram } from '../../engine';
 import { NOTE_STRIP, type Rect } from '../magazine/bookLayout';
 import type { IssueId } from '../magazine/pages';
 import type { Shade } from '../tv/tv';
 import { NOTE_FRAG } from './noteShader';
 import { NOTES } from './notes';
 import { DEAL_TIME, type Deal, type Layer, type Sheet, inside, layers, openTime, pulled } from './pile';
-import { type PageLink, SHEET_DPI, SHEET_H, SHEET_W, drawSheet, paginate } from './sheet';
+import { type PageLink, SHEET_DPI, SHEET_H, SHEET_W, sheetSigs } from './sheet';
+import { SheetPainter, type SheetsDone, uploadSheets } from './sheetPainter';
 import { readHandled, saveHandled } from './wear';
 import type { DeskSpot } from '../computer/layout';
 import { DESK_LIGHT, type Quad, inQuadPx, onTable } from './onDesk';
@@ -26,21 +27,23 @@ const WATCHED = [...new Set(NOTES.flatMap((n) => [n.when, n.solved, n.orSolved, 
 /**
  * The player's notebook page. It peeks up from the bottom-left corner of the window (as the magazine peeks in from the
  * right); a new line makes it rise a little, pointing at it lifts it, and a click holds it up to read in front of the
- * room. Its pixels come from `drawSheet`, written fresh by hand each time the flags change, and again each time it is
- * back down, as every reading wears it a little more (wear.ts).
+ * room. Its pixels come from `drawSheet`, written fresh by hand (in a worker: `SheetPainter`) each time the flags change,
+ * and again each time it is back down, as every reading wears it a little more (wear.ts).
  */
 export class Notebook {
   private readonly program: Program;
   /** One texture per sheet, each written with its own notes, so the sheets under the top one show what is on them. */
   private readonly texs: WebGLTexture[] = [];
   private readonly vao: WebGLVertexArrayObject;
-  private readonly page = document.createElement('canvas');
+  private readonly painter = new SheetPainter();
+  /** What each sheet was last asked to show (`sheetSigs`), so only the sheets that change are written again. */
+  private asked: string[] = [];
   /** The flags and wear the sheets were last written for (null: never written). */
   private sig: string | null = null;
   private flagSig: string | null = null;
   /** How many times the page has been held up and put down again; set it from the console to see it age. */
   handled = readHandled();
-  /** The wear the sheets show: `handled` catches up only once the page is back down, so the rewrite (tens of ms a sheet) never stalls its animation. */ private worn = this.handled;
+  /** The wear the sheets show: `handled` catches up only once the page is back down, so the new marks never turn up while it moves. */ private worn = this.handled;
   private openT = 0;
   private lift = 0;
   private nudge = 0;
@@ -83,13 +86,11 @@ export class Notebook {
   constructor(private readonly gl: WebGL2RenderingContext, private readonly canvas: HTMLCanvasElement, private readonly flags: () => ReadonlySet<string>, private readonly tv: () => Rect, private readonly tuck: () => number, private readonly glow: () => readonly number[], private readonly picture: () => readonly number[], private readonly onPage: (index: number, issue: IssueId) => void) {
     this.program = linkProgram(gl, FULLSCREEN_VERT, NOTE_FRAG);
     this.vao = gl.createVertexArray()!;
-    this.page.width = SHEET_W;
-    this.page.height = SHEET_H;
     this.refresh(false);
     this.listen();
   }
 
-  /** Rewrite the sheets if the flags or their wear changed; `announce` makes the paper rise to say a note was added. */
+  /** Ask for the sheets to be written again if the flags or their wear changed; `announce` makes the paper rise to say a note was added. */
   private refresh(announce: boolean): void {
     const set = this.flags();
     const flagSig = WATCHED.filter((f) => set.has(f)).join(',');
@@ -99,20 +100,20 @@ export class Notebook {
     const first = this.sig === null;
     this.sig = sig;
     this.flagSig = flagSig;
-    const ctx = this.page.getContext('2d')!;
-    const gl = this.gl;
-    this.sheets = paginate(set).length;
-    for (let k = 0; k < this.sheets; k++) {
-      this.texs[k] ??= createTexture(gl, SHEET_W, SHEET_H);
-      this.links[k] = drawSheet(ctx, set, this.worn, k).links;
-      // Straight from the canvas: no read back into script.
-      gl.bindTexture(gl.TEXTURE_2D, this.texs[k]);
-      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.page);
-      gl.generateMipmap(gl.TEXTURE_2D);
-    }
-    if (first || wrote || this.sheet >= this.sheets) this.settle(this.sheets - 1);
+    const sigs = sheetSigs(set, this.worn);
+    const sheets = sigs.flatMap((g, k) => (g === this.asked[k] ? [] : [k]));
+    this.asked = sigs;
+    this.painter.paint({ flags: [...set], worn: this.worn, sheets, count: sigs.length, fresh: first || wrote, nudge: announce && wrote });
+  }
+
+  /** A rewrite is in: the sheets show it all at once. */
+  private apply(d: SheetsDone): void {
+    this.sheets = d.count;
+    uploadSheets(this.gl, this.texs, d);
+    for (const p of d.pages) this.links[p.sheet] = p.links;
+    if (d.fresh || this.sheet >= this.sheets) this.settle(this.sheets - 1);
     // One announcement per change: flags that arrive while it is still bouncing do not start it again.
-    if (announce && wrote && !this.open && this.nudge <= 0) this.nudge = BOUNCES * BOUNCE_TIME;
+    if (d.nudge && !this.open && this.nudge <= 0) this.nudge = BOUNCES * BOUNCE_TIME;
   }
 
   /** Put `sheet` on top with nothing moving. */
@@ -350,6 +351,7 @@ export class Notebook {
   update(dt: number): void {
     if (this.openT === 0) this.worn = this.handled;
     this.refresh(true);
+    for (const d of this.painter.take()) this.apply(d);
     this.openT = Math.min(1, Math.max(0, this.openT + (this.open ? dt : -dt) / openTime(Math.min(this.canvas.clientHeight, this.canvas.clientWidth / RATIO) * 0.93)));
     this.nudge = Math.max(0, this.nudge - dt);
     // Each bounce rises from rest to full lift and settles back, so it starts and ends where it was.
