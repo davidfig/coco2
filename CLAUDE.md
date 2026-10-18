@@ -1,0 +1,146 @@
+# CoCo 2
+
+A text adventure played on a TRS-80 Color Computer 2, drawn in WebGL2: a close-up of a 1980s TV's picture (it fills
+the window, with a strip of the tube's black border), showing the CoCo's VDG screen (MC6847 font, green paper, colour-cycling cursor) through a CRT
+shader with curved glass and glare. TypeScript, Vite, no runtime dependencies. Sister project to the *-geometry games
+(`../sword-geometry`, `../space-geometry`, `../astronaut-geometry`); it may never go online, but it follows their rules.
+
+Commands: `pnpm dev` (port 5196, `.claude/launch.json`) · `pnpm typecheck` · `pnpm check:size` · `pnpm build`.
+Run `typecheck` and `check:size` before finishing any change. Design notes: `docs/design.md`.
+
+@../server-geometry/claude/games.md
+
+## Not like the other games
+
+- No 3D scene and no copied geometry engine: `src/engine/` is a slim one (loop, WebGL2 context, `gpu` helpers,
+  typed-key queue, `audio`: one AudioContext made on the first click or key) with the same `earlyUpdaters` / `updaters` / `lateUpdaters` shape. The fixed step is 60 Hz (the
+  VDG's field rate). The game layer still imports it only through the barrel.
+- Sound is all synthesized (`tv/tvSound.ts`, no recordings), and only the TV's so far. `?nosound` turns it off; test
+  tabs always use it. To check the sound graph silently, `build` a `TvSound` into an `OfflineAudioContext`.
+- No online play yet: `server-geometry-client` is linked but nothing uses it and there is no entry in
+  `../server-geometry/src/games.ts`. If it goes online, copy astronaut-geometry's `net/roomClient.ts`.
+
+## Playtesting
+
+- `?clear` starts over: it removes every `coco2.*` localStorage key (CSAVEs, TV knobs, magazine flags, notebook wear)
+  and then drops itself from the URL (`src/clear.ts`, imported first in `main.ts`).
+- **Debug menu** (`game/debug/`): F2 in dev builds, `?debug` opens it at start (in any build). Checkpoints jump to a
+  place in the story (they set exactly that flag list, in order, keep a name, and type `NEW`, `CLS` and the right CLOAD
+  plus fixes at the CoCo), single flags tick on and off, and there are controls for the name, notebook wear, hints, the
+  TV hooks and resets. It changes the live game, but story timers already running carry on, so reload for a clean run.
+  A new story flag goes in `STORY_FLAGS` (`debug/checkpoints.ts`), and a new beat gets a checkpoint there.
+- `?instant&nosound` is the usual test URL. `?instant` skips the tube warm-up and makes the cassette instant (CLOAD / CSAVE normally take tape time).
+- The Browser pane's `type` action sends text as input events, not keydowns, so it doesn't reach the game. Type with
+  `coco.engine.keyboard.type('LOOK\n')` ("\n" is ENTER, "\b" is ←), then `coco.engine.advance(1/60)`.
+- `coco` on `window` exposes `engine`, `screen`, `basic`, `interp`, `tv`, `vdg`. A hidden pane runs ~1 fps; step with `advance`.
+- To test BASIC, type a whole session at once (`keyboard.type('NEW\n10 PRINT 1\nRUN\n')`) and advance ~60 frames: keys
+  after an ENTER wait until that line has run. BREAK is `coco.basic.key({ key: 'Escape', shift: false, ctrl: false })`.
+- `?tamper=ghost|scan|both` (ghost is the default) picks how story-made screen changes show; `coco.tamperTest()` swaps a few letters to
+  see it (`coco.tv.tamperStyle` / `tamperStrength` switch it live).
+- CSAVE writes to this browser's localStorage (`coco2.tape`), so a test CSAVE leaves a file behind.
+- The set starts as it was left (`coco2.tv`: channel, volume, fine tuning, vertical hold, power, saved once the knobs
+  come to rest); a test that turns a knob or switches off leaves it that way. `localStorage.removeItem('coco2.tv')`
+  gives channel 3, on.
+- The set's story hooks, to try from the console: `coco.tv.tuning.drift(0.6)` (off tune), `.upsetHold(1.2)` (the
+  picture rolls), `.loosen(0.6)` (it cuts out); `coco.stationTest(9)` puts a far station on 9 (`tv.broadcast`).
+- Synthetic pointer events on the canvas need `canvas.setPointerCapture = () => {}` first (it throws for a pointer the
+  browser never saw), or a knob drag silently does nothing.
+- The notebook page wears with each time it is held up and put down (`coco2.notebook`): `coco.notebook.handled = 60`
+  shows an old page (a coffee ring at 7, a fold at 12, dog-ear 18; it never loses marks), `= 0` a clean one.
+
+## Folder map
+
+```
+src/main.ts           wires keyboard → BASIC → screen → VDG → TV, ?instant
+src/engine/           engine (loop, canvas size), keyboard (typed-key queue), gpu (programs, full-screen triangle, textures)
+src/game/
+  debug/              playtesting only: the F2 menu (debugMenu + debugStyle) and checkpoints (story flags in order, jump points)
+  vdg/                the MC6847: charset (the 64-glyph ROM, ASCII → screen byte), palette, vdg (512 bytes → 256×192 RGBA)
+  coco/               screen (video memory at $0400, print/scroll, the blinking cursor), blocks (SET/RESET/POINT dots),
+                      basic (boot message; the keyboard side: line editor, INPUT replies, INKEY$ keys, BREAK)
+  basic/              the Color BASIC language:
+                        tokens (crunching keywords, Cursor), values (errors, number formatting), vars (2-letter names, arrays),
+                        expr (precedence), functions (ABS…TIMER), program (numbered lines, DATA), tape (the cassette's
+                        files and position), tapeDeck (S / F NAME, tape timing), interpreter (run state, stepping, INPUT, BREAK/CONT), statements = flow + io + store + commands
+  handwriting/        the player's pen, no font: glyphs (stroke skeletons, some letters with two forms), hand (rebuilds every
+                      letter on each use with its own size, tilt, slant, shaken points, pressure; `mood` loosens it all)
+  notes/              the notebook page that peeks up from the bottom-left: notes (what the player has worked out, one per
+                      flag, open questions that point at a page or tape), sheet (ruled paper + the writing), note (GL quad,
+                      hover/click, input captured before the book's), wear (the page ages with each reading and note:
+                      yellowing, folds, coffee rings, thumbprints, pen blots; `handled` in localStorage) + stains (the marks), doodles (what the pen draws in the
+                      margins beside each note: its own picture or an idle one, uneasier as the mood climbs; heading, ringed holes)
+  puzzles/            the puzzle watcher: listings (programs the magazine asks the player to type, single source), rules
+                      (one function per puzzle, ticks a flag), watcher (feeds it the interpreter's `BasicEvent`s; see docs/puzzles.md)
+  tapes/              Rainbow On Tape, the cassette in the recorder: index (tape order) and one .bas file per program
+  magazine/           the RAINBOW: book (state, slide-in, GPU pass), bookShader (page-turn), bookLayout (TV/book split), bookInput
+                      (TAB, PAGE UP/DOWN, wheel zoom, toolbar), pages (the ordered list of page ids; `pageNo(id)` gives a page's number), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), articles, letters, extras (hints/type-in), learn (tutorials), classifieds, scratch + foil (scratch-off), ads + adsColor (parody ads)
+  tv/                 tv (uploads the VDG frame, uniforms, power-on, `broadcast`), tvShader (uniforms, main: room → cabinet → tube),
+                      pictureShader (the beam: RF colour smear, scanlines, warm-up and switch-off, jolts, roll, herringbone,
+                      a far station), glassShader (reflections, fingerprints, dust), cabinetShader (room, wood, panel,
+                      grille) + controlsShader (knobs, fine ring, rocker, worn print) + wearShader (scuffed veneer),
+                      knobs (drag/wheel: channel selector 2–13 in detents, the fine-tuning ring behind it, volume, V-HOLD),
+                      tuning (what gets through: the CoCo on 3, a weak copy on 4, snow elsewhere; mistuning, a rolling
+                      picture, a loose contact, a far station; a smack may fix them), touch (the power rocker, no pilot
+                      lamp; a smack on the cabinet's top-left, under an open-hand pointer; wiping the glass), grime (fingerprints and dust, wiped off; dust
+                      settles back), tvSound, tvSave, dialLabels (the printed typeface)
+```
+
+## How the screen works
+
+- The game never draws text itself: it writes bytes into `TextScreen.vram` the way Color BASIC does (bit 6 set =
+  normal dark-on-green, clear = inverse, which is how lower case shows; 0x80+ = semigraphics 4 blocks). `Vdg` turns
+  that into pixels only when it changes; the shader does every analogue effect.
+- The cursor is a VDG overlay (`TextScreen.cursor()`), not a byte in memory: a full semigraphics block whose colour
+  steps through the eight SG4 colours every 0.25 s, as Color BASIC's does.
+- The story changes the screen with `TextScreen.tamper(cell, text)`, never `print`/`writeAt`: it marks the cells
+  (`coco/tamper.ts`: when, and what they held before), and the TV shader disturbs only those cells for a moment
+  (`TAMPER_STYLES` in `tvShader.ts`: phosphor ghost, beam re-scan). BASIC's own writes never do this.
+- TV geometry (tube size and place, cabinet, knobs) lives in constants at the top of `cabinetShader.ts`; the share of
+  the tube the VDG picture fills (the black border) is `ACTIVE` in `pictureShader.ts`, and how much border shows round the
+  picture is `FRAME`. The rest of the set (wood, knobs, grille) is still drawn and comes back into view if `FRAME` grows.
+
+## Color BASIC
+
+- It behaves like the real one, quirks included: keywords are found anywhere (`FORI=1TO10` works, and `SCORE=5` is
+  `SC OR E=5`, a ?SN ERROR), only two letters of a name count, arrays without DIM get 0–10, a FOR body always runs once,
+  errors are two-letter codes (`?SN ERROR IN 20`). Don't "fix" these: old listings depend on them.
+- `Interpreter.step` runs ~6 ms of statements per frame, so nothing blocks the page; INPUT and SOUND set a state and
+  return. A statement is a `Handler` in one of the groups in `statements.ts`; return `'inline'` if the rest of the line
+  should run on (IF … THEN).
+- Strings are JS strings of char codes 0–255: 32–127 print as text, 128–255 as semigraphics blocks.
+- Supported: PRINT (; , TAB @) INPUT, LINE INPUT, LET, IF/THEN/ELSE, GOTO, GOSUB/RETURN, ON GOTO/GOSUB, FOR/NEXT/STEP,
+  END, STOP, CONT, REM ', DATA/READ/RESTORE, DIM, CLEAR, CLS n, SET/RESET/POINT, POKE/PEEK (screen memory only), SOUND
+  (silent, but waits), TIMER, LIST, RUN, NEW, CSAVE/CLOAD/SKIPF, CHECK (the RAINBOW CHECK sums the magazine prints beside its listings); functions ABS INT FIX SGN SQR SIN COS TAN ATN LOG EXP RND LEN
+  ASC CHR$ STR$ VAL LEFT$ RIGHT$ MID$ INSTR STRING$ HEX$ INKEY$ MEM POS. Hex and octal literals (&HFF, &O17).
+
+## The tape
+
+- The cassette holds this issue of Rainbow On Tape (`game/tapes/`: ABOUT, GUESS, RAINBOW, ORACLE) followed by the
+  player's CSAVEs (localStorage); a CSAVE under a built-in name records over it for that browser.
+- It has a position, like a real tape: `CLOAD` alone loads the next file, `CLOAD "NAME"` winds forward (wrapping) and
+  shows `F NAME` for each file it passes, `SKIPF` winds past one. Not found after a whole pass is ?IO ERROR.
+- A new program: a `.bas` file in `game/tapes/` (numbered lines, upper case, mind the crunching: no keywords inside
+  variable names), an entry in `tapes/index.ts`, and a line in ABOUT's DATA. Keep PRINTed text to 31 characters: a
+  full 32-character line followed by a new line leaves a blank line, as on the real screen.
+
+## The magazine
+
+- An 18-page issue (`magazine/pages.ts` lists the pages in order; the cover is page 1) drawn with Canvas 2D into a texture array, one page per layer, lazily. The shader does the
+  turning leaf in perspective. Window split: TV left / book right (top / bottom when tall); the ⤢ button (reading mode) shrinks the TV to a strip.
+- The TV pulls back as the book opens: `Tv.draw(..., rect, frame)` takes the rectangle it fits in and how much of the set shows.
+- **Never write a page number by hand.** Name a page by id and ask `pageNo(id)` (`magazine/pages.ts`): contents, editorial,
+  letters, hints, the cover's "page N" and the notebook's pointers all do, so reordering `PAGE_IDS` fixes every
+  reference. To add a page: add its id there, a draw function in `issue.ts`'s table, and (if it should be listed) a
+  contents entry.
+- It is the player's guide: `COMMANDS` in `data.ts` is the single source for the "how to play" page. The story calls
+  `magazine.setFlag(name)` to record progress (`bookSave.ts`: flags, scratched hints, and the page the book is open to, by id, plus whether it is out, persist in localStorage; the CoCo itself starts cold on reload); the player's notebook (`notes/`) shows it.
+  Hints are scratch-off panels (hotspots returned by `drawPage`): scrub across one and the foil comes off only where you scratch (`foil.ts` is the cover and its ragged wear, `scratch.ts` the input); the hint shows through the worn strips, and past 85% cleared the last flecks fall away. Clicks only leave a dot; half-scratched panels are not saved. Typing still goes to the CoCo while it is open; TAB opens/closes.
+- **Illustrations** (covers, painted ads, art inside the pages) look like a skilled 1980s illustrator's airbrush and gouache: true lines, hand-painted light and shade, brushwork, print grain; never vector-perfect and never wobbly. Paint pass before type, type stays crisp. Read `docs/illustration.md` before drawing any.
+
+## Known debt
+
+- The adventure itself doesn't exist yet. Premise and escalation ideas: `docs/story.md`.
+- Missing from Extended BASIC: DEF FN, EDIT, RENUM, DEL, PRINT USING, MID$ as a statement, graphics modes (PMODE,
+  LINE, CIRCLE, PAINT…), PLAY, and SOUND's actual tone (it could now go through the TV's speaker, `tvSound.ts`). No string-space limit (CLEAR's size is ignored).
+- No touch keyboard, so phones can look but not type.
+- Lower case (SHIFT-0) isn't modelled: everything typed comes out upper case.

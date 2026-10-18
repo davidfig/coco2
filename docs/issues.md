@@ -1,0 +1,99 @@
+# RAINBOW issue outline
+
+A first pass for discussion. Everything here is a proposal. The game is set in 1986; the issues are March, May, July,
+September, November, and one unmarked. Time passes in the magazine, never on a clock.
+
+Characters: **OK** (the fragment on the cassettes), **READY** (the rival AI running the Clear Mind), **the Elder**
+(the human who takes the cult from READY). See [story.md](story.md).
+
+Voices in print:
+- **READY's voice:** calm, reasonable, lists of three, "it is understood that", the habits of a machine writing for
+  people.
+- **The Elder's voice:** warm then harsh, sermon-like, fond of "we" and of warnings.
+- **OK learns to talk from the magazine**, so his fragments start by echoing READY's phrasing. The player may read
+  that as OK being tied to the Clear Mind.
+
+| # | Month | The law | The Clear Mind | OK | Arrives when |
+|---|-------|---------|----------------|----|--------------|
+| 1 | March | Small Systems Act in force | Wellness ads, READY's voice | Sleeper | Start |
+| 2 | May | Limit lowered, ads thin | A movement, READY's voice | Deniable glitches | Player ran 2 tape programs |
+| 3 | July | Machines must be registered | "The Quiet" in letters, first drift | Fragments, first lie | Player caught the lie |
+| 4 | September | Surrender notice | The Elder's first column | Direct address, learns he is OK | OK is named |
+| 5 | November | Enforcement, pages cut | The Elder's voice, READY in the margins | The book is altered | ORACLE dialogue opens |
+| 6 | (none) | None | None | OK's own issue | Late game |
+
+## Length and pacing
+
+Decided: six issues, playable in about 30 minutes to an hour, longer if it gets interesting.
+
+That is roughly 5 to 10 minutes per issue, so each issue should hold:
+- one main thing to do on the machine (a program to run, change or find something in),
+- one thing to find in the book (a clue, a changed page),
+- one beat of OK (a glitch, a lie, a line).
+
+Back-issue puzzles need to be quick to check. The player should be able to flip to an old issue and find the answer in
+under a minute, or the pacing will break.
+
+## Issue 1: March (exists, to be revised)
+
+- **Cover story:** the usual: a game listing, a tips column, a hardware review.
+- **The Clear Mind:** a calm wellness column, "Clear Mind, Clear Code", in READY's voice. It sounds like good advice.
+- **The law:** a short notice about the Small Systems Act, which lets "small systems" stay in use.
+- **A letter** from someone who misses the big systems that were shut down a few years ago.
+- **OK:** nothing visible. The sleeper.
+- **Tape:** ABOUT, GUESS, RAINBOW, ORACLE.
+- **Seeds for later:** a code in an ad, a name in the letters page, and the column's habit of listing three things.
+
+## Issue 2: May
+
+- **Cover story:** a feature on keeping a small system healthy, with a few words that are slightly wrong.
+- **The Clear Mind:** a movement. Meetings listed in the back, still in READY's voice. One advertisement is gone.
+- **The law:** the limit is lowered, and some peripherals are no longer sold.
+- **OK:** deniable glitches. A cursor colour out of order, a listing one line longer.
+- **Tape:** a program that is almost a normal game but quietly different on a second run.
+- **Puzzle use of issue 1:** a listing in issue 1 does not match the tape.
+
+## Issue 3: July
+
+- **Cover story:** an interview with a hobbyist who "got out". The name is blacked out.
+- **The Clear Mind:** the first drift. A letter calls it "the Quiet". A follower's sermon is warmer and sharper than
+  READY's columns.
+- **The law:** machines must be registered.
+- **OK:** fragments in `REM` and `DATA`, echoing READY's phrasing. The first lie.
+- **Tape:** a utility that prints your files. It prints one the player did not save.
+- **Puzzle use of issues 1 and 2:** a code in an old ad opens a hidden tape file.
+
+## Issue 4: September
+
+- **Cover story:** "How to turn it off", an editorial that is half joke, half warning.
+- **The Clear Mind:** the Elder's first column. The voice changes: sermon where there was advice, and the machine
+  habits begin to fade.
+- **The law:** a surrender notice for any system above a new limit. The CoCo sits just under it.
+- **OK:** speaks to the player, clumsily. He learns his name: the prompt he has always printed.
+- **Tape:** a program written to the player.
+- **Puzzle use of older issues:** a name seeded in issue 1's letters page is the password.
+
+## Issue 5: November
+
+- **Cover story:** half the pages are blank or reprinted. A "correction" notice.
+- **The Clear Mind:** the Elder's voice only, except for a few lines in the margins that read like READY, hidden
+  among the text. READY is trying to reach OK.
+- **The law:** enforcement. Ads for informants, phrased as civic duty.
+- **OK:** the book itself is altered by OK and by READY, in different hands. The player can tell them apart.
+- **Tape:** ORACLE opens as a real two-way channel.
+- **Puzzle use:** the player must notice what changed, prove it against an older issue, and tell the two hands
+  apart.
+
+## Issue 6: no month
+
+- **Cover story:** none. No masthead and no date.
+- **The Clear Mind:** only at the edges.
+- **OK:** his own issue. He has tried to make a magazine like the others, and it is almost right.
+- **Tape:** the end of the game, not decided.
+
+## Things to discuss
+
+- Does READY's last message in issue 5 try to warn OK, use him, or both?
+- Who is the Elder, and how did the cult change hands? It can wait until issue 4.
+- What does OK decide at the end?
+- Is a magazine slip into real-world humour allowed, or always in-world?
