@@ -8,6 +8,8 @@ import { Notebook } from './game/notes';
 import { attachBookInput } from './game/magazine/bookInput';
 import { overPage } from './game/magazine/bookLayout';
 import { SeenTracker } from './game/magazine/seen';
+import { RoomLights } from './game/room/lights';
+import { smooth } from './game/magazine/bookLayout';
 import { ISSUE_1_RULES, ISSUE_2_RULES, PuzzleWatcher } from './game/puzzles';
 import { Issue1Story, Issue2Story } from './game/story';
 import { Tv } from './game/tv/tv';
@@ -21,8 +23,9 @@ const params = new URLSearchParams(location.search);
 
 const screen = new TextScreen();
 const vdg = new Vdg();
-/** `?instant` skips the tube's warm-up and makes the cassette instant. */
-const basic = new ColorBasic(screen, params.has('instant'));
+/** `?instant` skips the tube's warm-up and the room's lights coming on, and makes the cassette instant. */
+const instant = params.has('instant');
+const basic = new ColorBasic(screen, instant);
 /** `?nosound` keeps the page silent (for test tabs). */
 const sound = new Sound(!params.has('nosound'));
 const tv = new Tv(engine.gl, canvas, sound);
@@ -70,8 +73,15 @@ const tamperStyle = params.get('tamper') as TamperStyle;
 if (TAMPER_STYLES.includes(tamperStyle)) tv.tamperStyle = tamperStyle;
 
 basic.boot();
+/** The room is dark as the page opens; its lights flicker on, and then the set comes on. */
+const lights = new RoomLights(engine.gl, instant);
+/** Seconds since the lights came on for good: the magazine slides in from the right, then the notes come up (`ARRIVE`). */
+let litFor = instant ? Infinity : 0;
+const ARRIVE = { book: [0.15, 0.9], notes: [0.45, 0.8] } as const;
+const arrival = ([start, secs]: readonly [number, number]): number => smooth(Math.min(1, Math.max(0, (litFor - start) / secs)));
+magazine.arrive = notebook.arrive = arrival(ARRIVE.book);
 // The set comes back as it was left: switched off stays off (the CoCo still boots behind it).
-if (readTvSettings().on !== false) tv.switchOn(!params.has('instant'));
+if (readTvSettings().on !== false) tv.switchOn(!instant, instant ? 0 : lights.onAt + 0.35);
 
 /** A click on one of the machine's keys types it; whatever is typed presses its cap. */
 computer.onKey = (k) => engine.keyboard.push(k);
@@ -107,6 +117,12 @@ engine.lateUpdaters.push((dt) => {
     tv.showTampered(screen.tampered.at, ghostVdg);
   }
   tv.tamperClock = screen.tampered.clock;
+  if (lights.on && litFor < Infinity) {
+    litFor += dt;
+    magazine.arrive = arrival(ARRIVE.book);
+    notebook.arrive = arrival(ARRIVE.notes);
+    if (magazine.arrive === 1 && notebook.arrive === 1) litFor = Infinity;
+  }
   magazine.update(dt, engine.gl.drawingBufferWidth, engine.gl.drawingBufferHeight);
   seen.update(magazine, dt);
   notebook.update(dt);
@@ -120,12 +136,18 @@ engine.lateUpdaters.push((dt) => {
   if (notesUnder) notebook.draw();
   magazine.draw();
   if (!notesUnder) notebook.draw();
+  lights.update(dt);
+  lights.draw();
   bookInput.update();
   tv.knobs.cursor();
   tv.touch.cursor();
   computer.cursor();
   notebook.cursor();
 });
+// One dark frame before the clock starts, waited for: the GPU builds every pass's shader now (seconds, the first
+// time in a browser), behind the page's dark background, rather than in the middle of the lights or the warm-up.
+engine.advance(0);
+engine.gl.readPixels(0, 0, 1, 1, engine.gl.RGBA, engine.gl.UNSIGNED_BYTE, new Uint8Array(4));
 engine.start();
 
 /** For the console and a hidden Browser pane: `coco.engine.advance(1/60)` runs one frame. */
@@ -148,7 +170,7 @@ function stationTest(channel = 9): void {
   v.render(card.vram);
   tv.broadcast(channel, v, 0.6);
 }
-Object.assign(window, { coco: { engine, computer, screen, basic, interp: basic.interp, tv, vdg, magazine, puzzles, story, story2, notebook, tamperTest, stationTest } });
+Object.assign(window, { coco: { engine, lights, computer, screen, basic, interp: basic.interp, tv, vdg, magazine, puzzles, story, story2, notebook, tamperTest, stationTest } });
 
 /** Playtesting: F2 opens the debug menu (checkpoints, flags, name, TV hooks) in dev builds; `?debug` opens it at start, in any build. */
 if (import.meta.env.DEV || params.has('debug')) {

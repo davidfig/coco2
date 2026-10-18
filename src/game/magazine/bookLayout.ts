@@ -123,11 +123,12 @@ export function spreadView(phi: number, last: number): { c: number; xmin: number
 
 /**
  * The split right now: closed → beside the TV as the book opens, → reading mode; the hover makes a closed book peek out
- * further. `notes` is how far the notebook page tucks down out of the book's way (0..1: only in a tall window), and
+ * further, and `arrive` (0..1) brings the put-away book in from off the window as the page opens. `notes` is how far the notebook page tucks down out of the book's way (0..1: only in a tall window), and
  * `notesTv` the set the page is sized by: full size beside the book, shrinking only with the TV in reading mode.
  */
-export function layoutAt(aspect: number, hoverT: number, openT: number, readT: number): Layout & { notes: number; notesTv: Rect } {
-  const L = layouts(aspect, PEEK + PEEK_HOVER * smooth(hoverT));
+export function layoutAt(aspect: number, hoverT: number, openT: number, readT: number, arrive = 1): Layout & { notes: number; notesTv: Rect } {
+  // Not yet arrived, the put-away book waits a little past the window's edge, so its tilted corner is out of sight too.
+  const L = layouts(aspect, (PEEK + PEEK_HOVER * smooth(hoverT)) * arrive - 0.06 * (1 - arrive));
   const open = smooth(openT);
   const read = smooth(readT);
   const a: Layout = { tv: lerpRect(L.closed.tv, L.side.tv, open), book: lerpRect(L.closed.book, L.side.book, open) };

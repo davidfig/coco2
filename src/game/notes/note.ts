@@ -70,6 +70,8 @@ export class Notebook {
   /** Turns waiting for the one in progress: +1 sends the top sheet under, -1 brings the bottom one up. */
   private queue: (1 | -1)[] = [];
   open = false;
+  /** How far the peeking page has come up into the window (0..1): below it while the room's lights come on (main.ts). */
+  arrive = 1;
   /**
    * Put down, how far the pile lies on the table instead of peeking in (0..1: main.ts, from `Computer.tableT`, as the
    * view pulls back to the desk) and where the set's picture is (`Tv.picture`), which places the room's camera on screen.
@@ -137,7 +139,8 @@ export class Notebook {
     const pic = this.picture();
     const below = pic[1] - pic[3] - Math.max(4, unit * 0.006);
     // With the book out in a tall window it would hang over the pages: there it tucks down to a strip along the window's bottom.
-    const rest = Math.min(below, ph * PEEK_SHOW);
+    // Not yet arrived, it waits a little below the window's bottom.
+    const rest = Math.min(below, ph * PEEK_SHOW) * this.arrive - ph * 0.04 * (1 - this.arrive);
     const top = lerp(lerp(rest, below, this.lift), H * NOTE_STRIP * (1 + this.lift), this.tuck());
     const rot = -0.06;
     const px = tx + pw * 0.5 - unit * 0.04;

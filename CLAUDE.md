@@ -30,7 +30,8 @@ Run `typecheck` and `check:size` before finishing any change. Design notes: `doc
   plus fixes at the CoCo), single flags tick on and off, and there are controls for the name, notebook wear, the
   TV hooks and resets. It changes the live game, but story timers already running carry on, so reload for a clean run.
   A new story flag goes in `STORY_FLAGS` (`debug/checkpoints.ts`), and a new beat gets a checkpoint there.
-- `?instant&nosound` is the usual test URL. `?instant` skips the tube warm-up and makes the cassette instant (CLOAD / CSAVE normally take tape time).
+- `?instant&nosound` is the usual test URL. `?instant` skips the room's lights coming on, the tube warm-up and the
+  magazine and notes sliding in, and makes the cassette instant (CLOAD / CSAVE normally take tape time).
 - The Browser pane's `type` action sends text as input events, not keydowns, so it doesn't reach the game. Type with
   `coco.engine.keyboard.type('LOOK\n')` ("\n" is ENTER, "\b" is ←), then `coco.engine.advance(1/60)`.
 - `coco` on `window` exposes `engine`, `screen`, `basic`, `interp`, `tv`, `vdg`. A hidden pane runs ~1 fps; step with `advance`.
@@ -77,6 +78,8 @@ src/game/
   puzzles/            the puzzle watcher: listings (programs the magazine asks the player to type, single source), rules
                       (one function per puzzle, ticks a flag), watcher (feeds it the interpreter's `BasicEvent`s; see docs/puzzles.md);
                       listingsMay + rulesMay are issue 2's (the code, HANGMAN, OK's ORACLE)
+  room/               lights: the page opens in a dark room; the lamp flickers on (a multiply pass drawn last), then the set
+                      comes on and the magazine and notes slide in (`arrive`, main.ts)
   story/              what the story does besides the puzzles, one class per issue (issue1, issue2: timers, tampering, the tape swap)
   tapes/              Rainbow On Tape, the cassette in the recorder: index (tape order) and one .bas file per program
   magazine/           the RAINBOW: book (state, slide-in, GPU pass), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn), bookLayout (TV/book split), bookInput
@@ -108,7 +111,9 @@ src/game/
 - Every pass over the TV's is a full-screen triangle, so each sets `scissor()` (engine) to the pixels it can touch
   (`bookBounds`, the sheet's quad, the table's back edge): a new pass, or a shader that draws further, needs its bounds
   widened. The CoCo's march is kept (`computer/marchCache.ts`) and marched again only when the view, glow or keys
-  change, at CSS-pixel resolution while the view moves. To time passes, sync with a 1-pixel `readPixels` and keep
+  change, at CSS-pixel resolution while the view moves. `main.ts` draws one dark frame and waits for it before starting
+  the clock, so the GPU builds every shader (seconds on a cold cache) before the lights come on: a new pass should draw
+  in that first frame. The TV's pass sets no blend state and expects blending off; leave it off after a pass. To time passes, sync with a 1-pixel `readPixels` and keep
   blending on: ANGLE/Metal timer queries are meaningless, and Apple GPUs skip opaque draws that a later one covers.
 - The magazine and the notes move between their own place and the table rigidly (`computer/pose.ts`): a sheet is a
   real sheet held before the eye and laid on the table (slerped, its centre straight across the view, receding evenly),

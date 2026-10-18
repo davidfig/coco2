@@ -53,6 +53,9 @@ export class Tv {
   powerTime = -1;
   /** Seconds since switched off (the picture collapsing to a dot); negative if it hasn't been. */
   private offTime = -1;
+  /** Seconds until a delayed `switchOn` comes on (it counts as on already); negative when none is waiting. */
+  private onIn = -1;
+  private onWarm = true;
   private look = { x: 0, y: 0 };
   private lookTarget = { x: 0, y: 0 };
   /** The picture's average colour (0..1), before the warm-up. */
@@ -99,10 +102,10 @@ export class Tv {
     this.sound = new TvSound(sound);
     const play = this.sound.play.bind(this.sound);
     // The knobs listen first: a turn is theirs before the touch code could take it for a smack.
-    this.knobs = new Knobs(canvas, this, () => this.powerTime >= 0, readTvSettings());
+    this.knobs = new Knobs(canvas, this, () => this.isOn, readTvSettings());
     this.knobs.onEvent = play;
     this.tuning = new Tuning(this.knobs);
-    const power = { isOn: () => this.powerTime >= 0, toggle: () => (this.powerTime >= 0 ? this.switchOff() : this.switchOn()) };
+    const power = { isOn: () => this.isOn, toggle: () => (this.isOn ? this.switchOff() : this.switchOn()) };
     this.touch = new Touch(canvas, this, power, this.grime, () => this.tuning.smack(), play);
     canvas.addEventListener('pointermove', (e) => {
       this.lookTarget.x = (e.clientX / canvas.clientWidth) * 2 - 1;
@@ -110,7 +113,19 @@ export class Tv {
     });
   }
 
-  switchOn(warm = true): void {
+  /** Switched on, or about to come on (`switchOn`'s delay). */
+  get isOn(): boolean {
+    return this.powerTime >= 0 || this.onIn >= 0;
+  }
+
+  /** `delay` seconds from now (the room's lights coming on first), though the rocker and the saved state say on at once. */
+  switchOn(warm = true, delay = 0): void {
+    if (delay > 0) {
+      this.onIn = delay;
+      this.onWarm = warm;
+      return;
+    }
+    this.onIn = -1;
     this.powerTime = warm ? 0 : 10;
     this.offTime = -1;
     if (!warm) return;
@@ -120,6 +135,10 @@ export class Tv {
 
   /** The CoCo runs on; only the set goes dark. */
   switchOff(): void {
+    if (this.onIn >= 0) {
+      this.onIn = -1; // it never lit
+      return;
+    }
     this.powerTime = -1;
     this.offTime = 0;
     this.sound.play('crackle', 0.3);
@@ -179,10 +198,11 @@ export class Tv {
   /** `rect` is where the picture goes, in window fractions (bottom-left origin); `frame` how much border round it. */
   draw(dt: number, time: number, border: readonly number[], rect = FULL, frame = 0.08, shade?: Shade): void {
     const gl = this.gl;
+    if (this.onIn >= 0 && (this.onIn -= dt) < 0) this.switchOn(this.onWarm);
     if (this.powerTime >= 0) this.powerTime += dt;
     if (this.offTime >= 0) this.offTime += dt;
-    // As the shader's spill: the picture comes up over the first second and a half.
-    const t = Math.min(1, Math.max(0, (this.powerTime - 0.3) / 1.2));
+    // As the shader's warm-up: the light grows as the picture opens out of its line (`open`, 0.12–0.55 s).
+    const t = Math.min(1, Math.max(0, (this.powerTime - 0.12) / 0.43));
     const warm = this.powerTime < 0 ? 0 : t * t * (3 - 2 * t);
     this.knobs.update(dt);
     this.tuning.update(dt);

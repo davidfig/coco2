@@ -32,6 +32,8 @@ export class Magazine {
   openT = 0;
   readT = 0;
   hoverT = 0;
+  /** How far the put-away book has come in at the window's edge (0..1): off it while the room's lights come on (main.ts). */
+  arrive = 1;
   /** The spread showing (0 = cover alone); a spread is the leaf-turn unit, but only one of its pages is in view. */
   spread = 0;
   /** The spread the reader is heading for. */
@@ -249,13 +251,13 @@ export class Magazine {
     // Every page is readied before it is needed, so turning rarely waits: one asked for a frame once the fonts are in, none
     // while the set warms up or the book moves (painting is the worker's, but each page still goes up to the GPU here).
     this.age += dt;
-    const still = !this.flip && this.zoom === this.zoomGoal && [this.openT, this.readT, this.hoverT].every((t) => t === 0 || t === 1);
+    const still = !this.flip && this.zoom === this.zoomGoal && [this.openT, this.readT, this.hoverT, this.arrive].every((t) => t === 0 || t === 1);
     this.painter.update();
     let next = 0;
     while (next < this.count && this.painter.asked(next)) next++;
     if (this.fontsReady && this.age > PRELOAD_AFTER && still && next < this.count) this.painter.ensure(this.issue, next);
 
-    const lay = layoutAt(W / H, this.hoverT, this.openT, this.readT);
+    const lay = layoutAt(W / H, this.hoverT, this.openT, this.readT, this.arrive);
     this.tv = lay.tv;
     this.book = lay.book;
     this.notesTuck = lay.notes;

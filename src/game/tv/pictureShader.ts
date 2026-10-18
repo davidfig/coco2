@@ -142,11 +142,13 @@ vec3 snow(vec2 uv) {
 
 /** The picture on the phosphor at tube coordinates q (-1..1), before the glass; \`off\` is uOff. */
 vec3 picture(vec2 q, float on, float off) {
-  // Warm-up: a bright line that opens into the picture, then the tube coming up to brightness.
+  // Warm-up: a bright line that opens into the picture. The line's light spreads over as much of the raster as has
+  // opened, so it is hot while thin and thins out as it opens, down to the picture's full brightness, which it keeps.
   float open = smoothstep(0.12, 0.55, on);
   float widen = smoothstep(0.02, 0.2, on);
+  float beam = max(min(4.0, 0.4 * widen / max(open, 0.02)), 1.0);
   // Switched off: the picture falls to a hot line, the line shrinks to a dot, and the dot dies away.
-  float hot = (1.0 - open) * 4.0 * widen;
+  float hot = 0.0;
   vec2 least = vec2(0.02, 0.004); // the thinnest the picture gets: across, down
   float halo = 0.0;
   if (off >= 0.0) {
@@ -212,8 +214,7 @@ vec3 picture(vec2 q, float on, float off) {
   col *= 1.0 + 0.018 * sin((uv.y + uTime * 0.12) * 6.2832);           // the slow hum bar
   col *= 0.985 + 0.015 * hash(vec2(uTime, 3.1));                       // flicker
   col += (hash(gl_FragCoord.xy + fract(uTime) * 91.0) - 0.5) * 0.035;  // RF snow
-  float bright = smoothstep(0.1, 1.6, on);
-  col *= bright + hot;                                                 // the line is hot before it opens
+  col *= off >= 0.0 ? 1.0 + hot : beam;                               // the line is hot before it opens
   return max(col, 0.0) + vec3(0.42, 0.45, 0.5) * halo;
 }
 `;
