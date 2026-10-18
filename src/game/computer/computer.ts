@@ -50,6 +50,8 @@ export class Computer {
   /** The march as last drawn (`marchCache.ts`), and the view it was last drawn at (a change is the view moving). */
   private readonly cache: MarchCache;
   private lastView: number[] = [];
+  /** The screen's light the march was last given. */
+  private lit: number[] = [];
   visible = true;
   /** Pulled back to the whole desk (a click on the machine), and how far along the way there (0..1). */
   focused = false;
@@ -271,14 +273,16 @@ export class Computer {
     const top = picture[1] + (DRAWN_TOP - TUBE_C[1]) * k + 2;
     if (!scissor(gl, 0, 0, W, top)) return;
     // The march is costly and its picture changes only with the view, the screen's light and the keys: it is kept, and
-    // marched again only when one of them changes. While the view moves it is marched once per CSS pixel (a quarter of
-    // the work on a 2× screen) and scaled up; sharp again the frame it stops.
+    // marched again only when one of them changes. While the view moves the kept one moves with it and only what comes
+    // into view is marched, once per CSS pixel (a quarter of the work on a 2× screen); sharp again the frame it stops.
     const view = [W, H, picture[0], picture[1], k];
     const moving = view.some((v, i) => v !== this.lastView[i]);
     this.lastView = view;
     const s = moving && this.canvas.clientWidth > 0 ? Math.min(1, Math.max(0.5, this.canvas.clientWidth / W)) : 1;
-    // The light thrown is rounded off: a few letters more or less on the screen shouldn't march it again.
-    const lit = glow.map((g) => Math.round(g * 256) / 256);
+    // The light thrown is rounded off: a few letters more or less on the screen shouldn't march it again. While the view
+    // moves it is held as it was (the march once it stops catches up), so the kept picture can move with the view.
+    const lit = moving && this.lit.length ? this.lit : glow.map((g) => Math.round(g * 256) / 256);
+    this.lit = lit;
     // A key going down or up changes only the caps round it (and the shade they throw): just that is marched again.
     const keys = this.keys.uniform();
     const around = (was: readonly number[]): [number, number, number, number] | null => {
@@ -288,10 +292,10 @@ export class Computer {
       return [px(b[0], 0) - 2, px(b[1], 1) - 2, px(b[2], 0) + 2, px(b[3], 1) + 2];
     };
     gl.bindVertexArray(this.vao);
-    this.cache.draw([...view, ...lit], s, [0, 0, W, top], () => {
+    this.cache.draw({ x: picture[0], y: picture[1], k }, [W, H, ...lit], s, moving, [0, 0, W, top], (pic) => {
       gl.useProgram(this.program.prog);
       const u = this.program.u;
-      gl.uniform3f(u.uPic, picture[0] * s, picture[1] * s, k * s);
+      gl.uniform3f(u.uPic, ...pic);
       gl.uniform3f(u.uGlow, lit[0], lit[1], lit[2]);
       gl.uniform4fv(u.uKeys, keys);
       gl.activeTexture(gl.TEXTURE0);
