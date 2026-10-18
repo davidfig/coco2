@@ -138,7 +138,7 @@ engine.lateUpdaters.push((dt) => {
   if (!notesUnder) notebook.draw();
   lights.update(dt);
   lights.draw();
-  bookInput.update();
+  bookInput.update(lights.css());
   tv.knobs.cursor();
   tv.touch.cursor();
   computer.cursor();

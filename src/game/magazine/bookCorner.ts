@@ -163,7 +163,7 @@ function burstButton(ink: string, tilt: number, title: string, act: () => void):
 }
 
 /** The corner's bursts; `update` keeps their words current and pins them to the page corner. */
-export function attachCorner(mag: Magazine, canvas: HTMLCanvasElement, covers: () => Cover[]): { update: () => void } {
+export function attachCorner(mag: Magazine, canvas: HTMLCanvasElement, covers: () => Cover[]): { update: (light: string) => void } {
   const style = document.createElement('style');
   style.textContent = CSS;
   document.head.append(style);
@@ -220,7 +220,9 @@ export function attachCorner(mag: Magazine, canvas: HTMLCanvasElement, covers: (
   };
 
   return {
-    update() {
+    /** `light`: the room's lights as a CSS filter (`RoomLights.css`), so the stickers dim with the page they're on. */
+    update(light) {
+      if (bar.style.filter !== light) bar.style.filter = light;
       bar.classList.toggle('away', mag.openT < 0.97);
       read.say.textContent = mag.reading ? 'Smaller' : 'Bigger';
       const other = nextIssue();
