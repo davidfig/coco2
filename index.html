@@ -19,7 +19,10 @@
         box-sizing: border-box;
         padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
       }
-      canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+      /* No double-tap or pinch zoom anywhere (iOS ignores user-scalable=no); the debug menu still scrolls. */
+      *, *::before, *::after { touch-action: none; }
+      .coco-debug, .coco-debug * { touch-action: pan-y; }
+      canvas { display: block; width: 100%; height: 100%; }
       .book-hint {
         position: fixed; transform: translateX(-50%); padding: 6px 12px; border-radius: 14px; pointer-events: none;
         background: rgba(18, 14, 10, 0.78); color: #e8dcc0; font: 600 12px/1 Helvetica, Arial, sans-serif;
