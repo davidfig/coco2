@@ -40,6 +40,9 @@ Run `typecheck`, `check:size` and `test` before finishing any change. Design not
   plus fixes at the CoCo), single flags tick on and off, and there are controls for the name, notebook wear, the
   TV hooks and resets. It changes the live game, but story timers already running carry on, so reload for a clean run.
   A new story flag goes in `STORY_FLAGS` (`debug/checkpoints.ts`), and a new beat gets a checkpoint there.
+- `?touch` forces the touch keyboard (a finger-driven device gets it anyway), `?notouch` leaves it out. In the Browser
+  pane, the mobile preset counts as touch but a custom size doesn't: add `?touch`. Synthetic presses on its keys are
+  `pointerdown` on the key, then `pointerup` on `window`.
 - `?instant&nosound` is the usual test URL. `?instant` skips the room's lights coming on, the tube warm-up and the
   magazine and notes sliding in, and makes the cassette instant (CLOAD / CSAVE normally take tape time).
 - The Browser pane's `type` action sends text as input events, not keydowns, so it doesn't reach the game. Type with
@@ -94,6 +97,8 @@ src/game/
   room/               lights: the page opens in a dark room; the lamp flickers on (a multiply pass drawn last), then the set
                       comes on and the magazine and notes slide in (`arrive`, main.ts)
   story/              what the story does besides the puzzles, one class per issue (issue1, issue2: timers, tampering, the tape swap)
+  touch/              phones and tablets: touchKeys (the machine's keyboard as a strip along the bottom, pressed through
+                      `CocoKeys` so the cap on the table goes down too; the canvas takes what's left above) + touchStyle
   tapes/              Rainbow On Tape, the cassette in the recorder: index (tape order) and one .bas file per program
   magazine/           the RAINBOW: book (state, slide-in, GPU pass), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn), bookLayout (TV/book split), bookInput
                       (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, HANGMAN, the tape) + mayLetters (letters, classifieds), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner (parody ads)
@@ -179,5 +184,7 @@ src/game/
 - The adventure itself doesn't exist yet. Premise and escalation ideas: `docs/story.md`.
 - Missing from Extended BASIC: DEF FN, EDIT, RENUM, DEL, PRINT USING, MID$ as a statement, graphics modes (PMODE,
   LINE, CIRCLE, PAINT…), PLAY, and SOUND's actual tone (it could now go through the TV's speaker, `tvSound.ts`). No string-space limit (CLEAR's size is ignored).
-- No touch keyboard, so phones can look but not type.
+- Phones: the touch keyboard is the first step (`game/touch/`). Still to do: one thing at a time in portrait (TV / magazine /
+  notes), the set beside the keyboard on a phone on its side, a tap for hover, a shake to smack, and an installable app
+  (iOS clears a site's localStorage after 7 days unvisited).
 - Lower case (SHIFT-0) isn't modelled: everything typed comes out upper case.

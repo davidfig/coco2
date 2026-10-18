@@ -59,4 +59,4 @@ next").
 
 - The adventure: written in this Color BASIC as a program that is loaded and RUN, or as a built-in command; to decide.
 - Sound: the CoCo's 6-bit DAC beeps (`SOUND`), with `?nosound`.
-- A touch keyboard for phones.
+- Phones: the touch keyboard is in (`game/touch/`); next, one thing at a time in portrait, and an installable app.

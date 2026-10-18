@@ -12,6 +12,7 @@ import { RoomLights } from './game/room/lights';
 import { smooth } from './game/magazine/bookLayout';
 import { ISSUE_1_RULES, ISSUE_2_RULES, PuzzleWatcher } from './game/puzzles';
 import { Issue1Story, Issue2Story } from './game/story';
+import { TouchKeys, wantsTouchKeys } from './game/touch';
 import { Tv } from './game/tv/tv';
 import { TAMPER_STYLES, TamperStyle } from './game/tv/tvShader';
 import { readTvSettings } from './game/tv/tvSave';
@@ -85,6 +86,8 @@ if (readTvSettings().on !== false) tv.switchOn(!instant, instant ? 0 : lights.on
 
 /** A click on one of the machine's keys types it; whatever is typed presses its cap. */
 computer.onKey = (k) => engine.keyboard.push(k);
+/** Phones and tablets get the machine's keyboard as a strip along the bottom (`?touch` forces it, `?notouch` leaves it out). */
+const touchKeys = wantsTouchKeys(params) ? new TouchKeys(computer.keys) : null;
 engine.earlyUpdaters.push((dt) => {
   const typed = engine.keyboard.drain();
   computer.keys.typed(typed);
@@ -170,7 +173,7 @@ function stationTest(channel = 9): void {
   v.render(card.vram);
   tv.broadcast(channel, v, 0.6);
 }
-Object.assign(window, { coco: { engine, lights, computer, screen, basic, interp: basic.interp, tv, vdg, magazine, puzzles, story, story2, notebook, tamperTest, stationTest } });
+Object.assign(window, { coco: { engine, lights, computer, screen, basic, interp: basic.interp, tv, vdg, magazine, touchKeys, puzzles, story, story2, notebook, tamperTest, stationTest } });
 
 /** Playtesting: F2 opens the debug menu (checkpoints, flags, name, TV hooks) in dev builds; `?debug` opens it at start, in any build. */
 if (import.meta.env.DEV || params.has('debug')) {

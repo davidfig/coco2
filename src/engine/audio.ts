@@ -18,6 +18,12 @@ export class Sound {
       out.connect(ctx.destination);
       this.ctx = ctx;
       this.out = out;
+      // iOS Safari can make it suspended from a pointerdown: the touch's end (or the click) is what lets it play.
+      const resume = (): void => {
+        if (ctx.state !== 'suspended') return;
+        void ctx.resume();
+      };
+      for (const ev of ['touchend', 'click', 'keydown']) window.addEventListener(ev, resume, true);
       for (const fn of this.waiting.splice(0)) fn(ctx, out);
     };
     window.addEventListener('pointerdown', start, true);
