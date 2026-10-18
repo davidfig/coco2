@@ -99,8 +99,9 @@ src/game/
   room/               lights: the page opens in a dark room; the lamp flickers on (a multiply pass drawn last), then the set
                       comes on and the magazine and notes slide in (`arrive`, main.ts)
   story/              what the story does besides the puzzles, one class per issue (issue1, issue2: timers, tampering, the tape swap)
-  touch/              phones and tablets: touchKeys (the machine's keyboard as a strip along the bottom, pressed through
-                      `CocoKeys` so the cap on the table goes down too; the canvas takes what's left above) + touchStyle,
+  touch/              phones and tablets: touchKeys (the machine's keyboard as a strip along the bottom, or at the right on
+                      a phone on its side, pressed through `CocoKeys` so the cap on the table goes down too; the canvas
+                      takes what's left) + touchStyle,
                       shake (a phone shaken smacks the set; iOS asks leave at the first smack by hand), install (the
                       home-screen app: `public/manifest.webmanifest`, `public/sw.js` for offline, production builds only)
   tapes/              Rainbow On Tape, the cassette in the recorder: index (tape order) and one .bas file per program
@@ -188,6 +189,7 @@ src/game/
 - The adventure itself doesn't exist yet. Premise and escalation ideas: `docs/story.md`.
 - Missing from Extended BASIC: DEF FN, EDIT, RENUM, DEL, PRINT USING, MID$ as a statement, graphics modes (PMODE,
   LINE, CIRCLE, PAINT…), PLAY, and SOUND's actual tone (it could now go through the TV's speaker, `tvSound.ts`). No string-space limit (CLEAR's size is ignored).
-- Phones: still to do, one thing at a time in portrait (TV / magazine / notes) and the set beside the keyboard on a
-  phone on its side. Hover needs no stand-in: a tap opens the notebook or the magazine as a click does.
+- Phones: portrait already works one thing at a time through the tall-window layouts (the set, the set over the book,
+  reading mode, the notes held up), and a phone on its side docks the keyboard at the right. Hover needs no stand-in: a
+  tap opens the notebook or the magazine as a click does. Not yet tried on a real phone.
 - Lower case (SHIFT-0) isn't modelled: everything typed comes out upper case.

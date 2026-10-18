@@ -47,16 +47,31 @@ export class TouchKeys {
     tab.addEventListener('click', () => this.toggle());
     this.el.append(tab, this.pop);
     document.body.append(this.el);
-    this.el.style.setProperty('--kb-h', `${this.el.offsetHeight}px`);
+    this.measure();
     const up = (e: PointerEvent): void => this.up(e.pointerId);
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', up);
+    // Turned on its side or back, the strip docks the other way: slid away, it needs the new size to stay out of sight.
+    window.addEventListener('resize', () => this.measure());
   }
 
   /** Slide the strip away (to read, or look at the set), or bring it back. */
   toggle(show = this.el.classList.contains('hidden')): void {
-    this.el.style.setProperty('--kb-h', `${this.el.offsetHeight}px`);
+    this.measure();
     this.el.classList.toggle('hidden', !show);
+  }
+
+  /** How far to slide the strip away: down its height, or (docked at the side on a phone on its side) across its width. */
+  private measure(): void {
+    const hidden = this.el.classList.contains('hidden');
+    // Slid away, it is measured as it would stand (taken out and put back in the same frame: nothing shows).
+    this.el.style.transition = 'none';
+    this.el.classList.remove('hidden');
+    this.el.style.setProperty('--kb-h', `${this.el.offsetHeight}px`);
+    this.el.style.setProperty('--kb-w', `${this.el.offsetWidth}px`);
+    this.el.classList.toggle('hidden', hidden);
+    void this.el.offsetWidth;
+    this.el.style.transition = '';
   }
 
   private cap(row: number, i: number, label: string, x: number, w: number): HTMLElement {

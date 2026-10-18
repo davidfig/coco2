@@ -40,4 +40,21 @@ body.coco-touch canvas#game { flex: 1 1 auto; height: auto; min-height: 0; }
   border-radius: 8px 8px 0 0; background: #1d1c1a; color: #b9b2a2; font: 600 11px/22px Helvetica, Arial, sans-serif;
   letter-spacing: 0.06em;
 }
+/* A phone on its side: the keyboard docks at the right, the set keeps the window's full height on the left. The keys
+   take half the width and stand a little taller than wide, for the thumbs; the tab moves to the strip's left edge. */
+@media (orientation: landscape) and (max-height: 520px) {
+  body.coco-touch { flex-direction: row; }
+  body.coco-touch canvas#game { height: 100%; min-width: 0; }
+  .coco-kb {
+    --u: min(calc((48vw - 12px) / 13.75), 42px);
+    justify-content: center; padding: 6px calc(6px + env(safe-area-inset-right)) 6px 6px; gap: calc(var(--u) * 0.14);
+    border-top: none; border-left: 1px solid #34322e; transition: margin-right 0.25s ease-out;
+  }
+  .coco-kb.hidden { margin-bottom: 0; margin-right: calc(-1 * var(--kb-w, 400px) + 22px); }
+  .coco-kb .row { height: calc(var(--u) * 1.4); }
+  .coco-kb .tab {
+    top: 12px; right: auto; left: -22px; width: 22px; height: auto; padding: 12px 0; writing-mode: vertical-rl;
+    transform: rotate(180deg); border: 1px solid #34322e; border-left: none; border-radius: 0 8px 8px 0; line-height: 22px;
+  }
+}
 `;
