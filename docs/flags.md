@@ -17,8 +17,8 @@ the story answer the puzzle; they should notice, a little later, that something 
 | `adventure-runs` | Fixed line 30 of ADVENT | None visible. The "worn tape" typo is the first wrong line on a tape. Later it is reframed (see `found-extra-line`). | Silent |
 | `looked` | Typed `LOOK` | None. | |
 | `has-lamp` | Took the lamp | None. | |
-| `mapped` | Visited all three rooms | None. | |
-| `door-open` | Read the code and opened the door | The player has seen inside a program. The vault holds a note signed by the person who made the cassettes (*proposed*, plants the issue 4 password). | ADVENT |
+| `mapped` | Visited every room but the vault | None. | |
+| `door-open` | Found the four numbers (clock, the listing's whisper, mirror, the boxed card), set them in map order, opened the door | The player has seen inside a program. The vault holds a note signed by the person who made the cassettes (*proposed*, plants the issue 4 password). | ADVENT |
 | `found-extra-line` | Noticed the extra `REM` in GUESS | OK's first fragment. Reframes the typo in ADVENT as possibly his. **Gates issue 2.** | Tape |
 | `deleted-extra-line` | Deleted it (a choice, not a flag to earn) | See below. | Silent |
 

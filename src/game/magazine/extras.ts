@@ -19,7 +19,7 @@ export function drawHints(ctx: Ctx, s: IssueState): Hotspot[] {
   const hints: [string, string, string][] = [
     ['hint:prompt', 'The machine seems to ignore me.', 'It is waiting for ENTER. Nothing is understood until you press it at the end of the line.'],
     ['hint:sn', 'I keep getting ?SN ERROR.', 'Check the spelling, and check the quote marks come in pairs. If it says IN and a number, the mistake is in that line of the program: LIST it, read it slowly, and type it again with its number. Page ' + pageNo('program') + ' has more.'],
-    ['hint:key', 'There is a door and I cannot open it.', 'Some doors want a key you can carry, so look again in every room. A door that asks for a code wants a number the screen will not show you. Programs can be read: see page ' + pageNo('stopping') + '.'],
+    ['hint:key', 'There is a door and I cannot open it.', 'Some locks want a key you can carry: EXAMINE everything. A lock with wheels wants a number for each, and the rooms hold them, one only in the program’s lines (page ' + pageNo('stopping') + ').'],
     ['hint:dark', 'It is too dark to see anything.', 'You cannot see or move in the dark. Feel around: EXAMINE what you can feel, and TAKE anything that might give light.'],
     ['hint:lost', 'I am lost and nothing makes sense.', 'Type LOOK, read slowly, and write the room’s name on your map. Try every direction in turn.'],
   ];

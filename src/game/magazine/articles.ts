@@ -1,7 +1,8 @@
 import { houseAd } from './ads';
 import { COMMANDS } from './data';
 import { PageId, pageNo } from './pages';
-import { Ctx, INK, MARGIN, MONO, OPTIMA, PAGE_H, PAGE_W, SANS, SERIF, colWidth, flow, headline, leader, pullQuote, rng, rowsFor, sidebar, text, topBar, wobbleRect } from './paper';
+import { drawPlayerMap } from './playerMap';
+import { Ctx, INK, MARGIN, MONO, OPTIMA, PAGE_H, PAGE_W, SANS, SERIF, colWidth, flow, headline, leader, pullQuote, rowsFor, sidebar, text, topBar } from './paper';
 
 const W = PAGE_W - MARGIN * 2;
 const BOTTOM = PAGE_H - 100;
@@ -215,7 +216,7 @@ export function drawHowTo2(ctx: Ctx): void {
   );
 }
 
-/** mapping, with a printed figure on graph paper. */
+/** mapping, with a grid of graph paper for the reader's own map (the player has already drawn theirs on it). */
 export function drawMap(ctx: Ctx): void {
   const y = headline(ctx, 'Map Your Way', ['Graph paper, a pencil and a good sense of north . . .'], 'Priya Rao');
   body(
@@ -249,27 +250,7 @@ export function drawMap(ctx: Ctx): void {
   ctx.strokeStyle = INK;
   ctx.lineWidth = 4;
   ctx.strokeRect(gx, gy, W, gh);
-  const rand = rng(5);
-  const rooms: [string, number, number][] = [['CLEARING', 2, 4], ['GATE', 2, 2], ['HALL', 5, 2], ['CELLAR', 8, 2], ['LIBRARY', 5, 4], ['TOWER', 5, 0]];
-  const bw = 150;
-  const bh = 62;
-  const pos = (cx: number, cy: number) => [gx + 40 + cx * 70, gy + 30 + cy * 60] as const;
   ctx.lineWidth = 3;
-  for (const [a, b] of [[0, 1], [1, 2], [2, 3], [2, 4], [2, 5]]) {
-    const [ax, ay] = pos(rooms[a][1], rooms[a][2]);
-    const [bx, by] = pos(rooms[b][1], rooms[b][2]);
-    ctx.beginPath();
-    ctx.moveTo(ax + bw / 2, ay + bh / 2);
-    ctx.lineTo(bx + bw / 2, by + bh / 2);
-    ctx.stroke();
-  }
-  for (const [name, cx, cy] of rooms) {
-    const [rx, ry] = pos(cx, cy);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(rx, ry, bw, bh);
-    wobbleRect(ctx, rx, ry, bw, bh, rand);
-    text(ctx, name, rx + bw / 2, ry + bh / 2 + 8, `bold 20px ${SANS}`, INK, 'center');
-  }
   text(ctx, 'N', gx + W - 56, gy + 52, `bold 34px ${SANS}`, INK, 'center');
   ctx.beginPath();
   ctx.moveTo(gx + W - 56, gy + 120);
@@ -278,6 +259,7 @@ export function drawMap(ctx: Ctx): void {
   ctx.moveTo(gx + W - 56, gy + 66);
   ctx.lineTo(gx + W - 46, gy + 82);
   ctx.stroke();
-  text(ctx, 'locked: need a key?', gx + 40 + 8 * 70 - 14, gy + 30 + 2 * 60 + 100, `italic 20px ${SERIF}`, INK);
-  flow(ctx, rowsFor(ctx, [{ text: 'Fig. 2: A reader’s first map. Pencil, not pen.', font: `italic 17px ${SERIF}`, lh: 21, align: 'left', before: 0 }], W), MARGIN, gy + gh + 12, W, 40);
+  // The reader's own map: the player filled this grid in before the game begins (see playerMap.ts).
+  drawPlayerMap(ctx, gx + 50, gy + 50);
+  flow(ctx, rowsFor(ctx, [{ text: 'Fig. 2: Your first map goes on this grid. Pencil, not pen.', font: `italic 17px ${SERIF}`, lh: 21, align: 'left', before: 0 }], W), MARGIN, gy + gh + 12, W, 40);
 }

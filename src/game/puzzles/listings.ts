@@ -17,10 +17,43 @@ export const FIRST_PROGRAM: readonly string[] = [
 
 /**
  * ADVENT (`tapes/advent.bas`): the line numbers the rules watch. Change them together with the tape file.
- * `door` is EXAMINE DOOR (a lock and a plate), `desk` the study desk's scrap that sends the player to the program, and `plate` where EXAMINE PLATE gives the riddle for it (answer 4976: Wick, 60 / 6.50, 14 / 2, the six rooms of Fig. 2); `typo` is the line with the misspelled word (it gives ?SN ERROR) and `fixed` the first line after it; `describe` prints a room; `prompt` is where it waits for a command; `rooms` are the three room descriptions; `vault` is
- * the room behind the locked door (its description) and `ending` where taking the gold there wins. The variables are Q (door unlocked) and LP (the lamp's room, 0 when carried).
+ * `typo` is the line with the misspelled word (it gives ?SN ERROR) and `fixed` the first line after it; `describe` prints a
+ * room; `prompt` is where it waits for a command. The door's lock wants four numbers, one in each of four rooms, set in the
+ * order they are read off the player's map like a page (`plate`): the tower clock (`clock`: one hand, straight down, 6), the
+ * chapel's whisper, which is only in a REM (`whisper`: TWO, pointed at by the `altar`), the gallery mirror (`mirror`: NEVES, 7)
+ * and the cellar's box, opened with the study desk's key (`box` locked, `unlock`, `card`: the nine of clubs). Code 6279.
+ * `door` is EXAMINE DOOR, `cellar` where the cellar shows its box, `tried` a wrong code (it says how many wheels clicked),
+ * `vault` the room behind the door and `ending` where taking the gold there wins. `mapRooms` are the room numbers (ADVENT's R)
+ * of every room but the vault. The variables are Q (door unlocked), LP (the lamp's room, 0 when carried) and KY (the key's).
  */
-export const ADVENT = { door: 570, desk: 575, plate: 580, typo: 30, fixed: 40, describe: 200, prompt: 60, rooms: [210, 220, 230], vault: 235, ending: 700 } as const;
+export const ADVENT = {
+  typo: 30,
+  fixed: 40,
+  prompt: 60,
+  describe: 200,
+  vault: 240,
+  chapel: 272,
+  whisper: 274,
+  cellar: 282,
+  door: 640,
+  plate: 645,
+  mirror: 660,
+  clock: 665,
+  altar: 670,
+  box: 676,
+  card: 685,
+  ending: 700,
+  unlock: 830,
+  tried: 960,
+  mapRooms: [1, 2, 3, 5, 6, 7, 8],
+} as const;
+
+/** The whisper as ADVENT's REM writes it (read from the tape file, so the rule and the notes quote what LIST shows). */
+export const ADVENT_WHISPER = advent
+  .split('\n')
+  .find((l) => l.startsWith(`${ADVENT.whisper} `))!
+  .replace(/^\d+ REM /, '')
+  .trim();
 
 /**
  * Puzzle 5: the tape's GUESS has this extra line, which the magazine's printed copy lacks. It is inside the program, after the
@@ -39,6 +72,3 @@ export const GUESS_EXTRA_TEXT = guess
 export const GUESS_PRINTED: readonly string[] = guess
   .split('\n')
   .filter((l) => l.trim() !== '' && !l.startsWith(`${GUESS_EXTRA_LINE} `));
-
-/** The door's code, read from ADVENT's own `IF C=` line so that the rules and the riddle's answer can never drift from the tape. */
-export const ADVENT_CODE = /IF C=(\d+)/.exec(advent)![1];

@@ -311,18 +311,3 @@ export function banner(ctx: Ctx, label: string, x = MARGIN, y = 72, w = 260): vo
   ctx.fillRect(x, y, w, 26);
   text(ctx, label, x + 10, y + 20, `italic bold 19px ${SERIF}`, '#ffffff');
 }
-
-/** A hand-wobbled box, the way a mapper draws rooms in pencil. */
-export function wobbleRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: () => number): void {
-  const j = () => (r() - 0.5) * 3;
-  ctx.beginPath();
-  ctx.moveTo(x + j(), y + j());
-  ctx.lineTo(x + w / 2 + j(), y + j());
-  ctx.lineTo(x + w + j(), y + j());
-  ctx.lineTo(x + w + j(), y + h / 2 + j());
-  ctx.lineTo(x + w + j(), y + h + j());
-  ctx.lineTo(x + w / 2 + j(), y + h + j());
-  ctx.lineTo(x + j(), y + h + j());
-  ctx.lineTo(x + j(), y + j());
-  ctx.stroke();
-}

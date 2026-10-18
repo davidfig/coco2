@@ -1,7 +1,8 @@
 import type { Program } from '../basic/program';
 import type { Interpreter } from '../basic/interpreter';
-import { ADVENT, ADVENT_CODE, FIRST_PROGRAM, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from './listings';
-import { programIs, Rule } from './watcher';
+import { ADVENT, ADVENT_WHISPER, FIRST_PROGRAM, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from './listings';
+import type { BasicEvent } from '../basic/events';
+import { programIs, type PuzzleContext, type Rule } from './watcher';
 
 /**
  * Issue 1's solution tests (see `docs/puzzles.md`). Each ticks the story flag of the same name when it sees the
@@ -62,40 +63,57 @@ const hasLamp: Rule = (e, ctx) => {
   if (e.type === 'line' && e.num === ADVENT.prompt && isAdvent(ctx.interp.program) && advVar(ctx.interp, 'LP') === 0) ctx.set('has-lamp');
 };
 
+/** True when ADVENT is in memory and has just reached line `num`. */
+const atLine = (e: BasicEvent, ctx: PuzzleContext, num: number): boolean => e.type === 'line' && e.num === num && isAdvent(ctx.interp.program);
+
 /** EXAMINE DOOR was typed in the hall: a lock with four wheels and a plate. */
 const doorExamined: Rule = (e, ctx) => {
-  if (e.type === 'line' && e.num === ADVENT.door && isAdvent(ctx.interp.program)) {
-    ctx.set('lock-examined');
-    ctx.set('door-examined');
-  }
+  if (!atLine(e, ctx, ADVENT.door)) return;
+  ctx.set('lock-examined');
+  ctx.set('door-examined');
 };
 
-/** The scrap in the study desk: the game itself says the code is not in the rooms but in the program. */
-const deskRead: Rule = (e, ctx) => {
-  if (e.type === 'line' && e.num === ADVENT.desk && isAdvent(ctx.interp.program)) ctx.set('desk-read');
-};
-
-/** EXAMINE PLATE: the brass plate's riddle was read, the honest way to the code. */
+/** EXAMINE PLATE: four rooms hold a number each, set in the order they are read off the map. */
 const plateRead: Rule = (e, ctx) => {
-  if (e.type === 'line' && e.num === ADVENT.plate && isAdvent(ctx.interp.program)) {
-    ctx.set('lock-examined');
-    ctx.set('plate-passed');
-    ctx.set('plate-read');
-  }
+  if (!atLine(e, ctx, ADVENT.plate)) return;
+  ctx.set('lock-examined');
+  ctx.set('plate-read');
 };
 
-/** The player listed ADVENT and the line that checks the code is on the screen, so the code can be read (the cheat). */
-const readCode: Rule = (() => {
+/** The four clues, and the way to the last of them: each ticks a flag the notebook writes down (what was seen, not the digit). */
+const CLUES: readonly [line: number, flag: string][] = [
+  [ADVENT.clock, 'clock-read'],
+  [ADVENT.mirror, 'mirror-read'],
+  [ADVENT.chapel, 'whisper-heard'],
+  [ADVENT.altar, 'altar-read'],
+  [ADVENT.cellar, 'box-seen'],
+  [ADVENT.box, 'box-seen'],
+  [ADVENT.unlock, 'box-opened'],
+  [ADVENT.card, 'card-read'],
+  [ADVENT.tried, 'code-tried'],
+];
+const clues: Rule = (e, ctx) => {
+  for (const [line, flag] of CLUES) if (atLine(e, ctx, line)) ctx.set(flag);
+};
+
+/** The key from the study desk is carried: back at the prompt with KY at 0. */
+const hasKey: Rule = (e, ctx) => {
+  if (atLine(e, ctx, ADVENT.prompt) && advVar(ctx.interp, 'KY') === 0) ctx.set('has-key');
+};
+
+/**
+ * The whisper was found: ADVENT was listed and its REM is on the screen when the listing ends (or the player deleted it,
+ * which means they found it first). It is the one number that is only in the program.
+ */
+const whisperFound: Rule = (() => {
   let listed = false;
   return (e, ctx) => {
     const p = ctx.interp.program;
     if (!isAdvent(p)) return;
-    if (e.type === 'list') {
-      const at = p.lines.find((l) => /IF C=\d+/.test(l.text));
-      listed = !!at && e.from <= at.num && e.to >= at.num;
-    } else if (e.type === 'idle' && listed) {
+    if (e.type === 'list') listed = e.from <= ADVENT.whisper && e.to >= ADVENT.whisper;
+    else if (e.type === 'idle' && listed) {
       listed = false;
-      if (screenText(ctx.interp.screen.vram).includes(`C=${ADVENT_CODE}`)) ctx.set('read-code');
+      if (screenText(ctx.interp.screen.vram).includes(ADVENT_WHISPER)) ctx.set('whisper-found');
     }
   };
 })();
@@ -109,13 +127,12 @@ const adventureWon: Rule = (e, ctx) => {
 const doorOpen: Rule = (e, ctx) => {
   if (e.type === 'line' && e.num === ADVENT.vault && isAdvent(ctx.interp.program) && advVar(ctx.interp, 'Q') === 1) {
     ctx.set('lock-examined'); // whether or not the player asked the lock first
-    ctx.set('plate-passed');
     ctx.set('door-open');
   }
 };
 
 /**
- * The notebook's "start a map": the player has stood in all three rooms. Counted by where they are each time the game waits
+ * The notebook's "walk the map": the player has stood in every room but the vault. Counted by where they are each time the game waits
  * for a command (ADVENT's variable R), not by the descriptions shown: in the dark, or after taking the lamp and walking on,
  * a room may never have been described, but the player has still been there.
  */
@@ -124,7 +141,7 @@ const mapped: Rule = (() => {
   return (e, ctx) => {
     if (e.type !== 'line' || e.num !== ADVENT.prompt || !isAdvent(ctx.interp.program)) return;
     been.add(advVar(ctx.interp, 'R'));
-    if (ADVENT.rooms.every((_, i) => been.has(i + 1))) ctx.set('mapped');
+    if (ADVENT.mapRooms.every((r) => been.has(r))) ctx.set('mapped');
   };
 })();
 
@@ -155,4 +172,4 @@ const extraLine: Rule = (() => {
   };
 })();
 
-export const ISSUE_1_RULES: readonly Rule[] = [sayHello, firstProgram, tapeInserted, adventureLoaded, adventureError, adventureRuns, looked, hasLamp, mapped, doorExamined, deskRead, plateRead, readCode, doorOpen, adventureWon, extraLine];
+export const ISSUE_1_RULES: readonly Rule[] = [sayHello, firstProgram, tapeInserted, adventureLoaded, adventureError, adventureRuns, looked, hasLamp, mapped, doorExamined, plateRead, clues, hasKey, whisperFound, doorOpen, adventureWon, extraLine];

@@ -5,7 +5,7 @@
  * rushed the hand is, and climbs as the notes turn from learning BASIC to what is going on.
  */
 import { pageNo } from '../magazine/pages';
-import { GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../puzzles/listings';
+import { ADVENT, ADVENT_WHISPER, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../puzzles/listings';
 
 export interface Note {
   id: string;
@@ -36,14 +36,22 @@ export const NOTES: readonly Note[] = [
   { id: 'err', when: 'adventure-runs', text: 'Line 30 misspelled. Retyped. Kessler\'s mistake?', mood: 0.1 },
   { id: 'begin', when: 'adventure-runs', text: 'Runs now. Says: type LOOK', mood: 0.1, ask: true, solved: 'looked', orSolved: 'has-lamp' },
   { id: 'dark', when: 'looked', text: 'Pitch dark. Feel around for a light', mood: 0.1, ask: true, solved: 'has-lamp', skipIf: 'has-lamp' },
-  { id: 'explore', when: 'has-lamp', text: `Got the lamp. Explore, make a map. p.${pageNo('map')}`, mood: 0.11, ask: true, solved: 'mapped' },
-  { id: 'rooms', when: 'mapped', text: 'Rooms: store room, hall, study', mood: 0.12 },
+  { id: 'explore', when: 'has-lamp', text: `Got the lamp. Walk my map, p.${pageNo('map')}`, mood: 0.11, ask: true, solved: 'mapped' },
+  { id: 'rooms', when: 'mapped', text: 'Been in every room but one', mood: 0.12 },
   { id: 'door', when: 'mapped', text: 'Hall, north door locked. EXAMINE DOOR?', mood: 0.14, ask: true, solved: 'lock-examined' },
-  { id: 'platehint', when: 'door-examined', text: 'Lock has a plate. EXAMINE PLATE', mood: 0.15, ask: true, solved: 'plate-passed' },
-  { id: 'inside', when: 'desk-read', text: `Desk scrap: code not in the rooms. ESC + LIST? p.${pageNo('stopping')}`, mood: 0.16, ask: true, solved: 'door-open' },
-  { id: 'plate', when: 'plate-read', text: '4 wheels, 4 clues. Answers in the magazine?', mood: 0.17, ask: true, solved: 'door-open' },
-  { id: 'code', when: ['door-open', 'read-code'], text: 'Code was right there in the listing!', mood: 0.16 },
-  { id: 'riddle', when: ['door-open', 'plate-read'], text: 'All 4 clues from the magazine. Open!', mood: 0.16 },
+  { id: 'platehint', when: 'door-examined', text: 'Lock has a plate. EXAMINE PLATE', mood: 0.15, ask: true, solved: 'plate-read' },
+  { id: 'plate', when: 'plate-read', text: `4 rooms, 4 numbers. In order: read my map like a page, p.${pageNo('map')}`, mood: 0.17, ask: true, solved: 'door-open' },
+  // The clues, as seen: what the player noticed in each room, never the digit itself.
+  { id: 'clock', when: 'clock-read', text: 'Tower clock: one hand, pointing straight down', mood: 0.15 },
+  { id: 'mirror', when: 'mirror-read', text: 'In the dust on the mirror: NEVES. Backwards?', mood: 0.16 },
+  { id: 'box', when: 'box-seen', text: 'Cellar: iron box, locked. Key somewhere?', mood: 0.15, ask: true, solved: 'box-opened', orSolved: 'card-read' },
+  { id: 'key', when: 'has-key', text: 'Small iron key, from the study desk', mood: 0.14 },
+  { id: 'card', when: 'card-read', text: 'In the box: one card, the nine of clubs', mood: 0.16 },
+  { id: 'whisper', when: 'whisper-heard', text: 'Chapel: a whisper, gone before I hear it', mood: 0.18, ask: true, solved: 'whisper-found' },
+  { id: 'altar', when: 'altar-read', text: `Altar: "wrote it in my lines, the 270s". ESC, LIST 270-280? p.${pageNo('stopping')}`, mood: 0.2, ask: true, solved: 'whisper-found' },
+  { id: 'heard', when: 'whisper-found', text: `Line ${ADVENT.whisper}, in the listing: ${ADVENT_WHISPER.charAt(0)}${ADVENT_WHISPER.slice(1).toLowerCase()}`, mood: 0.2 },
+  { id: 'clicks', when: 'code-tried', text: 'Wrong code. Some wheels click: right number, right place?', mood: 0.18, ask: true, solved: 'door-open' },
+  { id: 'opened', when: 'door-open', text: 'Clock, whisper, mirror, card, in map order. Open!', mood: 0.16 },
   { id: 'vault', when: 'door-open', text: 'A vault. A chest of gold!', mood: 0.2, ask: true, solved: 'adventure-won' },
   { id: 'won', when: 'adventure-won', text: 'Took the gold. WON! 100/100', mood: 0.15 },
   { id: 'voice', when: 'tamper-voice', text: 'Strange: after the game, HELLO came up on the screen by itself. Shimmering. What is that?', mood: 0.34 },

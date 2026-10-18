@@ -14,13 +14,20 @@ export const STORY_FLAGS: readonly [flag: string, label: string][] = [
   ['looked', 'a room was described'],
   ['tamper-lamp', 'story: LAMP WAITS ON IT'],
   ['has-lamp', 'carrying the lamp'],
-  ['mapped', 'stood in all three rooms'],
+  ['mapped', 'stood in every room but the vault'],
   ['door-examined', 'EXAMINE DOOR'],
   ['lock-examined', 'asked about the lock'],
-  ['desk-read', 'read the scrap in the desk'],
-  ['plate-read', 'EXAMINE PLATE (the riddle)'],
-  ['read-code', 'LISTed the code line'],
-  ['plate-passed', 'past the plate'],
+  ['plate-read', 'EXAMINE PLATE (the order)'],
+  ['clock-read', 'EXAMINE CLOCK (6)'],
+  ['mirror-read', 'EXAMINE MIRROR (7)'],
+  ['box-seen', 'saw the locked box'],
+  ['has-key', 'carrying the key'],
+  ['box-opened', 'unlocked the box'],
+  ['card-read', 'read the card (9)'],
+  ['whisper-heard', 'heard the chapel whisper'],
+  ['altar-read', 'EXAMINE ALTAR'],
+  ['whisper-found', 'LISTed the whisper (2)'],
+  ['code-tried', 'a wrong code'],
   ['door-open', 'opened the vault door'],
   ['tamper-name', 'story: the name at the prompt'],
   ['adventure-won', 'took the cassette'],
@@ -53,8 +60,9 @@ const HELLO = [...START, 'printed', 'first-program'];
 const BROKEN = [...HELLO, 'adventure-loaded', 'adventure-sn'];
 const FIXED = [...BROKEN, 'adventure-runs'];
 const LAMP = [...FIXED, 'looked', 'tamper-lamp', 'has-lamp'];
-const AT_DOOR = [...LAMP, 'mapped', 'door-examined', 'lock-examined'];
-const OPEN = [...AT_DOOR, 'desk-read', 'read-code', 'plate-passed', 'door-open'];
+const AT_DOOR = [...LAMP, 'mapped', 'door-examined', 'lock-examined', 'plate-read'];
+const CLUES = [...AT_DOOR, 'clock-read', 'mirror-read', 'box-seen', 'has-key', 'box-opened', 'card-read', 'whisper-heard', 'altar-read', 'whisper-found'];
+const OPEN = [...CLUES, 'door-open'];
 const WON = [...OPEN, 'tamper-name', 'adventure-won', 'tamper-voice'];
 const FOUND = [...WON, 'seen-guess', 'found-extra-line'];
 const DELETED = [...FOUND, 'deleted-extra-line'];
@@ -70,6 +78,7 @@ export const CHECKPOINTS: readonly Checkpoint[] = [
   { label: 'ADVENT fixed, before LOOK', flags: FIXED, named: true, typed: ADVENT_FIXED },
   { label: 'Lamp in hand', flags: LAMP, named: true, typed: ADVENT_FIXED },
   { label: 'Mapped, at the door', flags: AT_DOOR, named: true, typed: ADVENT_FIXED },
+  { label: 'All four clues found', flags: CLUES, named: true, typed: ADVENT_FIXED },
   { label: 'Door open (name tamper next)', flags: OPEN, named: true, typed: ADVENT_FIXED },
   { label: 'Adventure won', flags: WON, named: true, typed: GUESS },
   { label: 'Found the extra line (kept)', flags: FOUND, named: true, typed: GUESS },

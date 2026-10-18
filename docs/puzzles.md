@@ -46,21 +46,42 @@ line is wrong on a tape; whether it was OK is left open (ladder rung 1).
 
 **The lamp (start of ADVENT).** The adventure is dark until the lamp is carried: the first `LOOK` says "IT IS TOO DARK TO SEE. / YOUR HAND FINDS A SHELF. / A LAMP SITS ON IT.", moving says "YOU CANNOT SEE WHERE TO GO.", `EXAMINE SHELF` closes a hand on the lamp, `TAKE LAMP` works even in the dark. Dropping the lamp puts a room back in the dark, but it can always be picked up again (movement needs the lamp, so it is always in the room you are in). Flag `has-lamp`.
 
-**P4. The locked door.** The hall's north door has a four-wheel lock. `EXAMINE DOOR` only describes it (a lock with four wheels
-and a plate). The one place that sends the player to the program is the scrap in the study desk (the east room): the code is
-not in the rooms, stop the tape and read the lines (the adventure knows it is a program: nobody would write a game this way,
-which is the point). Two ways through:
-- *Cheat:* `BREAK` at the code prompt, a plain `LIST`, read `IF C=4976` on the last rows (the door-code subroutine is the very
-  last thing in the program, lines 900 and up, reached by `GOSUB` from the move code, so the screen's last 16 rows always show it), `CONT`, type it. Taught by the page on stopping a program.
-- *Research (hard, not searchable, since every fact is in this fictional issue):* `EXAMINE PLATE` gives four clues, one digit
-  each: (1) letters in the surname of the screen's teacher = Wick = 4; (2) a year of tapes ($60) over a single issue
-  ($6.50), whole issues = 9; (3) half the age of the Akron reader who trades maps (letters page + classifieds) = 7;
-  (4) rooms on the reader's first map, Fig. 2 = 6. Code 4976. The clues use facts, not page numbers, so reordering the
-  pages cannot break them; if a page's content changes, check the four clues still hold.
-Flags: `lock-examined` (door or plate), `door-examined`, `plate-read`, `desk-read`, `door-open`. The notebook follows: "Try EXAMINE DOOR",
-then "The lock has a plate. EXAMINE PLATE", then "Four wheels, four clues"; and, from the desk scrap, "the code is not in the
-rooms. ESC, then LIST". Entering the vault with the door really
-unlocked sets `door-open`.
+**The map (magazine page "Map Your Way").** The printed example map is gone: Fig. 2 is now a blank grid "for your first map",
+and the player has already filled it in, in the notebook's blue ballpoint and hand (`magazine/playerMap.ts`): every room of
+ADVENT with its exits, a note of what is in each (big clock, altar, mirror, desk, iron box, "dark! lamp"), "?" behind the
+locked north door, and "start" at the store room. It saves the player the mapping and is half of the lock's puzzle.
+
+ADVENT's map (north up; R is the program's room number):
+```
+TOWER (6)    ?  VAULT (4)     CHAPEL (7)
+   |             | locked        |
+GALLERY (5) -- HALL (2) ----- STUDY (3)
+                 |
+CELLAR (8) --- STORE ROOM (1, start, dark)
+```
+
+**P4. The locked door.** The hall's north door has a four-wheel lock. `EXAMINE DOOR`: a lock with four wheels and a plate.
+`EXAMINE PLATE`: four rooms hold a number each; read them off your map as you would read a page and set the wheels in that
+order. Nothing in the magazine is needed beyond the map. The four numbers, one skill each:
+1. *Tower, observe and think* (`EXAMINE CLOCK`): the clock has one hand, pointing straight down. **6**.
+2. *Chapel, the listing*: the room says someone whispers a number, gone before you hear it; `EXAMINE ALTAR`: "I cannot say
+   it aloud, so I wrote it in my lines, in the 270s. Stop me and read them." BREAK, `LIST 270-280` (taught on the stopping
+   page), and line 274 is `REM THE WHISPER: TWO`. **2**. It is the one number that never appears on the screen while playing.
+3. *Gallery, wordplay* (`EXAMINE MIRROR`): in the dust on the glass, `NEVES`, SEVEN backwards. **7**.
+4. *Cellar, an object* (a key for a box): the cellar's iron box is locked; the key is in the study desk (`EXAMINE DESK`,
+   `TAKE KEY`), and `USE KEY` (or `OPEN BOX`) in the cellar shows a card, the nine of clubs. **9**. The map page's own text
+   ("when you come back with a key, you will know where to use it") and the hints page point at this.
+
+**The order** is the map read like a page: top row left to right (tower, chapel), then the next rows (gallery, then cellar).
+Code **6279**. A wrong four-digit code says how many wheels clicked (right digit, right place), so a player with the four
+numbers but the wrong order can always work it out; anything but four characters says the lock has four wheels. The listing
+does not give the code away: the check compares each wheel with a letter of `"LHMO"` less 22 (ASCII), which a curious
+player can decode with `PRINT CHR$(ASC("L")-22)`, but nothing teaches it.
+Flags: `lock-examined` (door or plate), `door-examined`, `plate-read`, `clock-read`, `mirror-read`, `box-seen`, `has-key`,
+`box-opened`, `card-read`, `whisper-heard`, `altar-read`, `whisper-found` (line 274 really on the screen at the end of a
+LIST), `code-tried`, `door-open`. The notebook writes down what was seen in each room, never the digit (the listing's REM is
+the exception, quoted once found), and points at the map page for the order and at the stopping page for the 270s.
+Entering the vault with the door really unlocked sets `door-open`.
 
 **The ending.** Behind the door is a small vault, a room like the others (exit south) with a chest of gold (`EXAMINE GOLD`: old coins, heaped to the lid). `TAKE GOLD` (or `TAKE CHEST`) wins: the screen clears (still green: a black screen hid the shimmer) for "YOU TAKE THE GOLD. / *** YOU HAVE WON *** / SCORE: 100 OF 100", and the program ends with BASIC's OK; then HELLO writes itself above the prompt (see `docs/flags.md`). Flag `adventure-won`. The notebook: "A vault. A chest of gold!", then "Took the gold. WON! 100/100", once HELLO has appeared (`tamper-voice`), "Strange: after the game, HELLO came up on the screen by itself. Shimmering. What is that?", then the label's question. Kessler's note is on the real tape's label instead, noted the first time the tape is used (`tape-inserted`).
 
@@ -72,13 +93,13 @@ Tutorial note: the page's check table is the only way to see the difference with
 
 ## Built
 
-- The puzzle watcher and rules for P1–P4 (`src/game/puzzles/`), and `tapes/advent.bas` (rooms: store room, hall, study,
-  vault; code 4976 at line 930, last in the program). Flags ticked: `printed`, `first-program`, `adventure-runs`, `looked`, `has-lamp`,
+- The puzzle watcher and rules for P1–P4 (`src/game/puzzles/`), and `tapes/advent.bas` (eight rooms, see the map above;
+  code 6279, checked wheel by wheel at lines 930-960, last in the program). Flags ticked: `printed`, `first-program`, `adventure-runs`, `looked`, `has-lamp`,
   `door-open`. `mapped` has no rule (nothing the machine can see).
 - The issue grew to 16 pages here, then 18 (see P5). Page 11 prints P2's program from `FIRST_PROGRAM` (RAINBOW CHECK table included), page 12
   (`magazine/learn.ts`) teaches line numbers, RUN, LIST, editing and deleting a line plus the error codes, and page 13
   teaches BREAK, `LIST a-b` and CONT with a made-up password program (the ADVENT door code is not printed anywhere).
-  `mapped` ticks once the player has stood in all three rooms (counted by ADVENT's room variable `R` at each prompt, not by descriptions shown, since the first room is dark). The notebook gives a pointer at every step of the start: error, "type LOOK", dark, "walk around and draw a map". The journal page was removed: the notebook replaced it, and its slot became the classifieds page.
+  `mapped` ticks once the player has stood in every room but the vault (counted by ADVENT's room variable `R` at each prompt, not by descriptions shown, since the first room is dark). The notebook gives a pointer at every step of the start: error, "type LOOK", dark, "walk around and draw a map". The journal page was removed: the notebook replaced it, and its slot became the classifieds page.
 - P5: `tapes/guess.bas` has an extra line 125 (`REM IS ANYONE READING THIS`), after the win message and near enough the end that a plain LIST, which scrolls off a 16-row screen, still shows it. The reason to check at all: the vault's cassette label (copied by hand, "mistakes are mine, check it against the magazine"), and GUESS is the one program printed in the issue. `found-extra-line` only ticks when the line is really on the screen as the listing ends. Page 14 prints GUESS without it
   (derived from the tape file, `GUESS_PRINTED`), and page 15 explains the tape. The new `CHECK` command prints the
   RAINBOW CHECK sums for the program in memory, which is how a player compares a type-in or a tape with the magazine
