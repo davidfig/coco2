@@ -1,4 +1,4 @@
-import { FULLSCREEN_VERT, Program, linkProgram, scissor } from '../../engine';
+import { FULLSCREEN_VERT, KeptPass, Program, linkProgram } from '../../engine';
 import type { DeskSpot } from '../computer/layout';
 import { camBounds, onTable, setCam } from './bookCam';
 import { BOOK_FRAG } from './bookShader';
@@ -69,6 +69,7 @@ export class Magazine {
 
   private readonly program: Program;
   private readonly vao: WebGLVertexArrayObject;
+  private readonly kept: KeptPass;
   private readonly pages: PageTextures;
   /** Paints the pages (in a worker) and puts them on the GPU. */
   private readonly painter: PagePainter;
@@ -81,6 +82,7 @@ export class Magazine {
     this.load();
     this.program = linkProgram(gl, FULLSCREEN_VERT, BOOK_FRAG);
     this.vao = gl.createVertexArray()!;
+    this.kept = new KeptPass(gl);
     this.pages = new PageTextures(gl);
     this.painter = new PagePainter(this.pages, this.state);
     // Pages are painted once the typefaces are in (any painted before then, again), then all of them are readied.
@@ -323,36 +325,35 @@ export class Magazine {
     const f = this.flip;
     const [L, R, F, B] = leafLayers(f, this.spread, this.count);
     for (const i of [L, R, F, B]) if (i >= 0) this.ensure(i);
-    const [x0, y0, x1, y1] = v.cam ? camBounds(cam, v, !!f) : bookBounds(v, !!f);
-    if (!scissor(gl, x0, y0, x1, y1)) return;
+    const bounds = v.cam ? camBounds(cam, v, !!f) : bookBounds(v, !!f);
     const angle = f ? Math.PI * (f.dir > 0 ? smooth(f.t) : 1 - smooth(f.t)) : 0;
-    gl.useProgram(this.program.prog);
-    const u = this.program.u;
-    gl.uniform2f(u.uRes, v.W, v.H);
-    gl.uniform4f(u.uClip, ...v.clip);
-    setCam(gl, u, cam, light);
-    gl.uniform1f(u.uH, PAGE_UNIT_H);
-    gl.uniform1f(u.uTheta, angle);
-    gl.uniform1f(u.uFlipOn, f ? 1 : 0);
-    gl.uniform1f(u.uBend, this.bend);
-    gl.uniform1f(u.uFold, smooth(this.openT));
-    gl.uniform1f(u.uL, L);
-    gl.uniform1f(u.uR, R);
-    gl.uniform1f(u.uF, F);
-    gl.uniform1f(u.uB, B);
-    gl.uniform4f(u.uExt, ...v.ext);
-    gl.uniform2f(u.uWin, ...v.win);
-    gl.uniform1f(u.uTexW, PAGE_W); gl.uniform1f(u.uLastPage, this.count - 1);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.pages.tex);
-    gl.uniform1i(u.uPages, 1);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    const vals = { res: [v.W, v.H], clip: v.clip, theta: angle, flipOn: f ? 1 : 0, bend: this.bend, fold: smooth(this.openT), layers: [L, R, F, B], ext: v.ext, win: v.win };
+    // The book lies still more often than not while the rest moves: its picture is kept, and marched again only when
+    // something it shows changes (the view, the leaf, a page painted).
+    const key = [...Object.values(vals).flat(), ...cam.o, ...cam.m, cam.scale, cam.focal, light, ...bounds, this.count, this.pages.version];
     gl.bindVertexArray(this.vao);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    gl.disable(gl.BLEND);
-    gl.disable(gl.SCISSOR_TEST);
-    gl.activeTexture(gl.TEXTURE0);
+    this.kept.draw(key, bounds, () => {
+      gl.useProgram(this.program.prog);
+      const u = this.program.u;
+      gl.uniform2f(u.uRes, v.W, v.H);
+      gl.uniform4f(u.uClip, ...v.clip);
+      setCam(gl, u, cam, light);
+      gl.uniform1f(u.uH, PAGE_UNIT_H);
+      gl.uniform1f(u.uTheta, angle);
+      gl.uniform1f(u.uFlipOn, vals.flipOn);
+      gl.uniform1f(u.uBend, this.bend);
+      gl.uniform1f(u.uFold, vals.fold);
+      [u.uL, u.uR, u.uF, u.uB].forEach((loc, i) => gl.uniform1f(loc, vals.layers[i]));
+      gl.uniform4f(u.uExt, ...v.ext);
+      gl.uniform2f(u.uWin, ...v.win);
+      gl.uniform1f(u.uTexW, PAGE_W);
+      gl.uniform1f(u.uLastPage, this.count - 1);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.pages.tex);
+      gl.uniform1i(u.uPages, 1);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.activeTexture(gl.TEXTURE0);
+    });
   }
 
   // ---- pages ----

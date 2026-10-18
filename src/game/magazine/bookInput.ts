@@ -17,7 +17,7 @@ const HINT_KEY = 'coco2.rainbow.hint';
  * away, PAGE UP/DOWN turn. A few starbursts on the page corner remain (bookCorner). Typing is left alone so the CoCo keeps listening
  * while the magazine is open.
  */
-export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers: () => Cover[]): { update: () => void } {
+export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers: () => Cover[]): { update: (light?: string) => void } {
   const norm = (e: MouseEvent): [number, number] => {
     const r = canvas.getBoundingClientRect();
     return [(e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height];
@@ -258,9 +258,11 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers
   }
 
   return {
-    update() {
+    /** `light`: the room's lights as a CSS filter (`RoomLights.css`), for what lies over the canvas. */
+    update(light = '') {
       const show = mag.openT > 0.97;
-      corner.update();
+      corner.update(light);
+      if (hint.style.filter !== light) hint.style.filter = light;
       canvas.style.cursor = mag.open ? (hold || slide ? 'grabbing' : overLink ? 'pointer' : 'grab') : mag.hover ? 'pointer' : '';
       if (show && !learned) hintLeft = Math.min(hintLeft + 1 / 60, 9);
       if (!show) hintLeft = 0;

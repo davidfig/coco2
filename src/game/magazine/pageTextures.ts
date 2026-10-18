@@ -13,6 +13,8 @@ export class PageTextures {
   private readonly stage: WebGLTexture;
   private readonly stageFb: WebGLFramebuffer;
   private readonly levels = Math.floor(Math.log2(Math.max(PAGE_W, PAGE_H))) + 1;
+  /** Bumped whenever any layer's pixels change: a picture drawn from them before is out of date. */
+  version = 0;
 
   constructor(private readonly gl: WebGL2RenderingContext) {
     this.tex = gl.createTexture()!;
@@ -33,6 +35,7 @@ export class PageTextures {
   /** Put a painted page (`PAGE_W`×`PAGE_H`: a canvas, or the worker's ImageBitmap) into layer `layer`. */
   upload(layer: number, page: HTMLCanvasElement | ImageBitmap): void {
     const gl = this.gl;
+    this.version++;
     gl.bindTexture(gl.TEXTURE_2D, this.stage);
     gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, PAGE_W, PAGE_H, gl.RGBA, gl.UNSIGNED_BYTE, page);
     gl.generateMipmap(gl.TEXTURE_2D);
@@ -48,6 +51,7 @@ export class PageTextures {
   /** Bare paper in every layer, every level: what shows of a page not painted yet (not black, nor another issue's page). */
   blank(): void {
     const gl = this.gl;
+    this.version++;
     const scissor = gl.isEnabled(gl.SCISSOR_TEST);
     gl.disable(gl.SCISSOR_TEST);
     const was = gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING) as WebGLFramebuffer | null;

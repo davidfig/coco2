@@ -37,6 +37,8 @@ export class RoomLights {
   /** When the lights are on for good, this load (seconds from the first frame): the set comes on after it. */
   readonly onAt: number;
   private program: Program | null = null;
+  /** The same tint for what the page lays over the canvas (the magazine's stickers): an SVG filter, made on first use. */
+  private matrix: SVGFEColorMatrixElement | null = null;
 
   constructor(private readonly gl: WebGL2RenderingContext, on = false) {
     this.level = on ? 1 : 0;
@@ -63,17 +65,47 @@ export class RoomLights {
     if (this.time >= this.onAt && this.level > 0.995) this.level = 1;
   }
 
+  /**
+   * A CSS `filter` that dims an element over the canvas as `draw` dims the canvas ('' once the lights are on). The
+   * multiply pass works on the canvas's sRGB values, so the filter does too.
+   */
+  css(): string {
+    if (this.on) return '';
+    if (!this.matrix) {
+      const ns = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('width', '0');
+      svg.setAttribute('height', '0');
+      svg.style.position = 'absolute';
+      const filter = document.createElementNS(ns, 'filter');
+      filter.id = 'room-lights';
+      filter.setAttribute('color-interpolation-filters', 'sRGB');
+      this.matrix = document.createElementNS(ns, 'feColorMatrix');
+      filter.append(this.matrix);
+      svg.append(filter);
+      document.body.append(svg);
+    }
+    const [r, g, b] = this.tint();
+    this.matrix.setAttribute('values', `${r} 0 0 0 0  0 ${g} 0 0 0  0 0 ${b} 0 0  0 0 0 1 0`);
+    return 'url(#room-lights)';
+  }
+
+  /** What each channel is multiplied by: a filament low on current glows orange. */
+  private tint(): [number, number, number] {
+    const l = this.level;
+    return [l, Math.pow(l, 1.4), Math.pow(l, 2.2)];
+  }
+
   draw(): void {
     // The program is built on the first dark frame, which the page draws before it starts its clock.
     if (this.on) return;
     const gl = this.gl;
     this.program ??= linkProgram(gl, FULLSCREEN_VERT, LIGHTS_FRAG);
-    const l = this.level;
     gl.disable(gl.SCISSOR_TEST);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ZERO, gl.SRC_COLOR);
     gl.useProgram(this.program.prog);
-    gl.uniform3f(this.program.u.uTint, l, Math.pow(l, 1.4), Math.pow(l, 2.2));
+    gl.uniform3f(this.program.u.uTint, ...this.tint());
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     // The next frame's first pass (the TV's) draws without setting blending: it must find it off.
     gl.blendFunc(gl.ONE, gl.ZERO);
