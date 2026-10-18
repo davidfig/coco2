@@ -1,6 +1,6 @@
 import type { TypedKey } from '../../engine';
 import { TUBE_C } from '../tv/cabinetShader';
-import { CAP, CASE, EYE, KB_X0, KB_Z0, Key, PITCH, PLACE, PLATE_T, ROWS, TABLE, UPPER } from './layout';
+import { CAP, CASE, EYE, KB_X0, KB_Z0, Key, PITCH, PLACE, PLATE_T, ROWS, TABLE, UPPER, project } from './layout';
 
 /** How many keys can be moving at once (the shader's `uKeys`). */
 export const KEYS_MOVING = 6;
@@ -113,6 +113,31 @@ export class CocoKeys {
   private shiftKeys(): { row: number; key: Key }[] {
     return ROWS.flatMap((keys, row) => keys.filter((k) => k.label === 'SHIFT').map((key) => ({ row, key })));
   }
+}
+
+/**
+ * Where caps going down or up show on screen (panel units: x0, y0, x1, y1), with a key's pitch round them for the shade
+ * they throw: every cap in each of the given `uKeys` (`CocoKeys.uniform`). Null if there are none.
+ */
+export function capsBounds(...us: readonly ArrayLike<number>[]): [number, number, number, number] | null {
+  const a = Math.atan2(CASE.deckBack - CASE.deckFront, CASE.hd - CASE.deckZ);
+  const b = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const u of us)
+    for (let i = 0; i + 3 < u.length; i += 4) {
+      if (u[i + 2] === 0) continue;
+      for (const x of [u[i] - u[i + 2] - PITCH, u[i] + u[i + 2] + PITCH])
+        for (const z of [u[i + 1] - 1.5 * PITCH, u[i + 1] + 1.5 * PITCH])
+          for (const y of [-PLATE_T, CAP.h]) {
+            // Out of the deck's frame (as the shader's deck(), undone).
+            const [zd, xd] = [KB_Z0 + z, KB_X0 + x];
+            const [px, py] = project(xd, CASE.deckBack + y * Math.cos(a) - zd * Math.sin(a), CASE.deckZ + y * Math.sin(a) + zd * Math.cos(a));
+            b[0] = Math.min(b[0], px);
+            b[1] = Math.min(b[1], py);
+            b[2] = Math.max(b[2], px);
+            b[3] = Math.max(b[3], py);
+          }
+    }
+  return b[0] < b[2] ? [b[0], b[1], b[2], b[3]] : null;
 }
 
 /** Browser key names that land on a cap, beside the ones in `SENDS`. */

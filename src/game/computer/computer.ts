@@ -4,7 +4,7 @@ import { TALL } from '../magazine/bookLayout';
 import { ACTIVE } from '../tv/pictureShader';
 import { COMPUTER_FRAG } from './computerShader';
 import { MarchCache } from './marchCache';
-import { CocoKeys, keyAt } from './keys';
+import { CocoKeys, capsBounds, keyAt } from './keys';
 import { CORDS_BACK } from './cords';
 import { DeskTable, type View } from './deskTable';
 import { CASE, DeskSpot, EDGE, PLACE, PRINT_H, PRINT_W, deskBounds, drawPrint, keyboardBounds, lowestPoint, onCase, project } from './layout';
@@ -279,9 +279,16 @@ export class Computer {
     const s = moving && this.canvas.clientWidth > 0 ? Math.min(1, Math.max(0.5, this.canvas.clientWidth / W)) : 1;
     // The light thrown is rounded off: a few letters more or less on the screen shouldn't march it again.
     const lit = glow.map((g) => Math.round(g * 256) / 256);
+    // A key going down or up changes only the caps round it (and the shade they throw): just that is marched again.
     const keys = this.keys.uniform();
+    const around = (was: readonly number[]): [number, number, number, number] | null => {
+      const b = capsBounds(was, keys);
+      if (!b) return null;
+      const px = (x: number, i: number) => picture[i] + (x - TUBE_C[i]) * k;
+      return [px(b[0], 0) - 2, px(b[1], 1) - 2, px(b[2], 0) + 2, px(b[3], 1) + 2];
+    };
     gl.bindVertexArray(this.vao);
-    this.cache.draw([...view, ...lit, ...keys], s, [0, 0, W, top], () => {
+    this.cache.draw([...view, ...lit], s, [0, 0, W, top], () => {
       gl.useProgram(this.program.prog);
       const u = this.program.u;
       gl.uniform3f(u.uPic, picture[0] * s, picture[1] * s, k * s);
@@ -291,7 +298,7 @@ export class Computer {
       gl.bindTexture(gl.TEXTURE_2D, this.print);
       gl.uniform1i(u.uPrint, 0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-    });
+    }, { key: keys, clip: around });
     gl.disable(gl.SCISSOR_TEST);
   }
 }

@@ -1,5 +1,7 @@
 import { FULLSCREEN_VERT, Program, linkProgram } from '../../engine';
 
+type Rect = [number, number, number, number];
+
 const BLIT_FRAG = /* glsl */ `#version 300 es
 precision highp float;
 uniform sampler2D uTex;
@@ -19,6 +21,7 @@ export class MarchCache {
   private w = 0;
   private h = 0;
   private key: number[] = [];
+  private partKey: number[] = [];
   private scale = 1;
 
   constructor(private readonly gl: WebGL2RenderingContext) {
@@ -41,12 +44,25 @@ export class MarchCache {
     this.key = [];
   }
 
+  /** Whether two keys differ. */
+  private static differ(a: readonly number[], b: readonly number[]): boolean {
+    return a.length !== b.length || a.some((v, i) => v !== b[i]);
+  }
+
   /**
    * Draw the kept picture over the window (straight-alpha output blended as SRC_ALPHA), running `pass` first if `key` or
    * `scale` changed. `pass` sets its program and uniforms (scaled by `scale`) and draws its full-screen triangle; it runs
    * into the kept texture, blended so that it comes out premultiplied. `clip` is the scissor (pixels) at full scale.
+   * `part` is what changes only a small piece of the picture (the keys): when it alone changed, the pass runs only over
+   * `part.clip(was)` (pixels, given the part's last key), and the rest of the kept picture stays.
    */
-  draw(key: number[], scale: number, clip: [number, number, number, number], pass: () => void): void {
+  draw(
+    key: number[],
+    scale: number,
+    clip: Rect,
+    pass: () => void,
+    part?: { key: ArrayLike<number>; clip: (was: readonly number[]) => Rect | null },
+  ): void {
     const gl = this.gl;
     const W = gl.drawingBufferWidth;
     const H = gl.drawingBufferHeight;
@@ -57,10 +73,20 @@ export class MarchCache {
       this.key = [];
     }
     key = [...key, scale];
-    if (key.length !== this.key.length || key.some((v, i) => v !== this.key[i])) {
+    const partKey = part ? Array.from(part.key) : [];
+    let at: Rect | null = null;
+    if (MarchCache.differ(key, this.key)) at = clip;
+    else if (part && MarchCache.differ(partKey, this.partKey)) {
+      const c = part.clip(this.partKey);
+      // Only within the whole pass's clip; nothing to march if they don't meet.
+      if (c) at = [Math.max(c[0], clip[0]), Math.max(c[1], clip[1]), Math.min(c[2], clip[2]), Math.min(c[3], clip[3])];
+      else at = clip;
+    }
+    this.partKey = partKey;
+    if (at && at[2] > at[0] && at[3] > at[1]) {
       this.key = key;
       this.scale = scale;
-      const [x0, y0, x1, y1] = clip;
+      const [x0, y0, x1, y1] = at;
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb);
       gl.viewport(0, 0, Math.ceil(W * scale), Math.ceil(H * scale));
       gl.scissor(Math.floor(x0 * scale), Math.floor(y0 * scale), Math.ceil((x1 - x0) * scale) + 2, Math.ceil((y1 - y0) * scale) + 2);
@@ -71,7 +97,7 @@ export class MarchCache {
       pass();
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(0, 0, W, H);
-      gl.scissor(Math.floor(x0), Math.floor(y0), Math.ceil(x1 - x0), Math.ceil(y1 - y0));
+      gl.scissor(Math.floor(clip[0]), Math.floor(clip[1]), Math.ceil(clip[2] - clip[0]), Math.ceil(clip[3] - clip[1]));
     }
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
