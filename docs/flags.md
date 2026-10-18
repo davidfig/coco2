@@ -18,7 +18,7 @@ the story answer the puzzle; they should notice, a little later, that something 
 | `looked` | Typed `LOOK` | None. | |
 | `has-lamp` | Took the lamp | None. | |
 | `mapped` | Visited every room but the vault | None. | |
-| `door-open` | Found the four numbers (clock, the listing's whisper, mirror, the boxed card), set them in map order, opened the door | The player has seen inside a program. The vault holds a note signed by the person who made the cassettes (*proposed*, plants the issue 4 password). | ADVENT |
+| `door-open` | Found the four numbers (clock, the listing's whisper, mirror, the boxed card), set them in map order, opened the door; or BREAK, LIST and read it off line 930 (`read-code`) | The player has seen inside a program. The vault holds a note signed by the person who made the cassettes (*proposed*, plants the issue 4 password). | ADVENT |
 | `found-extra-line` | Noticed the extra `REM` in GUESS | OK's first fragment. Reframes the typo in ADVENT as possibly his. **Gates issue 2.** | Tape |
 | `deleted-extra-line` | Deleted it (a choice, not a flag to earn) | See below. | Silent |
 

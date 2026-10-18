@@ -1,6 +1,6 @@
 import type { Program } from '../basic/program';
 import type { Interpreter } from '../basic/interpreter';
-import { ADVENT, ADVENT_WHISPER, FIRST_PROGRAM, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from './listings';
+import { ADVENT, ADVENT_CODE, ADVENT_WHISPER, FIRST_PROGRAM, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from './listings';
 import type { BasicEvent } from '../basic/events';
 import { programIs, type PuzzleContext, type Rule } from './watcher';
 
@@ -118,6 +118,22 @@ const whisperFound: Rule = (() => {
   };
 })();
 
+/** The player listed ADVENT and the line that checks the code is on the screen, so the code can be read (the cheat). */
+const readCode: Rule = (() => {
+  let listed = false;
+  return (e, ctx) => {
+    const p = ctx.interp.program;
+    if (!isAdvent(p)) return;
+    if (e.type === 'list') {
+      const at = p.lines.find((l) => l.text.includes(`C$="${ADVENT_CODE}"`));
+      listed = !!at && e.from <= at.num && e.to >= at.num;
+    } else if (e.type === 'idle' && listed) {
+      listed = false;
+      if (screenText(ctx.interp.screen.vram).includes(`C$="${ADVENT_CODE}"`)) ctx.set('read-code');
+    }
+  };
+})();
+
 /** The adventure is won: the gold taken from the vault (with the door really opened, not by RUN 700). */
 const adventureWon: Rule = (e, ctx) => {
   if (e.type === 'line' && e.num === ADVENT.ending && isAdvent(ctx.interp.program) && advVar(ctx.interp, 'Q') === 1) ctx.set('adventure-won');
@@ -172,4 +188,4 @@ const extraLine: Rule = (() => {
   };
 })();
 
-export const ISSUE_1_RULES: readonly Rule[] = [sayHello, firstProgram, tapeInserted, adventureLoaded, adventureError, adventureRuns, looked, hasLamp, mapped, doorExamined, plateRead, clues, hasKey, whisperFound, doorOpen, adventureWon, extraLine];
+export const ISSUE_1_RULES: readonly Rule[] = [sayHello, firstProgram, tapeInserted, adventureLoaded, adventureError, adventureRuns, looked, hasLamp, mapped, doorExamined, plateRead, clues, hasKey, whisperFound, readCode, doorOpen, adventureWon, extraLine];

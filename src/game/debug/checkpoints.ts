@@ -28,6 +28,7 @@ export const STORY_FLAGS: readonly [flag: string, label: string][] = [
   ['altar-read', 'EXAMINE ALTAR'],
   ['whisper-found', 'LISTed the whisper (2)'],
   ['code-tried', 'a wrong code'],
+  ['read-code', 'LISTed the code line (the cheat)'],
   ['door-open', 'opened the vault door'],
   ['tamper-name', 'story: the name at the prompt'],
   ['adventure-won', 'took the cassette'],

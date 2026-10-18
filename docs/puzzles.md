@@ -74,12 +74,16 @@ order. Nothing in the magazine is needed beyond the map. The four numbers, one s
 
 **The order** is the map read like a page: top row left to right (tower, chapel), then the next rows (gallery, then cellar).
 Code **6279**. A wrong four-digit code says how many wheels clicked (right digit, right place), so a player with the four
-numbers but the wrong order can always work it out; anything but four characters says the lock has four wheels. The listing
-does not give the code away: the check compares each wheel with a letter of `"LHMO"` less 22 (ASCII), which a curious
-player can decode with `PRINT CHR$(ASC("L")-22)`, but nothing teaches it.
+numbers but the wrong order can always work it out; anything but four characters says the lock has four wheels.
+
+*The cheat* stays open too: `BREAK` at the code prompt, a plain `LIST`, read `IF C$="6279"` on the last rows (the door-code
+subroutine is the very last thing in the program, lines 900 and up, reached by `GOSUB` from the move code, so the screen's
+last 16 rows always show it), `CONT`, type it. Taught by the page on stopping a program, which the altar already sends the
+player to. Flag `read-code` (line 930 really on the screen at the end of a LIST); the notebook's "Open!" line says which way
+the player got in.
 Flags: `lock-examined` (door or plate), `door-examined`, `plate-read`, `clock-read`, `mirror-read`, `box-seen`, `has-key`,
 `box-opened`, `card-read`, `whisper-heard`, `altar-read`, `whisper-found` (line 274 really on the screen at the end of a
-LIST), `code-tried`, `door-open`. The notebook writes down what was seen in each room, never the digit (the listing's REM is
+LIST), `code-tried`, `read-code`, `door-open`. The notebook writes down what was seen in each room, never the digit (the listing's REM is
 the exception, quoted once found), and points at the map page for the order and at the stopping page for the 270s.
 Entering the vault with the door really unlocked sets `door-open`.
 
@@ -94,7 +98,7 @@ Tutorial note: the page's check table is the only way to see the difference with
 ## Built
 
 - The puzzle watcher and rules for P1–P4 (`src/game/puzzles/`), and `tapes/advent.bas` (eight rooms, see the map above;
-  code 6279, checked wheel by wheel at lines 930-960, last in the program). Flags ticked: `printed`, `first-program`, `adventure-runs`, `looked`, `has-lamp`,
+  code 6279 in plain digits at line 930, then counted wheel by wheel to 960, last in the program). Flags ticked: `printed`, `first-program`, `adventure-runs`, `looked`, `has-lamp`,
   `door-open`. `mapped` has no rule (nothing the machine can see).
 - The issue grew to 16 pages here, then 18 (see P5). Page 11 prints P2's program from `FIRST_PROGRAM` (RAINBOW CHECK table included), page 12
   (`magazine/learn.ts`) teaches line numbers, RUN, LIST, editing and deleting a line plus the error codes, and page 13

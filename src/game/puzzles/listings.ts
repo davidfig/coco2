@@ -22,7 +22,8 @@ export const FIRST_PROGRAM: readonly string[] = [
  * order they are read off the player's map like a page (`plate`): the tower clock (`clock`: one hand, straight down, 6), the
  * chapel's whisper, which is only in a REM (`whisper`: TWO, pointed at by the `altar`), the gallery mirror (`mirror`: NEVES, 7)
  * and the cellar's box, opened with the study desk's key (`box` locked, `unlock`, `card`: the nine of clubs). Code 6279.
- * `door` is EXAMINE DOOR, `cellar` where the cellar shows its box, `tried` a wrong code (it says how many wheels clicked),
+ * The code is in plain digits at line 930 (`IF C$=`), the last lines of the program, so BREAK at the prompt and a plain LIST
+ * shows it: the cheat, alongside the rooms. `door` is EXAMINE DOOR, `cellar` where the cellar shows its box, `tried` a wrong code (it says how many wheels clicked),
  * `vault` the room behind the door and `ending` where taking the gold there wins. `mapRooms` are the room numbers (ADVENT's R)
  * of every room but the vault. The variables are Q (door unlocked), LP (the lamp's room, 0 when carried) and KY (the key's).
  */
@@ -72,3 +73,6 @@ export const GUESS_EXTRA_TEXT = guess
 export const GUESS_PRINTED: readonly string[] = guess
   .split('\n')
   .filter((l) => l.trim() !== '' && !l.startsWith(`${GUESS_EXTRA_LINE} `));
+
+/** The door's code, read from ADVENT's own `IF C$=` line so that the rules can never drift from the tape. */
+export const ADVENT_CODE = /IF C\$="(\d+)"/.exec(advent)![1];
