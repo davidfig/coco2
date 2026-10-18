@@ -146,18 +146,21 @@ const DESK_PAPER_THICKNESS = 0.022;
 
 /**
  * Put away with the desk in view, the magazine lies on the table at `spot`, seen through the room's camera (`t` of the way there:
- * coming out, it rises off it). The view to draw and point with (its `cam` set while on the table), the camera, the light.
+ * coming out, it rises off it). The view to draw and point with (its `cam` set while on the table), the camera, the light,
+ * and how far it lies (`uDesk`).
  */
-export function onTable(v: View, t: number, spot: DeskSpot, picture: readonly number[]): { view: View; cam: Cam; light: number } {
+export function onTable(v: View, t: number, spot: DeskSpot, picture: readonly number[]): { view: View; cam: Cam; light: number; desk: number } {
   const own = viewCam(v);
-  if (t <= 0) return { view: v, cam: own, light: 1 };
+  if (t <= 0) return { view: v, cam: own, light: 1, desk: 0 };
   const cam = mixCam(own, deskCam(spot, picture, v.win), t, [0.5 * (v.win[0] + v.win[1]), 0, 0]);
   const c = v.clip;
   const clip: View['clip'] = [lerp(c[0], 0, t), lerp(c[1], 0, t), lerp(c[2], v.W, t), lerp(c[3], v.H, t)];
-  // Seen from across the room the block of paper shows its true thickness, its sides a band of sheet edges.
+  // Seen from across the room the block of paper shows its true thickness, its sides a band of sheet edges. Put down
+  // open at a page, it is folded back on its spine: the whole block lies under the page in view, the other half under.
   const k = lerp(1, DESK_PAPER_THICKNESS / PAPER_THICKNESS, t);
-  const ext: View['ext'] = [v.ext[0], v.ext[1], v.ext[2] * k, v.ext[3] * k];
-  return { view: { ...v, cam, clip, ext }, cam, light: lerp(1, DESK_LIGHT, t) };
+  const all = v.ext[2] + v.ext[3];
+  const ext: View['ext'] = [v.ext[0], v.ext[1], lerp(v.ext[2], all, t) * k, lerp(v.ext[3], all, t) * k];
+  return { view: { ...v, cam, clip, ext }, cam, light: lerp(1, DESK_LIGHT, t), desk: t };
 }
 
 /** Hand camera `cam` and the room's `light` to the book shader (`uRayO`, `uRayM`, `uScale`, `uFocal`, `uLight`). */

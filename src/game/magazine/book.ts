@@ -319,7 +319,7 @@ export class Magazine {
   draw(): void {
     const gl = this.gl;
     const desk = this.desk();
-    const { view: v, cam, light } = onTable(this.v, desk.spot ? desk.t * (1 - smooth(this.openT)) : 0, desk.spot!, desk.picture);
+    const { view: v, cam, light, desk: lying } = onTable(this.v, desk.spot ? desk.t * (1 - smooth(this.openT)) : 0, desk.spot!, desk.picture);
     this.v = v;
     if (v.clip[0] >= v.W || v.clip[1] >= v.H || v.clip[2] <= 0 || v.clip[3] <= 0) return;
     const f = this.flip;
@@ -330,7 +330,7 @@ export class Magazine {
     const vals = { res: [v.W, v.H], clip: v.clip, theta: angle, flipOn: f ? 1 : 0, bend: this.bend, fold: smooth(this.openT), layers: [L, R, F, B], ext: v.ext, win: v.win };
     // The book lies still more often than not while the rest moves: its picture is kept, and marched again only when
     // something it shows changes (the view, the leaf, a page painted).
-    const key = [...Object.values(vals).flat(), ...cam.o, ...cam.m, cam.scale, cam.focal, light, ...bounds, this.count, this.pages.version];
+    const key = [...Object.values(vals).flat(), ...cam.o, ...cam.m, cam.scale, cam.focal, light, lying, ...bounds, this.count, this.pages.version];
     gl.bindVertexArray(this.vao);
     this.kept.draw(key, bounds, () => {
       gl.useProgram(this.program.prog);
@@ -346,6 +346,7 @@ export class Magazine {
       [u.uL, u.uR, u.uF, u.uB].forEach((loc, i) => gl.uniform1f(loc, vals.layers[i]));
       gl.uniform4f(u.uExt, ...v.ext);
       gl.uniform2f(u.uWin, ...v.win);
+      gl.uniform1f(u.uDesk, lying);
       gl.uniform1f(u.uTexW, PAGE_W);
       gl.uniform1f(u.uLastPage, this.count - 1);
       gl.activeTexture(gl.TEXTURE1);

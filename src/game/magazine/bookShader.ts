@@ -1,9 +1,12 @@
+import { BOOK_EDGES } from './bookEdges';
+
 /**
  * The magazine as a real object. Book space: the spine is x = 0, a page is 1 wide and `uH` tall, y up, z toward the
  * viewer. A camera looks down at it from a tilt. Each pixel casts a ray: it is marched against the book's top surface
  * (a stack of paper whose thickness differs left and right of the spine, with the pages bowing up away from the gutter),
  * which also finds the white paper edges where the ray runs into the side of the block. A turning leaf is a sheet
- * hinged at the spine and bent into an arc, intersected analytically; whichever is nearer wins.
+ * hinged at the spine and bent into an arc, intersected analytically; whichever is nearer wins. Lying on the table
+ * (`uDesk`) it is folded back: the whole block under the page in view, wrapped round a swollen, rounded spine.
  */
 export const BOOK_FRAG = /* glsl */ `#version 300 es
 precision highp float;
@@ -25,6 +28,7 @@ uniform vec4 uExt;        // x extents (min, max), then the paper's thickness le
 uniform vec2 uWin;        // the part of the book in view (one page): drawn as a clean cut, no paper side shows there
 uniform float uTexW;
 uniform float uLastPage; // layer of the back cover (the front is 0): the glossy ones
+uniform float uDesk;      // 0..1: lying on the table, folded back on its spine (bookCam.ts's onTable), the fold rounded
 uniform sampler2DArray uPages;
 out vec4 outColor;
 
@@ -37,20 +41,46 @@ const vec3 LIGHT = vec3(-0.4, 0.45, 0.8);
 float bowlK() { return smoothstep(0.9, 1.8, uWin.y - uWin.x); }
 float bowl(float x) { return BOWL * bowlK() * (1.0 - exp(-abs(x) * 4.5)); }
 
+/**
+ * Lying on the table: which way from the spine the page in view lies (1 right, -1 left), and the fold's radius. Paper
+ * doesn't fold flat: the block swells by half again toward the spine and wraps round it in a half round that big.
+ */
+float spineS() { return uWin.x + uWin.y >= 0.0 ? 1.0 : -1.0; }
+float spineR() { return uDesk > 0.0 ? 0.75 * (spineS() > 0.0 ? uExt.w : uExt.z) : 0.0; }
+float foldLift(float x) {
+  float u = x * spineS();
+  return uDesk > 0.0 ? 0.6667 * spineR() * exp(-u * u * 100.0) : 0.0;
+}
+
 /** Height of the top of the book at q, ignoring where the book ends. */
 float heightAt(vec2 q) {
   float yy = clamp(q.y / (uH * 0.5), -1.0, 1.0);
-  // Pages bow up away from the gutter, and the outer corners curl up a little more.
+  // Pages bow up away from the gutter, and the outer corners curl up a little more; lying on the table, under its own
+  // weight, hardly at all (the block under a curl is drawn solid, so a bigger one would stand up as a wedge of edges).
   float lift = CURL * yy * yy * smoothstep(0.25, 1.0, abs(q.x)) + 0.012 * yy * smoothstep(0.2, 1.0, abs(q.x));
-  return mix(uExt.z, uExt.w, smoothstep(-0.04, 0.04, q.x)) + bowl(q.x) + lift;
+  lift *= 1.0 - 0.9 * uDesk;
+  return mix(uExt.z, uExt.w, smoothstep(-0.04, 0.04, q.x)) + bowl(q.x) + lift + foldLift(q.x);
 }
 
 /** Height of the top of the book at q, or -1 where there is no book. */
 float topAt(vec2 q) {
+  if (uDesk > 0.0) {
+    // Folded back, nothing lies past the spine but the fold itself: the sheets bent round it, a half round.
+    float u = q.x * spineS(), R = spineR();
+    if (u < 0.0) return u < -R || abs(q.y) > uH * 0.5 ? -1.0 : R + sqrt(max(R * R - u * u, 0.0));
+  }
   if (q.x < uExt.x || q.x > uExt.y || abs(q.y) > uH * 0.5) return -1.0;
   if (q.x < 0.0 && uL < 0.0) return -1.0;
   if (q.x >= 0.0 && uR < 0.0) return -1.0;
   return heightAt(q);
+}
+
+/** Whether q is inside the book: under its top, and over the underside of the fold where it curls back in. */
+bool inBook(vec3 q) {
+  float h = topAt(q.xy);
+  if (h < 0.0 || q.z > h) return false;
+  float u = q.x * spineS(), R = spineR();
+  return uDesk <= 0.0 || u >= 0.0 || q.z >= R - sqrt(max(R * R - u * u, 0.0));
 }
 
 vec3 atHeight(vec3 o, vec3 d, float z) { return o + d * ((z - o.z) / d.z); }
@@ -62,36 +92,7 @@ vec3 samplePage(float layer, vec2 uv) {
   return textureLod(uPages, vec3(uv.x, 1.0 - uv.y, layer), lod).rgb;
 }
 
-float hash1(float n) { return fract(sin(n * 91.345) * 47453.21); }
-
-/**
- * The side of the block of paper at P (on it, below the top), px pixels to a book unit there. Bound edge: the cover
- * folded round the spine. Elsewhere the sheets' edges, off-white in fine layers (the print is only on their faces).
- * Each face takes the light by which way it looks.
- */
-vec3 sideColor(vec3 P, float px) {
-  float hh = uH * 0.5;
-  bool right = P.x >= 0.0;
-  float top = right ? uR : uL;
-  float th = max(right ? uExt.w : uExt.z, 1e-4);
-  float v = clamp(P.y / uH + 0.5, 0.001, 0.999);
-  float dSpine = (right ? uL : uR) < 0.0 ? abs(P.x) : 1e9;
-  float dOut = right ? abs(uExt.y - P.x) : abs(P.x - uExt.x);
-  float dEnd = hh - abs(P.y);
-  vec3 n = dSpine <= min(dOut, dEnd) ? vec3(right ? -1.0 : 1.0, 0.0, 0.0)
-         : dOut <= dEnd ? vec3(right ? 1.0 : -1.0, 0.0, 0.0) : vec3(0.0, sign(P.y), 0.0);
-  float lit = 0.6 + 0.4 * max(dot(n, normalize(LIGHT)), 0.0);
-  if (dSpine <= min(dOut, dEnd)) return samplePage(top, vec2(right ? 0.002 : 0.998, v)) * 0.85 * lit;
-  // Height up the side, 0 (on the table) to 1 (the top sheet, wherever the corners curl), and how many pixels a sheet
-  // spans there: the layers fade out where they are finer than a pixel or two.
-  float z = clamp(P.z / max(heightAt(P.xy), th), 0.0, 1.0);
-  const float SHEETS = 40.0;
-  float s = floor(z * SHEETS);
-  float grain = 0.93 + 0.07 * hash1(s) - 0.12 * step(0.93, hash1(s + 17.0));
-  // The cover's stock, at the bottom, is a little whiter than the newsprint above it.
-  grain = mix(grain, 1.04, step(s, 0.0));
-  return vec3(0.9, 0.88, 0.82) * mix(0.96, grain, smoothstep(1.0, 3.0, px * th / SHEETS)) * lit;
-}
+${BOOK_EDGES}
 
 float sdBox(vec2 p, vec2 b) {
   vec2 q = abs(p) - b;
@@ -113,10 +114,15 @@ void main() {
   vec2 xr = vec2(max(uExt.x, uWin.x), min(uExt.y, uWin.y));
   if (uL < 0.0) xr.x = max(xr.x, 0.0);
   if (uR < 0.0) xr.y = min(xr.y, 0.0);
+  if (uDesk > 0.0) xr += spineR() * (spineS() > 0.0 ? vec2(-1.0, 0.0) : vec2(0.0, 1.0));
   vec3 E = atHeight(o, dc, heightAt(vec2(0.5 * (xr.x + xr.y), 0.0)));
   for (int i = 0; i < 3; i++) E = atHeight(o, dc, heightAt(clamp(E.xy, vec2(xr.x, -hh), vec2(xr.y, hh))));
   float dFoot = -hh - atHeight(o, dc, 0.0).y;
   float dEdge = max(max(xr.x - E.x, E.x - xr.y), max(E.y - hh, dFoot));
+  // Below the near edge, on the block's side, it ends where the ray meets that side (not where it met the top's height,
+  // which perspective carries past the corner and leaves a sliver standing off it).
+  vec3 S = o + dc * ((-hh - o.y) / (abs(dc.y) > 1e-6 ? dc.y : 1e-6));
+  if (E.y < -hh) dEdge = max(dEdge, max(xr.x - S.x, S.x - xr.y));
   float cover = clamp(0.5 - dEdge / max(fwidth(dEdge), 1e-6), 0.0, 1.0);
   if (g.x < uClip.x || g.y < uClip.y || g.x > uClip.z || g.y > uClip.w) { outColor = vec4(0.0); return; }
   // Lying on the table, the room's camera sees past the horizon: a ray going up never meets the book or its shadow.
@@ -132,18 +138,16 @@ void main() {
   float prev = t0;
   // A ray whose stretch through the slab passes wide of the book can't meet it (topAt is -1 all along): no march.
   vec3 q0 = o + d * t0, q1 = o + d * t1;
-  bool wide = max(q0.x, q1.x) < uExt.x || min(q0.x, q1.x) > uExt.y || (min(abs(q0.y), abs(q1.y)) > hh && q0.y * q1.y > 0.0);
+  bool wide = max(q0.x, q1.x) < uExt.x - spineR() || min(q0.x, q1.x) > uExt.y + spineR() || (min(abs(q0.y), abs(q1.y)) > hh && q0.y * q1.y > 0.0);
   for (int i = 1; i <= (wide ? 0 : 56); i++) {
     float t = mix(t0, t1, float(i) / 56.0);
     vec3 q = o + d * t;
-    float h = topAt(q.xy);
-    if (h >= 0.0 && q.z <= h) {
+    if (inBook(q)) {
       float a = prev, b = t;
       for (int k = 0; k < 6; k++) {
         float m = 0.5 * (a + b);
         vec3 qm = o + d * m;
-        float hm = topAt(qm.xy);
-        if (hm >= 0.0 && qm.z <= hm) b = m; else a = m;
+        if (inBook(qm)) b = m; else a = m;
       }
       tBook = b;
       P = o + d * b;
@@ -152,16 +156,30 @@ void main() {
     prev = t;
   }
 
-  if (tBook < 1e8 && (P.x < uWin.x || P.x > uWin.y)) tBook = 1e9;
+  // The fold lies just past the page in view, on the spine's side.
+  vec2 win = uWin + spineR() * (spineS() > 0.0 ? vec2(-1.0, 0.0) : vec2(0.0, 1.0));
+  if (tBook < 1e8 && (P.x < win.x || P.x > win.y)) tBook = 1e9;
 
   vec3 col = vec3(0.0);
   float a = 0.0;
   if (tBook < 1e8) {
     float h = topAt(P.xy);
-    if (h - P.z < 0.006) {
+    // How far below the top the ray met the block, in pixels: on its side, eased in over the first pixel and a half so
+    // the edge between the two doesn't step.
+    float below = (h - P.z) * pxUnit / tBook * sqrt(max(1.0 - d.z * d.z, 0.0));
+    float side = smoothstep(0.0, 1.5, below);
+    float u = P.x * spineS();
+    float R = max(spineR(), 1e-5);
+    if (uDesk > 0.0 && u < 0.0 && R - length(vec2(u, P.z - R)) < hh - abs(P.y)) {
+      // The fold: the page in view bent round it (its sheet is the outermost there), lit by which way it faces.
+      vec3 n = normalize(vec3(P.x, 0.0, P.z - R));
+      float lit = 0.6 + 0.4 * max(dot(n, normalize(LIGHT)), 0.0) / normalize(LIGHT).z;
+      col = samplePage(spineS() > 0.0 ? uR : uL, vec2(spineS() > 0.0 ? 0.002 : 0.998, clamp(P.y / uH + 0.5, 0.001, 0.999))) * min(lit, 1.0);
+      side = 0.0;
+    } else if (side < 1.0) {
       // The page itself.
       float x = P.x;
-      vec2 uv = vec2(x >= 0.0 ? x : x + 1.0, P.y / uH + 0.5);
+      vec2 uv = clamp(vec2(x >= 0.0 ? x : x + 1.0, P.y / uH + 0.5), 0.001, 0.999);
       col = samplePage(x >= 0.0 ? uR : uL, uv);
       // Lit flat, the way a leaf is in the hand, so a page looks the same resting as it does turning.
       // The fold at the gutter only shades where a facing page meets it, not at a cover's spine edge.
@@ -176,16 +194,16 @@ void main() {
         float shade = smoothstep(0.0, 0.12, d) * (1.0 - smoothstep(0.8, 1.1, d));
         col *= 1.0 - 0.5 * shade * smoothstep(0.0, 0.25, sn);
       }
-    } else {
-      // The block's side: the sheets' edges.
-      col = sideColor(vec3(clamp(P.x, uExt.x, uExt.y), P.yz), pxUnit / tBook);
     }
+    // The block's side: the sheets' edges.
+    else if (uDesk > 0.0 && u < 0.0) side = 1.0;
+    if (side > 0.0) col = mix(col, sideColor(vec3(clamp(P.x, uExt.x - spineR(), uExt.y + spineR()), P.yz), pxUnit / tBook * sqrt(max(1.0 - d.z * d.z, 0.0))), side);
     a = 1.0;
   } else if (cover > 0.0) {
     // Just outside what the march found, inside the smooth outline: the paper there, or its side by the near edge.
     vec2 q = clamp(E.xy, vec2(xr.x, -hh), vec2(xr.y, hh));
     vec2 uv = clamp(vec2(q.x >= 0.0 ? q.x : q.x + 1.0, q.y / uH + 0.5), 0.001, 0.999);
-    col = dFoot >= dEdge ? sideColor(vec3(q, 0.5 * (q.x >= 0.0 ? uExt.w : uExt.z)), pxUnit / length(E - o)) : samplePage(q.x >= 0.0 ? uR : uL, uv);
+    col = dFoot >= dEdge || E.y < -hh ? sideColor(vec3(q, 0.5 * (q.x >= 0.0 ? uExt.w : uExt.z)), pxUnit / length(E - o) * sqrt(max(1.0 - d.z * d.z, 0.0))) : samplePage(q.x >= 0.0 ? uR : uL, uv);
     a = 1.0;
   }
   a *= cover;
