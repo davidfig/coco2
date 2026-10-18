@@ -53,6 +53,8 @@ export class Touch {
   /** Seconds since the cabinet was last smacked (the picture's jolt and the set's shake run off it). */
   sinceSmack = 99;
   private hover: 'switch' | 'glass' | 'smack' | null = null;
+  /** Called after a smack by hand on the cabinet (main.ts: a phone asks, then, to be shaken instead). */
+  onHandSmack: () => void = () => {};
   /** The pointer wiping the glass, and where it was last (tube coordinates). */
   private wiping: { id: number; x: number; y: number } | null = null;
 
@@ -66,6 +68,13 @@ export class Touch {
   ) {
     this.rock = power.isOn() ? 1 : -1;
     this.listen();
+  }
+
+  /** The cabinet takes a smack: a hand on its top-left, or the whole phone shaken (`touch/shake.ts`). */
+  smack(): void {
+    this.sinceSmack = 0;
+    this.onSmack();
+    this.onEvent('smack');
   }
 
   update(dt: number): void {
@@ -120,9 +129,8 @@ export class Touch {
         c.setPointerCapture(e.pointerId);
         this.wiping = { id: e.pointerId, x: hit.tx, y: hit.ty };
       } else {
-        this.sinceSmack = 0;
-        this.onSmack();
-        this.onEvent('smack');
+        this.smack();
+        this.onHandSmack();
       }
     });
     c.addEventListener('pointermove', (e) => {

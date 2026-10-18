@@ -12,7 +12,7 @@ import { RoomLights } from './game/room/lights';
 import { smooth } from './game/magazine/bookLayout';
 import { ISSUE_1_RULES, ISSUE_2_RULES, PuzzleWatcher } from './game/puzzles';
 import { Issue1Story, Issue2Story } from './game/story';
-import { TouchKeys, wantsTouchKeys } from './game/touch';
+import { Shake, TouchKeys, installable, wantsTouchKeys } from './game/touch';
 import { Tv } from './game/tv/tv';
 import { TAMPER_STYLES, TamperStyle } from './game/tv/tvShader';
 import { readTvSettings } from './game/tv/tvSave';
@@ -88,6 +88,10 @@ if (readTvSettings().on !== false) tv.switchOn(!instant, instant ? 0 : lights.on
 computer.onKey = (k) => engine.keyboard.push(k);
 /** Phones and tablets get the machine's keyboard as a strip along the bottom (`?touch` forces it, `?notouch` leaves it out). */
 const touchKeys = wantsTouchKeys(params) ? new TouchKeys(computer.keys) : null;
+/** A phone shaken smacks the set (iOS asks leave to read the motion at the first smack by hand). */
+installable(import.meta.env.PROD);
+const shake = new Shake(() => tv.touch.smack());
+tv.touch.onHandSmack = () => shake.ask();
 engine.earlyUpdaters.push((dt) => {
   const typed = engine.keyboard.drain();
   computer.keys.typed(typed);
