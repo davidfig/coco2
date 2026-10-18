@@ -20,7 +20,7 @@ export const FIRST_PROGRAM: readonly string[] = [
  * `typo` is the line with the misspelled word (it gives ?SN ERROR) and `fixed` the first line after it; `describe` prints a
  * room; `prompt` is where it waits for a command. The door's lock wants four numbers, one in each of four rooms, set in the
  * order they are read off the player's map like a page (`plate`): the tower clock (`clock`: one hand, straight down, 6), the
- * chapel's whisper, which is only in a REM (`whisper`: TWO, pointed at by the `altar`), the gallery mirror (`mirror`: NEVES, 7)
+ * chapel's whisper (`whisper`: TWO), heard by LISTENing there (`listened`) or read in its REM, which the `altar` points at, the gallery mirror (`mirror`: NEVES, 7)
  * and the cellar's box, opened with the study desk's key (`box` locked, `unlock`, `card`: the nine of clubs). Code 6279.
  * The code is in plain digits at line 930 (`IF C$=`), the last lines of the program, so BREAK at the prompt and a plain LIST
  * shows it: the cheat, alongside the rooms. `door` is EXAMINE DOOR, `cellar` where the cellar shows its box, `tried` a wrong code (it says how many wheels clicked),
@@ -35,6 +35,7 @@ export const ADVENT = {
   vault: 240,
   chapel: 272,
   whisper: 274,
+  listened: 576,
   cellar: 282,
   door: 640,
   plate: 645,

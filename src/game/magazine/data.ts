@@ -13,6 +13,7 @@ export const COMMANDS: readonly [string, string][] = [
   ['EXAMINE DOOR', 'Look closely at one thing.'],
   ['INVENTORY', 'List what you are carrying. I will do.'],
   ['USE KEY', 'Try an object where you stand.'],
+  ['LISTEN', 'Keep still and hear what is about.'],
 ];
 
 export function newState(): IssueState {

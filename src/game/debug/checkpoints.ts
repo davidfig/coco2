@@ -27,6 +27,7 @@ export const STORY_FLAGS: readonly [flag: string, label: string][] = [
   ['card-read', 'read the card (9)'],
   ['whisper-heard', 'heard the chapel whisper'],
   ['altar-read', 'EXAMINE ALTAR'],
+  ['whisper-listened', 'LISTEN in the chapel (2)'],
   ['whisper-found', 'LISTed the whisper (2)'],
   ['code-tried', 'a wrong code'],
   ['read-code', 'LISTed the code line (the cheat)'],
@@ -80,7 +81,7 @@ const BROKEN = [...HELLO, 'adventure-loaded', 'adventure-sn'];
 const FIXED = [...BROKEN, 'adventure-runs'];
 const LAMP = [...FIXED, 'looked', 'tamper-lamp', 'has-lamp'];
 const AT_DOOR = [...LAMP, 'mapped', 'door-examined', 'lock-examined', 'plate-read'];
-const CLUES = [...AT_DOOR, 'clock-read', 'mirror-read', 'box-seen', 'has-key', 'box-opened', 'card-read', 'whisper-heard', 'altar-read', 'whisper-found'];
+const CLUES = [...AT_DOOR, 'clock-read', 'mirror-read', 'box-seen', 'has-key', 'box-opened', 'card-read', 'whisper-heard', 'whisper-listened', 'altar-read', 'whisper-found'];
 const OPEN = [...CLUES, 'door-open'];
 const WON = [...OPEN, 'tamper-name', 'adventure-won', 'tamper-voice'];
 const FOUND = [...WON, 'seen-guess', 'found-extra-line'];

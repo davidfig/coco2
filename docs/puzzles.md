@@ -64,9 +64,12 @@ CELLAR (8) --- STORE ROOM (1, start, dark)
 `EXAMINE PLATE`: four rooms hold a number each; read them off your map as you would read a page and set the wheels in that
 order. Nothing in the magazine is needed beyond the map. The four numbers, one skill each:
 1. *Tower, observe and think* (`EXAMINE CLOCK`): the clock has one hand, pointing straight down. **6**.
-2. *Chapel, the listing*: the room says someone whispers a number, gone before you hear it; `EXAMINE ALTAR`: "I cannot say
-   it aloud, so I wrote it in my lines, in the 270s. Stop me and read them." BREAK, `LIST 270-280` (taught on the stopping
-   page), and line 274 is `REM THE WHISPER: TWO`. **2**. It is the one number that never appears on the screen while playing.
+2. *Chapel, listen or read the listing*: the room says someone whispers a number, gone before you hear it. Two ways to it:
+   - *In the game*: `LISTEN` (a verb on the how-to-play page, with a reply in every room so it doesn't point here;
+     `EXAMINE WHISPER`: "You would have to listen.") holds your breath and a voice breathes `TWO.` (line 576).
+   - *In the code*: `EXAMINE ALTAR`: "I cannot say it aloud, so I wrote it in my lines, in the 270s. Stop me and read
+     them." BREAK, `LIST 270-280` (taught on the stopping page), and line 274 is `REM THE WHISPER: TWO`.
+   **2**.
 3. *Gallery, wordplay* (`EXAMINE MIRROR`): in the dust on the glass, `NEVES`, SEVEN backwards. **7**.
 4. *Cellar, an object* (a key for a box): the cellar's iron box is locked; the key is in the study desk (`EXAMINE DESK`,
    `TAKE KEY`), and `USE KEY` (or `OPEN BOX`) in the cellar shows a card, the nine of clubs. **9**. The map page's own text
@@ -82,9 +85,9 @@ last 16 rows always show it), `CONT`, type it. Taught by the page on stopping a 
 player to. Flag `read-code` (line 930 really on the screen at the end of a LIST); the notebook's "Open!" line says which way
 the player got in.
 Flags: `lock-examined` (door or plate), `door-examined`, `plate-read`, `clock-read`, `mirror-read`, `box-seen`, `has-key`,
-`box-opened`, `card-read`, `whisper-heard`, `altar-read`, `whisper-found` (line 274 really on the screen at the end of a
-LIST), `code-tried`, `read-code`, `door-open`. The notebook writes down what was seen in each room, never the digit (the listing's REM is
-the exception, quoted once found), and points at the map page for the order and at the stopping page for the 270s.
+`box-opened`, `card-read`, `whisper-heard`, `whisper-listened` (LISTEN in the chapel), `altar-read`, `whisper-found` (line 274 really on the screen at the end of a
+LIST), `code-tried`, `read-code`, `door-open`. The notebook writes down what was seen in each room, never the digit (the whisper is
+the exception, quoted once heard or found), and points at the map page for the order and at the stopping page for the 270s.
 Entering the vault with the door really unlocked sets `door-open`.
 
 **The ending.** Behind the door is a small vault, a room like the others (exit south) with a chest of gold (`EXAMINE GOLD`: old coins, heaped to the lid). `TAKE GOLD` (or `TAKE CHEST`) wins: the screen clears (still green: a black screen hid the shimmer) for "YOU TAKE THE GOLD. / *** YOU HAVE WON *** / SCORE: 100 OF 100", and the program ends with BASIC's OK; then HELLO writes itself above the prompt (see `docs/flags.md`). Flag `adventure-won`. The notebook: "A vault. A chest of gold!", then "Took the gold. WON! 100/100", once HELLO has appeared (`tamper-voice`), "Strange: after the game, HELLO came up on the screen by itself. Shimmering. What is that?", then the label's question. Kessler's note is on the real tape's label instead, noted the first time the tape is used (`tape-inserted`).

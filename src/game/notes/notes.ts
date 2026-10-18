@@ -49,8 +49,9 @@ export const NOTES: readonly Note[] = [
   { id: 'box', when: 'box-seen', text: 'Cellar: iron box, locked. Key somewhere?', mood: 0.15, ask: true, solved: 'box-opened', orSolved: 'card-read' },
   { id: 'key', when: 'has-key', text: 'Small iron key, from the study desk', mood: 0.14 },
   { id: 'card', when: 'card-read', text: 'In the box: one card, the nine of clubs', mood: 0.16 },
-  { id: 'whisper', when: 'whisper-heard', text: 'Chapel: a whisper, gone before I hear it', mood: 0.18, ask: true, solved: 'whisper-found' },
-  { id: 'altar', when: 'altar-read', text: `Altar: "wrote it in my lines, the 270s". ESC, LIST 270-280? p.${pageNo('stopping')}`, mood: 0.2, ask: true, solved: 'whisper-found' },
+  { id: 'whisper', when: 'whisper-heard', text: 'Chapel: a whisper, gone before I hear it', mood: 0.18, ask: true, solved: 'whisper-found', orSolved: 'whisper-listened' },
+  { id: 'altar', when: 'altar-read', text: `Altar: "wrote it in my lines, the 270s". ESC, LIST 270-280? p.${pageNo('stopping')}`, mood: 0.2, ask: true, solved: 'whisper-found', orSolved: 'whisper-listened' },
+  { id: 'listened', when: 'whisper-listened', text: 'Held my breath in the chapel. A voice: "Two"', mood: 0.22 },
   { id: 'heard', when: 'whisper-found', text: `Line ${ADVENT.whisper}, in the listing: ${ADVENT_WHISPER.charAt(0)}${ADVENT_WHISPER.slice(1).toLowerCase()}`, mood: 0.2 },
   { id: 'clicks', when: 'code-tried', text: 'Wrong code. Some wheels click: right number, right place?', mood: 0.18, ask: true, solved: 'door-open' },
   {

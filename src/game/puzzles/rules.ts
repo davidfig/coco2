@@ -86,6 +86,7 @@ const CLUES: readonly [line: number, flag: string][] = [
   [ADVENT.mirror, 'mirror-read'],
   [ADVENT.chapel, 'whisper-heard'],
   [ADVENT.altar, 'altar-read'],
+  [ADVENT.listened, 'whisper-listened'],
   [ADVENT.cellar, 'box-seen'],
   [ADVENT.box, 'box-seen'],
   [ADVENT.unlock, 'box-opened'],
@@ -103,7 +104,7 @@ const hasKey: Rule = (e, ctx) => {
 
 /**
  * The whisper was found: ADVENT was listed and its REM is on the screen when the listing ends (or the player deleted it,
- * which means they found it first). It is the one number that is only in the program.
+ * which means they found it first). The other way to it is to LISTEN in the chapel (`whisper-listened`).
  */
 const whisperFound: Rule = (() => {
   let listed = false;

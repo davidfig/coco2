@@ -52,3 +52,13 @@ test('ADVENT: the code opens the door and the gold wins', () => {
   expect(play(coco, 'TAKE GOLD')).toContain('YOU HAVE WON');
   expect(coco.interp.state).toBe('idle');
 });
+
+test('ADVENT: LISTEN in the chapel hears the whisper; elsewhere only the room', () => {
+  const coco = advent();
+  expect(play(coco, 'LISTEN')).toContain('MICE');
+  play(coco, 'TAKE LAMP', 'N', 'E', 'N');
+  expect(play(coco, 'EXAMINE WHISPER')).toContain('LISTEN');
+  const heard = play(coco, 'LISTEN');
+  expect(heard).toContain('A VOICE BREATHES');
+  expect(heard).toContain('TWO.');
+});
