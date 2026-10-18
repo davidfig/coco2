@@ -99,7 +99,10 @@ void main() {
   float t0 = (0.16 - o.z) / d.z;
   float t1 = (-o.z) / d.z;
   float prev = t0;
-  for (int i = 1; i <= 56; i++) {
+  // A ray whose stretch through the slab passes wide of the book can't meet it (topAt is -1 all along): no march.
+  vec3 q0 = o + d * t0, q1 = o + d * t1;
+  bool wide = max(q0.x, q1.x) < uExt.x || min(q0.x, q1.x) > uExt.y || (min(abs(q0.y), abs(q1.y)) > hh && q0.y * q1.y > 0.0);
+  for (int i = 1; i <= (wide ? 0 : 56); i++) {
     float t = mix(t0, t1, float(i) / 56.0);
     vec3 q = o + d * t;
     float h = topAt(q.xy);

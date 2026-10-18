@@ -68,7 +68,8 @@ Run `typecheck`, `check:size` and `test` before finishing any change. Design not
 ```
 src/test/check.ts     the test kit (test, expect, run); test files sit beside their code as *.test.ts
 src/main.ts           wires keyboard → BASIC → screen → VDG → TV, ?instant
-src/engine/           engine (loop, canvas size), keyboard (typed-key queue), gpu (programs, full-screen triangle, textures)
+src/engine/           engine (loop, canvas size), keyboard (typed-key queue), gpu (programs, full-screen triangle, textures),
+                      keptPass (a pass's picture kept, drawn again only when its inputs change)
 src/game/
   debug/              playtesting only: the F2 menu (debugMenu + debugStyle) and checkpoints (story flags in order, jump points)
   vdg/                the MC6847: charset (the 64-glyph ROM, ASCII → screen byte), palette, vdg (512 bytes → 256×192 RGBA)
@@ -123,10 +124,12 @@ src/game/
   picture is `FRAME`. The rest of the set (wood, knobs, grille) is still drawn and comes back into view if `FRAME` grows.
 - Every pass over the TV's is a full-screen triangle, so each sets `scissor()` (engine) to the pixels it can touch
   (`bookBounds`, the sheet's quad, the table's back edge): a new pass, or a shader that draws further, needs its bounds
-  widened. The CoCo's march is kept (`computer/marchCache.ts`) and marched again only when the glow or keys change
-  (just round the keys) or the view stops somewhere new. Its picture is fixed in panel units, so while the view moves the kept one
-  is drawn moved and scaled with it and only what comes into view is marched, at CSS-pixel resolution; a whole march only when the view
-  outruns the kept one's margin or drifts too far in scale. `main.ts` draws one dark frame and waits for it before starting
+  widened. The CoCo's march is kept (`computer/marchCache.ts`) and marched again only when the glow (held past the
+  cursor's blink) or keys change (just round the keys) or the view moves. Its picture is fixed in panel units, so while the
+  view moves the kept one is drawn moved and scaled with it and only what comes into view is marched, at CSS-pixel
+  resolution; the next kept one is made a band a frame in a second texture, aimed where the view is going, before the
+  shown one blurs or runs out of margin, and once the view stops the sharp one is made the same way. The magazine's pass
+  is kept too (`KeptPass`, engine): marched again only when something it shows changes. `main.ts` draws one dark frame and waits for it before starting
   the clock, so the GPU builds every shader (seconds on a cold cache) before the lights come on: a new pass should draw
   in that first frame. The TV's pass sets no blend state and expects blending off; leave it off after a pass. To time passes, sync with a 1-pixel `readPixels` and keep
   blending on: ANGLE/Metal timer queries are meaningless, and Apple GPUs skip opaque draws that a later one covers.

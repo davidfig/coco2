@@ -21,6 +21,8 @@ interface Rect {
 const BELOW = 0.1;
 /** How long the pull back takes, about (seconds). */
 const DESK_TIME = 0.6;
+/** How far the screen's light must move (any channel) before the machine is marched in the new light: past the cursor's blink. */
+const GLOW_STEP = 6 / 256;
 /** A press that moves further than this (CSS px) is a drag (wiping the glass), not a click. */
 const CLICK_SLOP = 6;
 
@@ -279,9 +281,11 @@ export class Computer {
     const moving = view.some((v, i) => v !== this.lastView[i]);
     this.lastView = view;
     const s = moving && this.canvas.clientWidth > 0 ? Math.min(1, Math.max(0.5, this.canvas.clientWidth / W)) : 1;
-    // The light thrown is rounded off: a few letters more or less on the screen shouldn't march it again. While the view
-    // moves it is held as it was (the march once it stops catches up), so the kept picture can move with the view.
-    const lit = moving && this.lit.length ? this.lit : glow.map((g) => Math.round(g * 256) / 256);
+    // The light thrown is held until it really changes: the cursor's blink and a few letters more or less on the screen
+    // shouldn't march it again. While the view moves it is held as it was (the march once it stops catches up), so the
+    // kept picture can move with the view.
+    const changed = !this.lit.length || glow.some((g, i) => Math.abs(g - this.lit[i]) > GLOW_STEP);
+    const lit = changed && (!moving || !this.lit.length) ? glow.map((g) => Math.round(g * 256) / 256) : this.lit;
     this.lit = lit;
     // A key going down or up changes only the caps round it (and the shade they throw): just that is marched again.
     const keys = this.keys.uniform();
