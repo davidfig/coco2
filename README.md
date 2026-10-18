@@ -44,7 +44,7 @@ design notes live in [docs/](docs/).
 
 ## License
 
-See [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
 
 This is a fan homage, not affiliated with or endorsed by Tandy, Radio Shack, Microsoft, Motorola or the publishers of
 *The Rainbow*. Those names and the boot message are theirs and appear only to recreate the machine as it was. The
