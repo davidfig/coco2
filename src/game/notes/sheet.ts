@@ -2,9 +2,15 @@ import { dash, hashSeed, measure, wrap, write } from '../handwriting';
 import { type Written, doodle } from './doodles';
 import { type Note, isSolved, noteText, visibleNotes } from './notes';
 import { type InkMark, ageOver, ageUnder } from './wear';
+import type { IssueId } from '../magazine/pages';
 
+/**
+ * A page torn out of a spiral notebook (Mead's one-subject, 10½ × 8 in with the wire; about 7½ in wide once torn
+ * out): drawn at `SHEET_DPI` pixels to the inch, the torn scraps (`EDGE`) included.
+ */
+export const SHEET_DPI = 104;
 export const SHEET_W = 800;
-export const SHEET_H = 1100;
+export const SHEET_H = 1092;
 
 const LINE_H = 40;
 const TOP = 112;
@@ -12,9 +18,9 @@ const LEFT = 120;
 const SIZE = 25;
 /** The paper's left edge: the strip before it holds only the scraps of the torn spiral edge. */
 const EDGE = 26;
-/** The punch holes down the left, at this x. */
+/** The punch holes down the left, at this x: three-hole punched, 4¼ in apart, about the middle. */
 const HOLE_X = 46;
-const HOLES = [190, 550, 910];
+const HOLES = [-1, 0, 1].map((i) => Math.round(SHEET_H / 2 + i * 4.25 * SHEET_DPI));
 /** The day the notes are dated: the story is set in 1986 and this is the March issue (see cover.ts). */
 const DATE = 'Mar 14, 1986';
 /** Rows of writing that fit under the heading. */
@@ -29,14 +35,9 @@ function rng(seed: number): () => number {
   };
 }
 
-/** Ruled notebook paper torn from a spiral binding, a margin, three punch holes. */
-function paper(ctx: CanvasRenderingContext2D, sheet = 0): void {
+/** The paper itself, ruled, over whatever is clipped: the same grain and blotches each time, so a scrap painted later matches the page it tore from. */
+function paint(ctx: CanvasRenderingContext2D, sheet: number): void {
   const r = rng(77 + sheet * 101);
-  ctx.clearRect(0, 0, SHEET_W, SHEET_H);
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(EDGE, 0, SHEET_W - EDGE, SHEET_H);
-  ctx.clip();
   ctx.fillStyle = '#f0ebda';
   ctx.fillRect(0, 0, SHEET_W, SHEET_H);
   for (let i = 0; i < 900; i++) {
@@ -64,15 +65,21 @@ function paper(ctx: CanvasRenderingContext2D, sheet = 0): void {
   ctx.moveTo(LEFT - 14, 0);
   ctx.lineTo(LEFT - 14, SHEET_H);
   ctx.stroke();
+}
+
+/** Ruled notebook paper torn from a spiral binding, a margin, three punch holes. */
+function paper(ctx: CanvasRenderingContext2D, sheet = 0): void {
+  const r = rng(177 + sheet * 101);
+  ctx.clearRect(0, 0, SHEET_W, SHEET_H);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(EDGE, 0, SHEET_W - EDGE, SHEET_H);
+  ctx.clip();
+  paint(ctx, sheet);
   ctx.restore();
-  // Punched holes and the ripped spiral edge are real gaps in the paper: cut out, so the room shows through.
+  // The ripped spiral edge and the punched holes are real gaps in the paper: cut out, so the room shows through.
   ctx.globalCompositeOperation = 'destination-out';
   ctx.fillStyle = '#000';
-  for (const y of HOLES) {
-    ctx.beginPath();
-    ctx.arc(HOLE_X, y, 15, 0, Math.PI * 2);
-    ctx.fill();
-  }
   // Each spiral ring tore partway free: the bites are cut into the edge, and between them the paper stays attached.
   const bites: { cy: number; rx: number; ry: number }[] = [];
   for (let y = 24; y < SHEET_H; y += 30 + r() * 14) {
@@ -106,24 +113,33 @@ function paper(ctx: CanvasRenderingContext2D, sheet = 0): void {
     }
     // The tip is a torn point, not a square end.
     const tip: [number, number] = [upper[n][0] - 2 - r() * 3, upper[n][1] + (lower[n][1] - upper[n][1]) * (0.3 + 0.6 * r()) + 2 * dir];
-    ctx.fillStyle = '#ebe5d1';
+    // Its root starts well inside the page, so the two are one piece of paper.
+    const outline = new Path2D();
+    outline.moveTo(EDGE + 12, upper[0][1]);
+    for (const p of upper) outline.lineTo(p[0], p[1]);
+    outline.lineTo(tip[0], tip[1]);
+    for (let i = n; i >= 0; i--) outline.lineTo(lower[i][0], lower[i][1]);
+    outline.lineTo(EDGE + 12, lower[0][1]);
+    outline.closePath();
+    ctx.save();
+    ctx.clip(outline);
+    paint(ctx, sheet);
+    // The underside is in shade where it hangs out past the edge.
     ctx.beginPath();
-    ctx.moveTo(EDGE + 5, upper[0][1]);
-    for (const p of upper) ctx.lineTo(p[0], p[1]);
-    ctx.lineTo(tip[0], tip[1]);
-    for (let i = n; i >= 0; i--) ctx.lineTo(lower[i][0], lower[i][1]);
-    ctx.lineTo(EDGE + 5, lower[0][1]);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(60,50,30,0.3)';
-    ctx.lineWidth = 0.9;
-    ctx.stroke();
-    // The underside is in shade where it hangs.
+    ctx.rect(0, 0, EDGE, SHEET_H);
+    ctx.clip();
     ctx.strokeStyle = 'rgba(60,50,30,0.18)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     lower.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
     ctx.stroke();
+    ctx.restore();
+    // Its torn edge, only where it meets the gap: drawn behind the paper, so none of it crosses the page.
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.strokeStyle = 'rgba(60,50,30,0.3)';
+    ctx.lineWidth = 1.8;
+    ctx.stroke(outline);
+    ctx.globalCompositeOperation = 'source-over';
   };
   // Joints are the paper left between neighbouring bites; some tore clean and keep no strip at all.
   for (let i = 1; i < bites.length; i++) {
@@ -132,6 +148,14 @@ function paper(ctx: CanvasRenderingContext2D, sheet = 0): void {
     if (room < 3 || r() < 0.18) continue;
     scrap(a.cy + a.ry + room * (0.3 + 0.4 * r()), r() < 0.5 ? 1 : -1, room + 2);
   }
+  // The holes go last, through any scrap's root too.
+  ctx.globalCompositeOperation = 'destination-out';
+  for (const y of HOLES) {
+    ctx.beginPath();
+    ctx.arc(HOLE_X, y, 15, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
   // Shading round each hole and bite, as the cut paper catches a little shadow.
   ctx.strokeStyle = 'rgba(60,50,30,0.35)';
   ctx.lineWidth = 1.5;
@@ -142,13 +166,17 @@ function paper(ctx: CanvasRenderingContext2D, sheet = 0): void {
   }
 }
 
-/** A "p.N" in the notes, as a rectangle on the sheet: clicking it turns the magazine to that page (`page` is its index). */
+/**
+ * A "p.N" in the notes, as a rectangle on the sheet: clicking it turns the magazine to that page (`page` is its index).
+ * "May p.N" is a page of the May issue; a bare "p.N" is March's.
+ */
 export interface PageLink {
   x: number;
   y: number;
   w: number;
   h: number;
   page: number;
+  issue: IssueId;
 }
 
 type Entry = { note: Note; solved: boolean; lines: string[] };
@@ -178,14 +206,14 @@ export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<stri
   const k = Math.min(sheet ?? sheets.length - 1, sheets.length - 1);
   paper(ctx, k);
   ageUnder(ctx, SHEET_W, SHEET_H, EDGE, handled, k);
-  // Every sheet is headed, so the corner that peeks out of the pile always reads as the notes; the first also has the date.
-  let titleEnd: number;
+  // Only the first sheet is headed, with the title and the date; the later ones just carry on.
+  let titleEnd = LEFT - 36;
   let dateStart = SHEET_W - 30;
   if (k === 0) {
     titleEnd = LEFT + write(ctx, 'My Notes', LEFT, 58, { size: 44, seed: 5, mood: 0.03 });
     dateStart = SHEET_W - 40 - measure(DATE, 26);
     write(ctx, DATE, dateStart, 50, { size: 26, seed: 9, mood: 0.05 });
-  } else titleEnd = LEFT + write(ctx, 'My Notes, continued', LEFT, 58, { size: 36, seed: 5 + k, mood: 0.05 });
+  }
   if (sheets.length > 1) write(ctx, String(k + 1), SHEET_W / 2 - 8, SHEET_H - 34, { size: 26, seed: 40 + k, mood: 0.05 });
   let row = 1;
   const INK: [number, number, number] = [28, 58, 170];
@@ -201,10 +229,10 @@ export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<stri
       const pen = { size: SIZE, seed: base + i * 131, mood: note.mood, ink };
       const spans: [number, number][] = [];
       const w = write(ctx, line, LEFT, y - 6, { ...pen, track: (k, a, b) => (spans[k] = [a, b]) });
-      for (const m of line.matchAll(/p\.(\d+)/gi)) {
+      for (const m of line.matchAll(/(May )?p\.(\d+)/g)) {
         const a = spans[m.index!]?.[0];
         const b = spans[m.index! + m[0].length - 1]?.[1];
-        if (a !== undefined && b !== undefined) links.push({ x: a - 8, y: y - 6 - pen.size * 1.2, w: b - a + 16, h: pen.size * 1.6, page: Number(m[1]) - 1 });
+        if (a !== undefined && b !== undefined) links.push({ x: a - 8, y: y - 6 - pen.size * 1.2, w: b - a + 16, h: pen.size * 1.6, page: Number(m[2]) - 1, issue: m[1] ? 'may' : 'march' });
       }
       if (solved) dash(ctx, LEFT - 6, y - 14, LEFT + w + 6, y - 15, { ...pen, size: 24, mood: 0.5 });
       if (i === lines.length - 1) {

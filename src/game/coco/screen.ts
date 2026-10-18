@@ -18,6 +18,8 @@ export class TextScreen {
   cursorOn = true;
   /** The cursor's semigraphics colour (0–7). */
   private cursorColor = 0;
+  /** Steps the cursor's colour takes instead of +1, one per blink (`misstep`). */
+  private missteps: number[] = [];
   private blinkTimer = 0;
 
   /** Video memory changed (or the cursor stepped) since the last `takeDirty`. */
@@ -136,9 +138,14 @@ export class TextScreen {
     this.blinkTimer += dt;
     if (this.blinkTimer >= BLINK) {
       this.blinkTimer -= BLINK;
-      this.cursorColor = (this.cursorColor + 1) & 7;
+      this.cursorColor = (this.cursorColor + (this.missteps.shift() ?? 1)) & 7;
       this.dirty = true;
     }
+  }
+
+  /** For a moment the cursor's colours come out of order: two of them swap places, once. No CoCo does this. */
+  misstep(): void {
+    this.missteps = [2, -1, 2];
   }
 
   /** What the VDG shows over memory at the cursor, if anything: a full semigraphics block in the cursor colour. */

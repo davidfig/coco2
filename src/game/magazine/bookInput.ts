@@ -1,5 +1,6 @@
 import type { Magazine } from './book';
-import { ISSUE_DATE, type IssueId } from './pages';
+import { attachCorner, type Cover } from './bookCorner';
+import { overPage } from './bookLayout';
 
 /** Clicks and drags shorter than this (CSS px) are clicks. */
 const CLICK_SLOP = 6;
@@ -13,10 +14,10 @@ const HINT_KEY = 'coco2.rainbow.hint';
  * Everything the reader does to the magazine, handled like paper rather than a document viewer: drag a page across
  * the spine to turn it (let go early and it falls back), click a page to put it away (at reading size, to turn it), double-click to lean in on it (drag
  * to move about, double-click to lean back), scroll or swipe to flip, pinch to zoom. TAB puts it
- * away, PAGE UP/DOWN turn. Only a bare corner pair of buttons remains. Typing is left alone so the CoCo keeps listening
+ * away, PAGE UP/DOWN turn. A few starbursts on the page corner remain (bookCorner). Typing is left alone so the CoCo keeps listening
  * while the magazine is open.
  */
-export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { update: () => void } {
+export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers: () => Cover[]): { update: () => void } {
   const norm = (e: MouseEvent): [number, number] => {
     const r = canvas.getBoundingClientRect();
     return [(e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height];
@@ -29,6 +30,8 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
   /** A leaf in the hand: which way it turns, where the pointer was grabbed, and how fast it is moving. */
   let hold: { dir: 1 | -1; x0: number; vel: number; lastX: number; lastT: number } | null = null;
   let clickTimer = 0;
+  /** The pointer is over a link (a contents page number). */
+  let overLink = false;
   /** The view in the hand, sliding to the other page of the same spread: which way, where it started and was grabbed. */
   let slide: { dir: 1 | -1; from: number; x0: number; t: number; vel: number; lastX: number; lastT: number } | null = null;
 
@@ -40,12 +43,13 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
       down = { x: e.clientX, y: e.clientY, moved: false };
     }
     if (pointers.size === 2) pinch = spread();
-    if (mag.open || mag.inRect(mag.book, nx, ny)) canvas.setPointerCapture(e.pointerId);
+    if (mag.open || overPage(mag.v, nx, ny)) canvas.setPointerCapture(e.pointerId);
   });
 
   canvas.addEventListener('pointermove', (e) => {
     const [nx, ny] = norm(e);
-    mag.hover = !mag.open && mag.inRect(mag.book, nx, ny);
+    mag.hover = !mag.open && overPage(mag.v, nx, ny);
+    overLink = !down?.moved && mag.linkUnder(nx, ny) !== undefined;
     const p = pointers.get(e.pointerId);
     if (!p) return;
     const dx = e.clientX - p.x;
@@ -132,15 +136,21 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
 
   function click(nx: number, ny: number): void {
     if (!mag.open) {
-      if (mag.inRect(mag.book, nx, ny)) mag.show();
+      if (overPage(mag.v, nx, ny)) mag.show();
       return;
     }
     // A click on the set puts the magazine away, as ✕ does.
     if (mag.inRect(mag.tv, nx, ny)) return mag.close();
     if (!mag.inRect(mag.book, nx, ny)) return;
+    clearTimeout(clickTimer);
+    // A contents page number turns straight to its page, at any size.
+    const to = mag.linkUnder(nx, ny);
+    if (to) {
+      mag.follow(to);
+      return heardTurn();
+    }
     const [px, py] = mag.toBook(nx, ny);
     if (mag.zoom > 1.05) return;
-    clearTimeout(clickTimer);
     // Wait a moment: a second click is a double-click, which leans in instead.
     // Beside the set, a click puts the magazine away; at reading size it turns the page.
     if (!mag.reading) {
@@ -157,7 +167,7 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
 
   canvas.addEventListener('dblclick', (e) => {
     const [nx, ny] = norm(e);
-    if (!mag.open || !mag.inRect(mag.book, nx, ny)) return;
+    if (!mag.open || !mag.inRect(mag.book, nx, ny) || mag.linkUnder(nx, ny)) return;
     clearTimeout(clickTimer);
     mag.lean(nx, ny);
     heardTurn();
@@ -222,34 +232,8 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
     }
   });
 
-  // ---- a bare pair of corner buttons, and a hint the first few times ----
-  const bar = document.createElement('div');
-  bar.className = 'book-corner';
-  const button = (text: string, title: string, act: () => void): HTMLButtonElement => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = text;
-    b.title = title;
-    b.setAttribute('aria-label', title);
-    b.tabIndex = -1;
-    b.addEventListener('mousedown', (e) => e.preventDefault());
-    b.addEventListener('click', () => {
-      act();
-      b.blur();
-    });
-    return b;
-  };
-  const read = button('⤢', 'Bigger / smaller magazine', () => mag.setReading(!mag.reading));
-  const shut = button('✕', 'Put the magazine away (Tab)', () => mag.close());
-  // Once a second issue has come, this swaps to the other one in the pile (it names the issue it goes to).
-  const nextIssue = (): IssueId => {
-    const have = mag.issues();
-    return have[(have.indexOf(mag.issue) + 1) % have.length];
-  };
-  const swap = button('', '', () => mag.setIssue(nextIssue()));
-  swap.classList.add('issue');
-  bar.append(swap, read, shut);
-  document.body.append(bar);
+  // ---- the corner's starbursts (bookCorner), and a hint the first few times ----
+  const corner = attachCorner(mag, canvas, covers);
 
   const hint = document.createElement('div');
   hint.className = 'book-hint';
@@ -276,27 +260,14 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
   return {
     update() {
       const show = mag.openT > 0.97;
-      bar.classList.toggle('show', show);
-      canvas.style.cursor = mag.open ? (hold || slide ? 'grabbing' : 'grab') : mag.hover ? 'pointer' : '';
+      corner.update();
+      canvas.style.cursor = mag.open ? (hold || slide ? 'grabbing' : overLink ? 'pointer' : 'grab') : mag.hover ? 'pointer' : '';
       if (show && !learned) hintLeft = Math.min(hintLeft + 1 / 60, 9);
       if (!show) hintLeft = 0;
       hint.classList.toggle('show', show && !learned && hintLeft < 8);
       if (!show) return;
-      const right = (mag.book.x + mag.book.w) * canvas.clientWidth;
-      const top = (1 - mag.book.y - mag.book.h) * canvas.clientHeight;
-      bar.style.right = `${Math.max(8, canvas.clientWidth - right + 8)}px`;
-      bar.style.top = `${Math.max(8, top + 8)}px`;
       hint.style.left = `${(mag.book.x + mag.book.w / 2) * canvas.clientWidth}px`;
       hint.style.bottom = `${Math.max(8, mag.book.y * canvas.clientHeight + 8)}px`;
-      read.classList.toggle('on', mag.reading);
-      const other = nextIssue();
-      swap.hidden = other === mag.issue;
-      const month = ISSUE_DATE[other].split(' ')[0];
-      if (swap.textContent !== month.slice(0, 3)) {
-        swap.textContent = month.slice(0, 3);
-        swap.title = `Pick up the ${month} issue`;
-        swap.setAttribute('aria-label', swap.title);
-      }
     },
   };
 }

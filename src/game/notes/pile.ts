@@ -3,6 +3,10 @@
 /** How long a sheet takes to go from the top of the pile to the bottom (seconds). */
 export const DEAL_TIME = 0.5;
 
+/** How long the sheet takes to be held up (seconds) when `held` CSS px tall held up: 0.35 s at 800 px, longer by the square root on
+ * bigger windows (so it doesn't race across them), at most 0.6 s. */
+export const openTime = (held: number): number => Math.min(0.6, Math.max(0.35, 0.35 * Math.sqrt(held / 800)));
+
 /** A sheet on screen: centre and half size in window pixels (bottom-left origin), turned by `rot`. */
 export type Sheet = { cx: number; cy: number; hx: number; hy: number; rot: number };
 

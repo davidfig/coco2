@@ -1,8 +1,9 @@
 import { houseAd } from './ads';
 import { COMMANDS } from './data';
 import { PageId, pageNo } from './pages';
+import { linkLeader } from './pageLinks';
 import { drawPlayerMap } from './playerMap';
-import { Ctx, INK, MARGIN, MONO, OPTIMA, PAGE_H, PAGE_W, SANS, SERIF, colWidth, flow, headline, leader, pullQuote, rowsFor, sidebar, text, topBar } from './paper';
+import { Ctx, INK, MARGIN, MONO, OPTIMA, PAGE_H, PAGE_W, SANS, SERIF, colWidth, flow, headline, pullQuote, rowsFor, sidebar, text, topBar } from './paper';
 
 const W = PAGE_W - MARGIN * 2;
 const BOTTOM = PAGE_H - 100;
@@ -24,30 +25,29 @@ export function drawContents(ctx: Ctx): void {
     ctx.fillRect(MARGIN, y + 12, lw, 3);
     return y + 48;
   };
-  const entry = (title: string, who: string, page: string, desc: string | null, y: number): number => {
+  const entry = (title: string, who: string, id: PageId, desc: string | null, y: number): number => {
     ctx.font = `bold 21px ${SERIF}`;
     const tw = ctx.measureText(title).width;
-    leader(ctx, title, page, MARGIN, y, lw, `bold 21px ${SERIF}`);
+    linkLeader(ctx, title, id, MARGIN, y, lw, `bold 21px ${SERIF}`);
     text(ctx, `/${who}`, MARGIN + tw, y, `italic 21px ${SERIF}`);
     if (!desc) return y + 30;
     text(ctx, desc, MARGIN + 18, y + 24, `18px ${SERIF}`);
     return y + 58;
   };
   let y = section('Features', 150);
-  const no = (id: PageId): string => String(pageNo(id));
-  y = entry('How To Play: The Screen', 'Dale Wick', no('screen'), 'Reading the green and typing back', y);
-  y = entry('How To Play: The Words', 'Dale Wick', no('words'), 'The verbs the adventure understands', y);
-  y = entry('Map Your Way', 'Priya Rao', no('map'), 'Graph paper, a pencil and a sense of north', y);
-  y = entry('Say Your Name', 'Tom Brannigan', no('typeIn'), null, y);
-  y = entry('Your First Program', 'Dale Wick', no('program'), null, y);
-  y = entry('Stopping a Program', 'Dale Wick', no('stopping'), null, y);
-  y = entry('Guess My Number', 'Dale Wick', no('guess'), null, y);
-  y = entry('Rainbow On Tape', 'Dale Wick', no('tape'), null, y);
-  y = entry('Marketplace', 'Our Advertisers', no('marketplace'), 'Games, gadgets and a few bold claims', y);
+  y = entry('How To Play: The Screen', 'Dale Wick', 'screen', 'Reading the green and typing back', y);
+  y = entry('How To Play: The Words', 'Dale Wick', 'words', 'The verbs the adventure understands', y);
+  y = entry('Map Your Way', 'Priya Rao', 'map', 'Graph paper, a pencil and a sense of north', y);
+  y = entry('Say Your Name', 'Tom Brannigan', 'typeIn', null, y);
+  y = entry('Your First Program', 'Dale Wick', 'program', null, y);
+  y = entry('Stopping a Program', 'Dale Wick', 'stopping', null, y);
+  y = entry('Guess My Number', 'Dale Wick', 'guess', null, y);
+  y = entry('Rainbow On Tape', 'Dale Wick', 'tape', null, y);
+  y = entry('Marketplace', 'Our Advertisers', 'marketplace', 'Games, gadgets and a few bold claims', y);
   y = section('Departments', y + 24);
-  y = entry('Letters To Rainbow', 'Our Readers', no('letters'), null, y);
-  y = entry('PRINT #-2', 'Margaret Hale', no('editorial'), null, y);
-  y = entry('Classified', 'Our Readers', no('classifieds'), null, y);
+  y = entry('Letters To Rainbow', 'Our Readers', 'letters', null, y);
+  y = entry('PRINT #-2', 'Margaret Hale', 'editorial', null, y);
+  y = entry('Classified', 'Our Readers', 'classifieds', null, y);
   y += 24;
   const box = rowsFor(
     ctx,
@@ -62,6 +62,12 @@ export function drawContents(ctx: Ctx): void {
   // The masthead box.
   const sx = MARGIN + lw + 30;
   const sw = W - lw - 30;
+  mastheadBox(ctx, sx, sw);
+  houseAd(ctx, MARGIN, 960, W);
+}
+
+/** The masthead box beside the contents: who makes the magazine, and where. */
+export function mastheadBox(ctx: Ctx, sx: number, sw: number): void {
   sidebar(ctx, 'The Rainbow', sx, 130, sw, 780);
   const staff: [string, string][] = [
     ['Margaret Hale', 'Editor'],
@@ -80,7 +86,6 @@ export function drawContents(ctx: Ctx): void {
     text(ctx, role, sx + sw / 2, 223 + i * 66, `italic 17px ${SANS}`, INK, 'center');
   });
   text(ctx, 'Box 209, Prospect, Kentucky', sx + sw / 2, 880, `15px ${SANS}`, INK, 'center');
-  houseAd(ctx, MARGIN, 960, W);
 }
 
 /** the editor's column. */
@@ -259,6 +264,6 @@ export function drawMap(ctx: Ctx): void {
   ctx.lineTo(gx + W - 46, gy + 82);
   ctx.stroke();
   // The reader's own map: the player filled this grid in before the game begins (see playerMap.ts).
-  drawPlayerMap(ctx, gx + 50, gy + 50);
+  drawPlayerMap(ctx, gx + 50, gy + 50, gx + W, gy + gh);
   flow(ctx, rowsFor(ctx, [{ text: 'Fig. 2: Your first map goes on this grid. Pencil, not pen.', font: `italic 17px ${SERIF}`, lh: 21, align: 'left', before: 0 }], W), MARGIN, gy + gh + 12, W, 40);
 }

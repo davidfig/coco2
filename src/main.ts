@@ -1,13 +1,15 @@
 import './clear';
 import { Engine, Sound } from './engine';
 import { ColorBasic } from './game/coco/basic';
+import { Computer } from './game/computer/computer';
 import { TextScreen } from './game/coco/screen';
 import { Magazine } from './game/magazine/book';
 import { Notebook } from './game/notes';
 import { attachBookInput } from './game/magazine/bookInput';
+import { overPage } from './game/magazine/bookLayout';
 import { SeenTracker } from './game/magazine/seen';
-import { ISSUE_1_RULES, PuzzleWatcher } from './game/puzzles';
-import { Issue1Story } from './game/story';
+import { ISSUE_1_RULES, ISSUE_2_RULES, PuzzleWatcher } from './game/puzzles';
+import { Issue1Story, Issue2Story } from './game/story';
 import { Tv } from './game/tv/tv';
 import { TAMPER_STYLES, TamperStyle } from './game/tv/tvShader';
 import { readTvSettings } from './game/tv/tvSave';
@@ -28,8 +30,27 @@ const tv = new Tv(engine.gl, canvas, sound);
 const ghostVdg = new Vdg();
 const magazine = new Magazine(engine.gl);
 /** Made before the book's input so that a click on the paper is the paper's. */
-const notebook = new Notebook(engine.gl, canvas, () => magazine.state.flags, () => magazine.tv, () => tv.glow, () => tv.picture, (page) => magazine.showPage(page));
-const bookInput = attachBookInput(magazine, canvas);
+const notebook = new Notebook(engine.gl, canvas, () => magazine.state.flags, () => magazine.notesTv, () => magazine.notesTuck, () => tv.glow, () => tv.picture, (page, issue) => magazine.showPage(page, issue));
+/** The CoCo 2 on the table in front of the set: a trial, `?nococo` leaves it out. Made after the notebook, so a click on the paper is the paper's. */
+const computer = new Computer(engine.gl, canvas);
+computer.visible = !params.has('nococo');
+/** The book is drawn over the machine, so a click on it is the book's: its half of the window while open, else the page peeking in. */
+computer.covered = (nx, ny) => (magazine.open ? magazine.inRect(magazine.book, nx, ny) : overPage(magazine.v, nx, ny));
+/** A click on the set pulls back or goes in, unless it is the set's own (a knob, the rocker, the smack) or the book or notebook is out: then it puts that away. */
+computer.isOut = () => magazine.open;
+computer.putAway = () => magazine.close();
+/** Put away while the view is pulled back to the whole desk, the magazine lies on the table beside the machine if there's room. */
+magazine.desk = () => ({ ...computer.table('magazine'), picture: tv.picture });
+notebook.desk = () => ({ ...computer.table('notes'), picture: tv.picture });
+/** On the table, whichever of the two was looked at last lies on top (the notes, to begin with). */
+let notesOnTop = true;
+notebook.covered = (x, y) => !notesOnTop && overPage(magazine.v, x / engine.gl.drawingBufferWidth, y / engine.gl.drawingBufferHeight);
+computer.busy = (x, y) => {
+  if (notebook.open) return true;
+  const part = tv.touch.at(x, y)?.part;
+  return !!tv.knobs.at(x, y) || (part !== undefined && part !== 'glass');
+};
+const bookInput = attachBookInput(magazine, canvas, () => notebook.covers());
 const seen = new SeenTracker();
 /** Placeholder for issue 2, shown once issue 1's night has passed. */
 /** `?book` starts with the magazine open (for playtesting). */
@@ -42,7 +63,8 @@ const story = new Issue1Story(screen, tv, (f) => magazine.state.flags.has(f), (f
   basic.interp.edited();
   basic.boot();
 });
-const puzzles = new PuzzleWatcher(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), [...ISSUE_1_RULES, ...story.rules]);
+const story2 = new Issue2Story(screen, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), basic.interp);
+const puzzles = new PuzzleWatcher(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), [...ISSUE_1_RULES, ...story.rules, ...ISSUE_2_RULES, ...story2.rules]);
 /** `?tamper=ghost|scan|both` overrides how a tampered cell shows (for comparing; the story sets it per issue). */
 const tamperStyle = params.get('tamper') as TamperStyle;
 if (TAMPER_STYLES.includes(tamperStyle)) tv.tamperStyle = tamperStyle;
@@ -51,18 +73,28 @@ basic.boot();
 // The set comes back as it was left: switched off stays off (the CoCo still boots behind it).
 if (readTvSettings().on !== false) tv.switchOn(!params.has('instant'));
 
+/** A click on one of the machine's keys types it; whatever is typed presses its cap. */
+computer.onKey = (k) => engine.keyboard.push(k);
 engine.earlyUpdaters.push((dt) => {
-  basic.step(dt, engine.keyboard.drain());
+  const typed = engine.keyboard.drain();
+  computer.keys.typed(typed);
+  basic.step(dt, typed);
 });
 // A page load is waking up: if the last session ended the evening without switching off, that counts as the night.
 story.sleep();
+story2.sleep();
 story.wake();
 let setOn = tv.powerTime >= 0;
 engine.updaters.push((dt) => {
   screen.step(dt);
   story.step(dt);
+  story2.step(dt);
   const on = tv.powerTime >= 0;
-  if (on !== setOn) (on ? story.wake() : story.sleep());
+  if (on && !setOn) story.wake();
+  if (!on && setOn) {
+    story.sleep();
+    story2.sleep();
+  }
   setOn = on;
 });
 engine.lateUpdaters.push((dt) => {
@@ -78,12 +110,20 @@ engine.lateUpdaters.push((dt) => {
   magazine.update(dt, engine.gl.drawingBufferWidth, engine.gl.drawingBufferHeight);
   seen.update(magazine, dt);
   notebook.update(dt);
-  tv.draw(dt, engine.time, vdg.border, magazine.tv, magazine.frame, notebook.shade());
+  const view = computer.view(dt, magazine.tv, magazine.frame, magazine.openT);
+  tv.draw(dt, engine.time, vdg.border, view.rect, view.frame, notebook.shade());
+  computer.draw(tv.picture, tv.glow);
+  // On the table the one looked at last lies on top; the notes held up, or peeking from the corner, are always over the book.
+  if (notebook.open) notesOnTop = true;
+  else if (magazine.open) notesOnTop = false;
+  const notesUnder = notebook.onDesk() > 0 && !notesOnTop;
+  if (notesUnder) notebook.draw();
   magazine.draw();
-  notebook.draw();
+  if (!notesUnder) notebook.draw();
   bookInput.update();
   tv.knobs.cursor();
   tv.touch.cursor();
+  computer.cursor();
   notebook.cursor();
 });
 engine.start();
@@ -108,7 +148,7 @@ function stationTest(channel = 9): void {
   v.render(card.vram);
   tv.broadcast(channel, v, 0.6);
 }
-Object.assign(window, { coco: { engine, screen, basic, interp: basic.interp, tv, vdg, magazine, puzzles, story, notebook, tamperTest, stationTest } });
+Object.assign(window, { coco: { engine, computer, screen, basic, interp: basic.interp, tv, vdg, magazine, puzzles, story, story2, notebook, tamperTest, stationTest } });
 
 /** Playtesting: F2 opens the debug menu (checkpoints, flags, name, TV hooks) in dev builds; `?debug` opens it at start, in any build. */
 if (import.meta.env.DEV || params.has('debug')) {

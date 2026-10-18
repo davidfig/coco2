@@ -51,3 +51,19 @@ export function uploadTexture(gl: WebGL2RenderingContext, tex: WebGLTexture, w: 
   gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
   gl.generateMipmap(gl.TEXTURE_2D);
 }
+
+/**
+ * Limit drawing to a rectangle of the drawing buffer (pixels, bottom-left origin, any order of rounding): a full-screen
+ * pass then runs its fragment shader only there. Returns false, leaving the test off, if the rectangle is empty.
+ * Pair with `gl.disable(gl.SCISSOR_TEST)`.
+ */
+export function scissor(gl: WebGL2RenderingContext, x0: number, y0: number, x1: number, y1: number): boolean {
+  const l = Math.max(0, Math.floor(x0));
+  const b = Math.max(0, Math.floor(y0));
+  const r = Math.min(gl.drawingBufferWidth, Math.ceil(x1));
+  const t = Math.min(gl.drawingBufferHeight, Math.ceil(y1));
+  if (r <= l || t <= b) return false;
+  gl.enable(gl.SCISSOR_TEST);
+  gl.scissor(l, b, r - l, t - b);
+  return true;
+}

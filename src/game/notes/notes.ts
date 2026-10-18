@@ -6,6 +6,8 @@
  */
 import { pageNo } from '../magazine/pages';
 import { ADVENT, ADVENT_WHISPER, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../puzzles/listings';
+import { HANGMAN_REM_LINE, MESSAGE_LINE, OK_MESSAGE, ORACLE_ASK, ORACLE_HOW } from '../puzzles/listingsMay';
+import { REPLY_KEY } from '../puzzles/rulesMay';
 
 export interface Note {
   id: string;
@@ -70,8 +72,41 @@ export const NOTES: readonly Note[] = [
   { id: 'saw-pleads', when: 'saw-pleads', text: 'Deleted it. Then the screen: IS ANYONE READING THIS, PLEASE. Line is back', mood: 0.55 },
   { id: 'saw-thanks', when: 'saw-thanks', text: 'Left it. Then THANK YOU, on the screen. The line says it too', mood: 0.4 },
   { id: 'night', when: 'issue1-done', text: 'Enough for tonight. Switch it off', mood: 0.3, ask: true, solved: 'issue1-closed' },
-  { id: 'nextday', when: 'issue2-waiting', text: 'Next day. May RAINBOW came: cover only!', mood: 0.2 },
+  { id: 'nextday', when: 'issue2-waiting', text: 'Next day. May RAINBOW came, and a new tape', mood: 0.2 },
+  // Issue 2: the message in HANGMAN, the ORACLE that came with it, and an answer.
+  { id: 'maytape', when: 'issue2-waiting', text: `What's on the new tape? May p.${pageNo('mayTape')}`, mood: 0.15, ask: true, solved: 'may-loaded' },
+  { id: 'secret', when: 'may-loaded', text: `Message hidden in HANGMAN's DATA. Decoder: May p.${pageNo('maySecret')}`, mood: 0.18, ask: true, solved: 'data-decoded' },
+  { id: 'hangman', when: 'hangman-loaded', text: `Check HANGMAN against May p.${pageNo('mayHangman')}, like GUESS`, mood: 0.2, ask: true, solved: 'hangman-rem' },
+  { id: 'checked', when: 'hangman-checked', text: 'CHECK is off right from the top. LIST -20', mood: 0.3, ask: true, solved: 'hangman-rem', skipIf: 'hangman-rem' },
+  {
+    id: 'rem15',
+    when: 'hangman-rem',
+    text: (f) => (f.has('deleted-extra-line') ? `Line ${HANGMAN_REM_LINE}: IS ANYONE READING THIS, PLEASE. On the new tape!` : `Line ${HANGMAN_REM_LINE}: IS ANYONE READING THIS. Then ${HANGMAN_REM_LINE + 1}: YES. SOMEONE IS`),
+    reads: ['deleted-extra-line'],
+    mood: 0.62,
+  },
+  { id: '990', when: 'message-seen', text: `Line ${MESSAGE_LINE}: just numbers. The code, May p.${pageNo('maySecret')}`, mood: 0.25, ask: true, solved: 'data-decoded' },
+  { id: 'decoded', when: 'data-decoded', text: `${MESSAGE_LINE} says: ${OK_MESSAGE}`, mood: 0.7 },
+  { id: 'same990', when: 'data-decoded', text: `Is ${MESSAGE_LINE} the same on May p.${pageNo('mayHangman')}?`, mood: 0.6, ask: true, solved: 'seen-mayHangman', skipIf: 'seen-mayHangman' },
+  { id: 'touched', when: ['data-decoded', 'seen-mayHangman'], text: `May p.${pageNo('mayHangman')} has a different ${MESSAGE_LINE}. Something DID touch it`, mood: 0.78 },
+  { id: 'what-else', when: 'data-decoded', text: 'What else is on this tape? CLOAD, watch the F', mood: 0.4, ask: true, solved: 'oracle-passed', skipIf: 'oracle-passed' },
+  { id: 'oracle-here', when: 'oracle-passed', text: `ORACLE is on this tape. Not on May p.${pageNo('mayTape')}'s list`, mood: 0.5, ask: true, solved: 'oracle-asked' },
+  { id: 'numbers', when: 'oracle-asked', text: 'ORACLE answers in numbers now. The code?', mood: 0.55, ask: true, solved: 'oracle-read', orSolved: 'oracle-answered' },
+  { id: 'asks', when: 'oracle-read', text: `ORACLE: ${ORACLE_ASK}. ${ORACLE_HOW}`, mood: 0.8 },
+  { id: 'answer', when: 'oracle-read', text: `Answer it? My own DATA, in the code. May p.${pageNo('maySecret')}`, mood: 0.6, ask: true, solved: 'oracle-answered' },
+  { id: 'answered', when: 'oracle-answered', text: () => `Answered in DATA: "${savedReply()}"`, mood: 0.6 },
+  { id: 'ontime', when: 'prompt-on-time', text: 'The OK comes up on time again. Was it slow all day?', mood: 0.55 },
+  { id: 'night2', when: 'issue2-done', text: 'Enough for tonight. Switch it off', mood: 0.35, ask: true, solved: 'issue2-closed' },
 ];
+
+/** What the player answered ORACLE (`oracle-answered` keeps it). */
+function savedReply(): string {
+  try {
+    return localStorage.getItem(REPLY_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
 
 /** The words of a note, given what the player has done. */
 export const noteText = (n: Note, flags: ReadonlySet<string>): string => (typeof n.text === 'string' ? n.text : n.text(flags));

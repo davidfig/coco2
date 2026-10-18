@@ -46,6 +46,9 @@ Run `typecheck` and `check:size` before finishing any change. Design notes: `doc
   picture rolls), `.loosen(0.6)` (it cuts out); `coco.stationTest(9)` puts a far station on 9 (`tv.broadcast`).
 - Synthetic pointer events on the canvas need `canvas.setPointerCapture = () => {}` first (it throws for a pointer the
   browser never saw), or a knob drag silently does nothing.
+- Pulled back to the whole desk (a click on the set), the view widens to take in the table where the magazine and the
+  notes lie (either side of the machine, or both to its right in a narrower window: `DESK_LAYOUTS` in
+  `computer/layout.ts`), so long as the set keeps 60% of its size; otherwise they stay where they are (`Computer.table`).
 - The notebook page wears with each time it is held up and put down (`coco2.notebook`): `coco.notebook.handled = 60`
   shows an old page (a coffee ring at 7, a fold at 12, dog-ear 18; it never loses marks), `= 0` a clean one.
 
@@ -68,14 +71,16 @@ src/game/
   notes/              the notebook page that peeks up from the bottom-left: notes (what the player has worked out, one per
                       flag, open questions that point at a page or tape), sheet (ruled paper + the writing), note (GL quads,
                       one texture per sheet; hover/click, drag a held-up sheet aside to send it under, input captured before the book's)
-                      + noteShader (the screen's light dims through each sheet behind) + pile (where each sheet lies, the turn animation), wear (the page ages with each reading and note:
-                      yellowing, folds, coffee rings, thumbprints, pen blots; `handled` in localStorage) + stains (the marks), doodles (what the pen draws in the
+                      + noteShader (the screen's light dims through each sheet behind) + pile (where each sheet lies, the turn animation) + onDesk (the pile lying on the table, in perspective), wear (the page ages with each reading and note:
+                      yellowing, folds, coffee rings, pen blots; `handled` in localStorage) + stains (the marks), doodles (what the pen draws in the
                       margins beside each note: its own picture or an idle one, uneasier as the mood climbs; heading, ringed holes)
   puzzles/            the puzzle watcher: listings (programs the magazine asks the player to type, single source), rules
-                      (one function per puzzle, ticks a flag), watcher (feeds it the interpreter's `BasicEvent`s; see docs/puzzles.md)
+                      (one function per puzzle, ticks a flag), watcher (feeds it the interpreter's `BasicEvent`s; see docs/puzzles.md);
+                      listingsMay + rulesMay are issue 2's (the code, HANGMAN, OK's ORACLE)
+  story/              what the story does besides the puzzles, one class per issue (issue1, issue2: timers, tampering, the tape swap)
   tapes/              Rainbow On Tape, the cassette in the recorder: index (tape order) and one .bas file per program
-  magazine/           the RAINBOW: book (state, slide-in, GPU pass), bookShader (page-turn), bookLayout (TV/book split), bookInput
-                      (TAB, PAGE UP/DOWN, wheel zoom, toolbar), pages (the ordered list of page ids; `pageNo(id)` gives a page's number), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May issue so far: its COMING SOON cover and the editor's notice), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner (parody ads)
+  magazine/           the RAINBOW: book (state, slide-in, GPU pass), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn), bookLayout (TV/book split), bookInput
+                      (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, HANGMAN, the tape) + mayLetters (letters, classifieds), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner (parody ads)
   tv/                 tv (uploads the VDG frame, uniforms, power-on, `broadcast`), tvShader (uniforms, main: room → cabinet → tube),
                       pictureShader (the beam: RF colour smear, scanlines, warm-up and switch-off, jolts, roll, herringbone,
                       a far station), glassShader (reflections, fingerprints, dust), cabinetShader (room, wood, panel,
@@ -100,6 +105,15 @@ src/game/
 - TV geometry (tube size and place, cabinet, knobs) lives in constants at the top of `cabinetShader.ts`; the share of
   the tube the VDG picture fills (the black border) is `ACTIVE` in `pictureShader.ts`, and how much border shows round the
   picture is `FRAME`. The rest of the set (wood, knobs, grille) is still drawn and comes back into view if `FRAME` grows.
+- Every pass over the TV's is a full-screen triangle, so each sets `scissor()` (engine) to the pixels it can touch
+  (`bookBounds`, the sheet's quad, the table's back edge): a new pass, or a shader that draws further, needs its bounds
+  widened. The CoCo's march is kept (`computer/marchCache.ts`) and marched again only when the view, glow or keys
+  change, at CSS-pixel resolution while the view moves. To time passes, sync with a 1-pixel `readPixels` and keep
+  blending on: ANGLE/Metal timer queries are meaningless, and Apple GPUs skip opaque draws that a later one covers.
+- The magazine and the notes move between their own place and the table rigidly (`computer/pose.ts`): a sheet is a
+  real sheet held before the eye and laid on the table (slerped, its centre straight across the view, receding evenly),
+  and the book's camera is split into turn × lens × place (`mixCam`). Never blend corners or camera matrices: the
+  in-between frames shear. A thing's size on the table must match the shape it is drawn, at its real size (`INCH` in `layout.ts`: the magazine 8½ × 11 in, the torn-out notebook page `SHEET_W` × `SHEET_H` at `SHEET_DPI`, about 7¾ × 10½). On the table the one looked at last lies on top (`notesOnTop` in `main.ts`), and takes the click where they overlap.
 
 ## Color BASIC
 
@@ -117,8 +131,9 @@ src/game/
 
 ## The tape
 
-- The cassette holds this issue of Rainbow On Tape (`game/tapes/`: ABOUT, GUESS, RAINBOW, ORACLE) followed by the
-  player's CSAVEs (localStorage); a CSAVE under a built-in name records over it for that browser.
+- The cassette holds this issue of Rainbow On Tape (`game/tapes/`: March's ABOUT, GUESS, RAINBOW, ORACLE, ADVENT; from issue 2,
+  the May tape: ABOUT, HANGMAN, ORACLE) followed by the player's CSAVEs (localStorage, one key per cassette); a CSAVE under a
+  built-in name records over it for that browser. `Tape.insert` swaps cassettes (`story/issue2.ts` does it).
 - It has a position, like a real tape: `CLOAD` alone loads the next file, `CLOAD "NAME"` winds forward (wrapping) and
   shows `F NAME` for each file it passes, `SKIPF` winds past one. Not found after a whole pass is ?IO ERROR.
 - A new program: a `.bas` file in `game/tapes/` (numbered lines, upper case, mind the crunching: no keywords inside
@@ -127,7 +142,7 @@ src/game/
 
 ## The magazine
 
-- Issues (`magazine/pages.ts`: `ISSUES` lists each issue's pages in order, the cover being page 1; March has 18, May only its cover, a notice and the back so far; `pageNo` is March's). The book holds one issue at a time (`Magazine.issue`, `setIssue`; a corner button switches once May has come), each drawn with Canvas 2D into a texture array, one page per layer, lazily. The shader does the
+- Issues (`magazine/pages.ts`: `ISSUES` lists each issue's pages in order, the cover being page 1; March has 18, May 14; `pageNo(id)` finds a page in whichever issue holds it, and the notes link "May p.N" into May). The book holds one issue at a time (`Magazine.issue`, `setIssue`; a corner button switches once May has come), each drawn with Canvas 2D into a texture array, one page per layer, lazily. The shader does the
   turning leaf in perspective. Window split: TV left / book right (top / bottom when tall); the ⤢ button (reading mode) shrinks the TV to a strip.
 - The TV pulls back as the book opens: `Tv.draw(..., rect, frame)` takes the rectangle it fits in and how much of the set shows.
 - **Never write a page number by hand.** Name a page by id and ask `pageNo(id)` (`magazine/pages.ts`): contents, editorial,

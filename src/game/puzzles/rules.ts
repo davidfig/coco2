@@ -165,7 +165,7 @@ const mapped: Rule = (() => {
 export const isGuess = (p: Program): boolean => p.lines[0]?.text.startsWith('REM GUESS') ?? false;
 
 /** What a screen's video memory says, as plain text (graphics blocks count as spaces). */
-const screenText = (vram: Uint8Array): string => [...vram].map((b) => (b >= 128 ? ' ' : String.fromCharCode((b & 63) < 32 ? (b & 63) + 64 : b & 63))).join('');
+export const screenText = (vram: Uint8Array): string => [...vram].map((b) => (b >= 128 ? ' ' : String.fromCharCode((b & 63) < 32 ? (b & 63) + 64 : b & 63))).join('');
 
 /**
  * P5: the player has seen GUESS's extra line, or has deleted it. Listing it is not enough: the screen holds 16 rows and a

@@ -1,11 +1,22 @@
 import { Ctx, PAGE_H, PAGE_W, rng } from './paper';
 
-/** Smooth value noise in 0..1 with features about `cell` pixels across. */
-function noise(cell: number, seed: number): (x: number, y: number) => number {
+/** The lattice of smooth value noise with features about `cell` pixels across: `noise` reads it. */
+interface Grid {
+  cell: number;
+  gw: number;
+  g: Float32Array;
+}
+
+function grid(cell: number, seed: number): Grid {
   const gw = Math.ceil(PAGE_W / cell) + 2;
   const gh = Math.ceil(PAGE_H / cell) + 2;
   const r = rng(seed);
-  const g = Float32Array.from({ length: gw * gh }, r);
+  return { cell, gw, g: Float32Array.from({ length: gw * gh }, r) };
+}
+
+/** Smooth value noise in 0..1 with features about `cell` pixels across. */
+function noise(cell: number, seed: number): (x: number, y: number) => number {
+  const { gw, g } = grid(cell, seed);
   return (x, y) => {
     const fx = x / cell;
     const fy = y / cell;
@@ -20,6 +31,27 @@ function noise(cell: number, seed: number): (x: number, y: number) => number {
     const b = g[i + gw] + (g[i + gw + 1] - g[i + gw]) * sx;
     return a + (b - a) * sy;
   };
+}
+
+/** `noise`'s lattice column and smoothed weight for each x of an area `w` wide starting at `ax`. */
+function columns({ cell }: Grid, ax: number, w: number): { ix: Int32Array; sx: Float64Array } {
+  const ix = new Int32Array(w);
+  const sx = new Float64Array(w);
+  for (let x = 0; x < w; x++) {
+    const fx = (ax + x) / cell;
+    ix[x] = Math.floor(fx);
+    const tx = fx - ix[x];
+    sx[x] = tx * tx * (3 - 2 * tx);
+  }
+  return { ix, sx };
+}
+
+/** `noise`'s lattice row offset and smoothed weight for page row `gy`. */
+function rowOf(cell: number, gy: number, gw: number): [number, number] {
+  const fy = gy / cell;
+  const iy = Math.floor(fy);
+  const ty = fy - iy;
+  return [iy * gw, ty * ty * (3 - 2 * ty)];
 }
 
 /** A line from a to b broken into short hand-drawn steps that wander off the straight, as a ridge cut from masking film. */
@@ -97,40 +129,85 @@ export function paintify(ctx: Ctx, area: Area = PAGE, printOnly = false): void {
   const img = ctx.getImageData(ax, ay, w, h);
   const src = img.data;
   const out = new Uint8ClampedArray(src.length);
-  const wobX = noise(60, 71);
-  const wobY = noise(60, 72);
-  const blotch = noise(90, 73);
-  const fine = noise(7, 74);
-  const r = rng(75);
+  const wobX = grid(60, 71);
+  const wobY = grid(60, 72);
+  const blotch = grid(90, 73);
+  const fine = grid(7, 74);
+  let seed = 75; // `rng(75)`, written out in the loop: one draw a pixel for the grain, then `r` carries on from there
   const drift = printOnly ? 0 : 1.2;
-  // Bilinear, so a wobbled edge stays soft instead of stair-stepping. Coordinates are the area's own.
-  const at = (x: number, y: number, c: number): number => {
-    x = Math.min(w - 1.001, Math.max(0, x));
-    y = Math.min(h - 1.001, Math.max(0, y));
-    const xi = x | 0;
-    const yi = y | 0;
-    const tx = x - xi;
-    const ty = y - yi;
-    const o = (yi * w + xi) * 4 + c;
-    const a = src[o] + (src[o + 4] - src[o]) * tx;
-    const b = src[o + w * 4] + (src[o + w * 4 + 4] - src[o + w * 4]) * tx;
-    return a + (b - a) * ty;
-  };
+  // The loop below is `noise` and a bilinear read written out by hand: the same sums in the same order (so the same
+  // pixels), with what stays the same along a row or down a column worked out once. It is most of a painted page's time.
+  const wob = columns(wobX, ax, w);
+  const bl = columns(blotch, ax, w);
+  const fn = columns(fine, ax, w);
+  const gx60 = wobX.gw;
+  const gx90 = blotch.gw;
+  const gx7 = fine.gw;
+  const [gX, gY, gB, gF] = [wobX.g, wobY.g, blotch.g, fine.g];
+  const xMax = w - 1.001;
+  const yMax = h - 1.001;
+  const row = w * 4;
   for (let y = 0; y < h; y++) {
+    const gy = ay + y;
+    const [rw, sw] = rowOf(60, gy, gx60);
+    const [rb, sb] = rowOf(90, gy, gx90);
+    const [rf, sf] = rowOf(7, gy, gx7);
     for (let x = 0; x < w; x++) {
-      const gx = ax + x;
-      const gy = ay + y;
-      const dx = (wobX(gx, gy) - 0.5) * drift;
-      const dy = (wobY(gx, gy) - 0.5) * drift;
-      const shade = 1 + (blotch(gx, gy) - 0.5) * 0.12 + (fine(gx, gy) - 0.5) * 0.05;
-      const grain = (r() - 0.5) * 12;
+      let i = rw + wob.ix[x];
+      let s = wob.sx[x];
+      let a = gX[i] + (gX[i + 1] - gX[i]) * s;
+      let b = gX[i + gx60] + (gX[i + gx60 + 1] - gX[i + gx60]) * s;
+      const dx = (a + (b - a) * sw - 0.5) * drift;
+      a = gY[i] + (gY[i + 1] - gY[i]) * s;
+      b = gY[i + gx60] + (gY[i + gx60 + 1] - gY[i + gx60]) * s;
+      const dy = (a + (b - a) * sw - 0.5) * drift;
+      i = rb + bl.ix[x];
+      s = bl.sx[x];
+      a = gB[i] + (gB[i + 1] - gB[i]) * s;
+      b = gB[i + gx90] + (gB[i + gx90 + 1] - gB[i + gx90]) * s;
+      const nb = a + (b - a) * sb;
+      i = rf + fn.ix[x];
+      s = fn.sx[x];
+      a = gF[i] + (gF[i + 1] - gF[i]) * s;
+      b = gF[i + gx7] + (gF[i + gx7 + 1] - gF[i + gx7]) * s;
+      const shade = 1 + (nb - 0.5) * 0.12 + (a + (b - a) * sf - 0.5) * 0.05;
+      seed = (seed + 0x6d2b79f5) >>> 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      const grain = (((t ^ (t >>> 14)) >>> 0) / 4294967296 - 0.5) * 12;
       const o = (y * w + x) * 4;
-      out[o] = at(x + dx + 0.5, y + dy, 0) * shade + grain;
-      out[o + 1] = at(x + dx, y + dy, 1) * shade + grain;
-      out[o + 2] = at(x + dx, y + dy + 0.35, 2) * shade + grain;
+      // Bilinear, so a wobbled edge stays soft instead of stair-stepping. Coordinates are the area's own; red is read
+      // half a pixel over and blue a third of one down (the press out of register).
+      const px = x + dx;
+      const py = y + dy;
+      const cx = Math.min(xMax, Math.max(0, px));
+      const cy = Math.min(yMax, Math.max(0, py));
+      const xi = cx | 0;
+      const yi = cy | 0;
+      const tx = cx - xi;
+      const ty = cy - yi;
+      let q = (yi * w + xi) * 4 + 1;
+      a = src[q] + (src[q + 4] - src[q]) * tx;
+      b = src[q + row] + (src[q + row + 4] - src[q + row]) * tx;
+      out[o + 1] = (a + (b - a) * ty) * shade + grain;
+      const rx = Math.min(xMax, Math.max(0, px + 0.5));
+      const rxi = rx | 0;
+      const rtx = rx - rxi;
+      q = (yi * w + rxi) * 4;
+      a = src[q] + (src[q + 4] - src[q]) * rtx;
+      b = src[q + row] + (src[q + row + 4] - src[q + row]) * rtx;
+      out[o] = (a + (b - a) * ty) * shade + grain;
+      const by = Math.min(yMax, Math.max(0, py + 0.35));
+      const byi = by | 0;
+      const bty = by - byi;
+      q = (byi * w + xi) * 4 + 2;
+      a = src[q] + (src[q + 4] - src[q]) * tx;
+      b = src[q + row] + (src[q + row + 4] - src[q + row]) * tx;
+      out[o + 2] = (a + (b - a) * bty) * shade + grain;
       out[o + 3] = 255;
     }
   }
+  const r = rng(seed);
   img.data.set(out);
   ctx.putImageData(img, ax, ay);
   if (printOnly) return;

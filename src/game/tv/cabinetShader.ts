@@ -67,7 +67,7 @@ const vec3 VHOLD = vec3(${f(VHOLD_KNOB.x)}, ${f(VHOLD_KNOB.y)}, ${f(VHOLD_KNOB.r
 const vec4 POWER_SW = vec4(${f(POWER_SWITCH.x)}, ${f(POWER_SWITCH.y)}, ${f(POWER_SWITCH.hw)}, ${f(POWER_SWITCH.hh)}); // centre, half-size
 const float LABEL_CELLS = ${f(LABEL_CELLS)};       // cells in the uDial strip: the channels, ON, OFF, V-HOLD (two)
 const vec2 DIAL_CELL = vec2(${f(DIAL_CELL_H * (LABEL_W / LABEL_H))}, ${f(DIAL_CELL_H)}); // one channel label's cell, in panel units
-const vec2 LIGHT = vec2(-0.55, 0.83);   // where the room light comes from (in the plane)
+const vec2 LIGHT = vec2(-0.55, 0.83);   // where the room light comes from (in the plane): the desk lamp the glass reflects
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) {
@@ -101,9 +101,9 @@ vec3 wood(vec2 p) {
 }
 
 ${WEAR_GLSL}
-/** The dark wall and the top of the table the TV stands on, lit a little by the screen. */
+/** The dark wall and the top of the table the TV stands on, lit a little by the screen; brighter toward the lamp. */
 vec3 room(vec2 p, float cabD, vec3 spill) {
-  vec3 wall = mix(vec3(0.035, 0.03, 0.028), vec3(0.075, 0.062, 0.05), smoothstep(-2.5, 1.5, p.y));
+  vec3 wall = mix(vec3(0.035, 0.03, 0.028), vec3(0.075, 0.062, 0.05), smoothstep(-2.5, 1.5, dot(p, LIGHT)));
   wall *= 0.75 + 0.25 * fbm(p * 3.0);
   float tableY = -CAB.y - 0.02;
   if (p.y < tableY) {
@@ -146,7 +146,7 @@ vec3 panel(vec2 p, vec2 knobs, vec2 more, float rock) {
   }
   // The knobs, with their printed scales: channel (it starts on 3, where a CoCo lives), volume, vertical hold.
   float print = max(max(channelTicks(p), channelNumbers(p)), max(max(volumeWedge(p), powerLabels(p)), holdLabel(p)));
-  col = mix(col, mix(vec3(0.56, 0.54, 0.47), vec3(0.5, 0.47, 0.38), noise(p * 12.0)), 0.8 * silkscreen(p, print)); // yellowed
+  col = mix(col, mix(vec3(0.56, 0.54, 0.47), vec3(0.5, 0.47, 0.38), noise(p * 12.0)), 0.9 * silkscreen(p, print)); // yellowed
   vec4 k = fineRing(p, more.x);
   col = k.a > 0.99 ? k.rgb : col * (1.0 - k.a);
   k = knob(p, CH_KNOB.xy, CH_KNOB.z, knobs.x);

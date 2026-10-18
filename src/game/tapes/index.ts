@@ -1,5 +1,7 @@
 import type { TapeFile } from '../basic/tape';
+import { ORACLE_ON_TAPE, hangmanOnTape } from '../puzzles/listingsMay';
 import about from './about.bas?raw';
+import aboutMay from './aboutMay.bas?raw';
 import advent from './advent.bas?raw';
 import guess from './guess.bas?raw';
 import oracle from './oracle.bas?raw';
@@ -16,4 +18,17 @@ export const RAINBOW_TAPE: readonly TapeFile[] = [
   { name: 'RAINBOW', text: rainbow },
   { name: 'ORACLE', text: oracle },
   { name: 'ADVENT', text: advent },
+];
+
+/** Where the May cassette's own recordings are kept (each cassette has its own; March's is the tape's default). */
+export const MAY_TAPE_KEY = 'coco2.tape.may';
+
+/**
+ * The May cassette: ABOUT and HANGMAN, as the magazine lists them, and ORACLE, which it does not (OK came with it). HANGMAN
+ * carries OK's REM, which depends on whether the player deleted GUESS's extra line in March.
+ */
+export const mayTape = (deleted: boolean): readonly TapeFile[] => [
+  { name: 'ABOUT', text: aboutMay },
+  { name: 'HANGMAN', text: hangmanOnTape(deleted) },
+  { name: 'ORACLE', text: ORACLE_ON_TAPE },
 ];

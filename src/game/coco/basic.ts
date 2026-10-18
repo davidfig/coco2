@@ -43,7 +43,8 @@ export class ColorBasic {
   step(dt: number, keys: TypedKey[]): void {
     this.backlog.push(...keys);
     while (this.backlog.length) {
-      if (this.interp.state === 'tape' && !isBreak(this.backlog[0])) break; // typed ahead: waits for the tape
+      const busy = this.interp.state === 'tape' || this.interp.state === 'prompt';
+      if (busy && !isBreak(this.backlog[0])) break; // typed ahead: waits for the tape, or for the OK
       const k = this.backlog.shift()!;
       this.key(k);
       if (k.key === 'Enter' && this.interp.state !== 'idle' && this.interp.state !== 'input') break;

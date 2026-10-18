@@ -9,7 +9,11 @@ import { drawGuessListing, drawListing } from './extras';
 import { drawFirstProgram, drawStopping, drawTape } from './learn';
 import { drawLetters } from './letters';
 import { ISSUES, ISSUE_DATE, type AnyPageId, type IssueId } from './pages';
-import { drawMayCover, drawMayNotice } from './may';
+import { drawMayCover } from './may';
+import { drawClearMind, drawHealthy, drawMayContents, drawMayEditorial } from './mayArticles';
+import { drawHangman, drawMayTape, drawSecret } from './mayCode';
+import { drawMayClassifieds, drawMayLetters } from './mayLetters';
+import { beginLinks } from './pageLinks';
 import { Ctx, PAGE_H, PAGE_W, furniture, inkPass, paperBase } from './paper';
 
 /** The most pages any issue has: the book's texture array holds that many layers. */
@@ -41,12 +45,22 @@ const PAGES: Record<AnyPageId, PageDef> = {
   guess: { draw: drawGuessListing },
   tape: { draw: drawTape },
   classifieds: { draw: drawClassifieds },
-  marketplace: { draw: drawAds },
   insideBack: { draw: drawInsideBackAd, colour: true },
   backCover: { draw: drawBackCover, colour: true },
-  // May: only the cover and the notice are new; the advertisers ran the same colour ads again.
+  marketplace: { draw: (ctx) => drawAds(ctx) },
+  // May: the advertisers ran the same colour ads again, and Ned's catalogue is back without its tape copier.
   mayCover: { draw: drawMayCover, colour: true },
-  mayNotice: { draw: drawMayNotice },
+  mayInsideFront: { draw: drawInsideCoverAd, colour: true },
+  mayContents: { draw: drawMayContents },
+  mayLetters: { draw: drawMayLetters, noFoot: true },
+  mayEditorial: { draw: drawMayEditorial },
+  mayHealthy: { draw: drawHealthy },
+  maySecret: { draw: drawSecret },
+  mayHangman: { draw: drawHangman },
+  mayTape: { draw: drawMayTape },
+  mayClearMind: { draw: drawClearMind },
+  mayClassifieds: { draw: drawMayClassifieds },
+  mayMarketplace: { draw: (ctx) => drawAds(ctx, false) },
   mayInsideBack: { draw: drawInsideBackAd, colour: true },
   mayBackCover: { draw: drawBackCover, colour: true },
 };
@@ -54,7 +68,9 @@ const PAGES: Record<AnyPageId, PageDef> = {
 /** Draw page `i` (0-based) of an issue onto a PAGE_W × PAGE_H canvas. */
 export function drawPage(issue: IssueId, i: number, ctx: Ctx, s: IssueState): void {
   ctx.clearRect(0, 0, PAGE_W, PAGE_H);
-  const def = PAGES[ISSUES[issue][i]];
+  const id = ISSUES[issue][i];
+  const def = PAGES[id];
+  beginLinks(id);
   if (def.colour) {
     def.draw(ctx, s);
     return;

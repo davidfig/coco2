@@ -9,8 +9,11 @@ import { Cursor, Token, crunch } from './tokens';
 import { Target, Vars } from './vars';
 import { BasicError, fail, isNumberText } from './values';
 
-/** idle: at the OK prompt · running · input: waiting for an INPUT reply · waiting: SOUND · tape: the cassette is moving. */
-export type RunState = 'idle' | 'running' | 'input' | 'waiting' | 'tape';
+/**
+ * idle: at the OK prompt · running · input: waiting for an INPUT reply · waiting: SOUND · tape: the cassette is moving ·
+ * prompt: done, but the OK has not come up yet (`promptLag`).
+ */
+export type RunState = 'idle' | 'running' | 'input' | 'waiting' | 'tape' | 'prompt';
 
 /** A place in the program (li -1 is the line typed at the OK prompt). */
 export interface Pos {
@@ -57,6 +60,8 @@ export class Interpreter implements Machine {
   private pending: PendingInput | null = null;
   /** Told what the player does (see `events.ts`); the puzzle watcher listens here. */
   listener: BasicListener | null = null;
+  /** Seconds between a command finishing and its OK coming up. A real CoCo has none; the story may set some. */
+  promptLag = 0;
 
   constructor(readonly screen: TextScreen, readonly tape: Tape) {
     this.deck = new TapeDeck(screen);
@@ -90,9 +95,10 @@ export class Interpreter implements Machine {
         this.report(e);
       }
     }
-    if (this.state === 'waiting') {
+    if (this.state === 'waiting' || this.state === 'prompt') {
       this.wait -= dt;
       if (this.wait > 0) return;
+      if (this.state === 'prompt') return this.prompt();
       this.state = 'running';
     }
     if (this.state !== 'running') return;
@@ -131,11 +137,19 @@ export class Interpreter implements Machine {
 
   /** The program (or typed line) is done: back to OK. */
   finish(): void {
-    this.state = 'idle';
-    this.emit({ type: 'idle' });
     this.deck.stop();
     this.keys = [];
     this.pending = null;
+    if (this.promptLag > 0) {
+      this.state = 'prompt';
+      this.wait = this.promptLag;
+    } else this.prompt();
+  }
+
+  /** The OK prompt comes up. */
+  private prompt(): void {
+    this.state = 'idle';
+    this.emit({ type: 'idle' });
     this.ensureLineStart();
     this.screen.print('OK\n');
   }
@@ -157,6 +171,7 @@ export class Interpreter implements Machine {
   /** BREAK key, or STOP: halt where we are, remembering the spot for CONT. */
   halt(): void {
     if (this.state === 'idle') return;
+    if (this.state === 'prompt') return this.prompt(); // BREAK hurries a slow OK along
     const p = this.state === 'input' ? this.stmtStart : this.c.p;
     this.contAt = this.li >= 0 ? { li: this.li, toks: this.c.toks, p } : null;
     this.emit({ type: 'break', line: this.li >= 0 ? this.program.lines[this.li].num : null });
@@ -287,6 +302,6 @@ export class Interpreter implements Machine {
   }
 
   memFree(): number {
-    return Math.max(0, 22823 - this.program.bytes());
+    return Math.max(0, 24871 - this.program.bytes()); // PRINT MEM on a 32K or 64K CoCo with Extended BASIC and no disk
   }
 }

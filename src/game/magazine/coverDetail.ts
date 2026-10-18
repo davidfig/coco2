@@ -1,4 +1,4 @@
-import { Ctx, PAGE_H, PAGE_W, rng } from './paper';
+import { Ctx, PAGE_H, PAGE_W, rng, scratch } from './paper';
 
 /** Where the moon sits on the cover; lit faces turn toward it. */
 const MOON_X = 770;
@@ -10,9 +10,7 @@ const MOON_X = 770;
 export function modelRidge(ctx: Ctx, peaks: [number, number][], shape: () => void, light: number, seed: number): void {
   const r = rng(seed);
   // The lit faces are painted small and scaled up, so they come out sprayed, with no hard edge.
-  const soft = document.createElement('canvas');
-  soft.width = PAGE_W / 8;
-  soft.height = Math.ceil(PAGE_H / 8);
+  const soft = scratch(PAGE_W / 8, Math.ceil(PAGE_H / 8));
   const sc = soft.getContext('2d')!;
   sc.scale(1 / 8, 1 / 8);
   ctx.save();

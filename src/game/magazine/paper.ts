@@ -18,6 +18,31 @@ export const PENCIL = 'Caveat, "Bradley Hand", "Comic Sans MS", cursive';
 
 export type Ctx = CanvasRenderingContext2D;
 
+/**
+ * The 2D context a whole page is painted on, in software. The paint passes read the page back (`paintify`), and after a
+ * few readbacks the browser moves a canvas off the GPU: the pages have always been painted on one that had moved (the
+ * book's one canvas, after its first painted page), so this one is moved before the first. A GPU canvas's edges and
+ * gradients come out a little differently, and not quite the same from one run to the next.
+ */
+export function pageContext(canvas: HTMLCanvasElement | OffscreenCanvas): Ctx {
+  // A worker's OffscreenCanvas doesn't move for readbacks: it is asked to be a software one from the start.
+  if (typeof document === 'undefined') return canvas.getContext('2d', { willReadFrequently: true }) as unknown as Ctx;
+  const ctx = canvas.getContext('2d') as Ctx;
+  for (let i = 0; i < 2; i++) ctx.getImageData(0, 0, 1, 1);
+  return ctx;
+}
+
+/**
+ * A scratch canvas `w`×`h` to paint on and draw from: a document's, or an OffscreenCanvas where there is none (the page
+ * painter's worker). Typed as the document's, which is all the pages ask of it.
+ */
+export function scratch(w: number, h: number): HTMLCanvasElement {
+  if (typeof document === 'undefined') return new OffscreenCanvas(w, h) as unknown as HTMLCanvasElement;
+  const c = document.createElement('canvas');
+  [c.width, c.height] = [w, h];
+  return c;
+}
+
 export function rng(seed: number): () => number {
   let a = seed >>> 0;
   return () => {

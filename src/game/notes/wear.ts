@@ -6,7 +6,7 @@
  * beside `handled`), so every new page wears its own way and `?clear` brings a different one.
  */
 
-import { blot, coffee, dogEar, fingerprint, fold, rand, type Rand } from './stains';
+import { blot, coffee, dogEar, fold, rand, type Rand } from './stains';
 
 const KEY = 'coco2.notebook';
 
@@ -62,10 +62,6 @@ export interface InkMark {
   ink: [number, number, number];
 }
 
-/** Fingerprints come quickly at first, then more slowly: the 1st, 3rd, 6th, 10th… handling. */
-const PRINTS = Array.from({ length: 14 }, (_, i) => 1 + (i * (i + 3)) / 2);
-/** Where a page is gripped to lift it: the bottom corners and edges most, now and then the top. */
-const GRIPS: [number, number][] = [[80, 1040], [730, 1050], [755, 640], [70, 760], [420, 1065], [740, 90], [110, 1000], [700, 980]];
 const COFFEE = [7, 24, 55];
 const FOLDS = [12, 34];
 const DOG_EAR = 18;
@@ -119,7 +115,7 @@ export function ageUnder(ctx: CanvasRenderingContext2D, W: number, H: number, ed
   ctx.restore();
 }
 
-/** Folds, coffee rings, fingerprints and the pen's blots: over the writing. */
+/** Folds, coffee rings and the pen's blots: over the writing. */
 export function ageOver(ctx: CanvasRenderingContext2D, W: number, H: number, edge: number, handled: number, inks: readonly InkMark[], sheet = 0): void {
   ctx.save();
   ctx.globalCompositeOperation = 'source-atop';
@@ -139,12 +135,6 @@ export function ageOver(ctx: CanvasRenderingContext2D, W: number, H: number, edg
     if (handled < at) return;
     const r = seeded(sheet * 1009 + 1301 + i * 17);
     coffee(ctx, edge + 90 + r() * (W - edge - 180), 90 + r() * (H - 180), 62 + r() * 18, r);
-  });
-  PRINTS.forEach((at, i) => {
-    if (handled < at) return;
-    const r = seeded(sheet * 1009 + 2203 + i * 29);
-    const [gx, gy] = GRIPS[i % GRIPS.length];
-    fingerprint(ctx, gx + (r() - 0.5) * 70, gy + (r() - 0.5) * 70, r() * Math.PI * 2, 0.9 + r() * 0.3, r() < 0.2, r);
   });
   ctx.restore();
 }

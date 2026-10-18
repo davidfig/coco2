@@ -12,7 +12,7 @@ function body(ctx: Ctx, paras: { text: string; before?: number }[], y: number, h
 }
 
 /** A printed screen: light grey, dark monospace, one string per row. Returns the y below it. */
-function screenBox(ctx: Ctx, x: number, y: number, w: number, rows: readonly string[], caption: string): number {
+export function screenBox(ctx: Ctx, x: number, y: number, w: number, rows: readonly string[], caption: string): number {
   const h = 20 + rows.length * 26;
   ctx.fillStyle = INK;
   ctx.fillRect(x - 12, y - 12, w + 24, h + 24);
@@ -162,7 +162,10 @@ const TAPE_COMMANDS: readonly [string, string][] = [
 ];
 
 /** the cassette, its programs, and the commands that work it. */
-export function drawTape(ctx: Ctx): void {
+export const drawTape = (ctx: Ctx): void => tapePage(ctx, TAPE);
+
+/** A month's tape page: what is on the cassette, and how to work the recorder. `more` is a closing word for that month. */
+export function tapePage(ctx: Ctx, onTape: readonly [string, string][], more?: string): void {
   const y = headline(ctx, 'Rainbow On Tape', ['This month’s cassette . . .', 'What is on it, and how to work the recorder . . .'], 'Dale Wick');
   body(
     ctx,
@@ -189,6 +192,7 @@ export function drawTape(ctx: Ctx): void {
     });
     ty += 40;
   };
-  table('On This Tape', TAPE, 200);
+  table('On This Tape', onTape, 200);
   table('At The Recorder', TAPE_COMMANDS, 300);
+  if (more) flow(ctx, rowsFor(ctx, [{ text: more, before: 0 }], W), MARGIN, ty - 10, W, BOTTOM - ty);
 }

@@ -241,3 +241,39 @@ export function sketch(ctx: CanvasRenderingContext2D, strokes: readonly Stroke[]
     }
   }
 }
+
+/**
+ * A freehand line through `pts` (in canvas pixels), drawn by the same hand and ballpoint as the writing: a box, an arrow,
+ * a line between two rooms. Each leg bows a little and wanders in a slow wave without a ruler, its ends staying on the
+ * points so the legs meet; the corners round off where the pen turns, and the pressure comes and goes as it does in letters.
+ */
+export function scrawl(ctx: CanvasRenderingContext2D, pts: readonly (readonly [number, number])[], pen: Pen): void {
+  const r = mulberry32(pen.seed ^ 0x27d4eb2f);
+  const mood = pen.mood ?? 0;
+  const ink = pen.ink ?? BLUE_BLACK;
+  const wave = pen.size * (0.05 + 0.2 * mood);
+  const path: P[] = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [a, b] = [pts[i], pts[i + 1]];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const [nx, ny] = [-(b[1] - a[1]) / len, (b[0] - a[0]) / len];
+    const bow = gauss(r) * Math.min(len * (0.02 + 0.03 * mood), pen.size * (0.22 + 0.4 * mood));
+    const [ph, ph2] = [r() * 6, r() * 6];
+    // A shaky hand's tremor: random nudges every few pixels, eased from one to the next, never a regular ripple.
+    const knots = Array.from({ length: Math.ceil(len / 7) + 2 }, () => gauss(r) * (0.15 + 0.5 * mood));
+    const shake = (d: number): number => {
+      const k = Math.floor(d / 7);
+      const f = (1 - Math.cos(((d / 7) - k) * Math.PI)) / 2;
+      return knots[k] + (knots[k + 1] - knots[k]) * f;
+    };
+    const n = Math.max(2, Math.round(len / 9));
+    for (let j = i ? 1 : 0; j <= n; j++) {
+      const t = j / n;
+      const env = Math.sqrt(Math.sin(Math.PI * t));
+      const off = env * (bow + wave * (Math.sin(ph + (len * t) / 41) * 0.7 + Math.sin(ph2 + (len * t) / 14) * 0.3)) + shake(len * t);
+      path.push([a[0] + (b[0] - a[0]) * t + nx * off, a[1] + (b[1] - a[1]) * t + ny * off]);
+    }
+  }
+  const shade = Math.round(gauss(r) * 9);
+  ribbon(ctx, sample(path, true, 1.5), Math.max(1.1, pen.size * 0.075 * (1 + gauss(r) * 0.08)), `rgb(${ink[0] + shade},${ink[1] + shade},${ink[2] + shade})`, r);
+}

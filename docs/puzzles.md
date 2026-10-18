@@ -109,7 +109,37 @@ Tutorial note: the page's check table is the only way to see the difference with
   RAINBOW CHECK sums for the program in memory, which is how a player compares a type-in or a tape with the magazine
   (page 11's table was unusable without it). Flags: `found-extra-line` when LIST shows the line (or it is deleted),
   `deleted-extra-line` when it is deleted. The notebook's "Line N ..." and "Who is asking?" notes wait for both halves of the comparison: the player has found the line AND has had the GUESS page open for a moment (`seen-guess`, set by `SeenTracker` in `magazine/seen.ts`; flipping past the page does not count). Order does not matter. The issue-2 trigger (not built) should wait on `found-extra-line`.
-- The issue is 18 pages now. Not built yet: issue 2 and OK reacting to the choice.
+- The issue is 18 pages now. OK's reaction to the choice is built (flags.md); issue 2 is below.
+
+## Issue 2 puzzles (built, first pass)
+
+Teaches `DATA`, `READ`, `VAL`, `CHR$` and `CSAVE`, on the May tape (`tapes/index.ts`, `mayTape`: ABOUT, HANGMAN, ORACLE; its
+CSAVEs are kept apart from March's, `coco2.tape.may`). Programs and messages: `puzzles/listingsMay.ts`; rules:
+`puzzles/rulesMay.ts`; pages: `magazine/mayCode.ts` (Secret Messages, HANGMAN, the tape).
+
+**The code** (page "Secret Messages"): A=1 … Z=26, 0 a space, -1 the end. The article prints a three-line decoder at lines
+1–3, with its RAINBOW CHECK, and says it can be typed into any program to read that program's DATA (it READs into A$ and
+uses VAL, so a program's word DATA prints as spaces instead of tripping it).
+
+**P6. The message in HANGMAN.** The magazine prints HANGMAN (twelve words in DATA at 900–930) and says line 990, which the
+game never reads, is the editors' message in the code. On the tape, line 990 is OK's instead. CLOAD "HANGMAN", type the
+decoder, RUN: `I DID NOT TOUCH THE TAPE` (after twelve spaces, one per word). It is the first lie, in the very line he
+touched; the printed page shows a different 990. Flags: `may-loaded`, `hangman-loaded`, `hangman-checked` (CHECK typed),
+`hangman-rem` (OK's REM at 15 on screen after a LIST), `message-seen` (990 on screen after a LIST), `data-decoded` (the
+message on the screen), `seen-mayHangman` (the page looked at).
+
+**The opening glitch** is on the tape itself: HANGMAN's line 15 is `REM IS ANYONE READING THIS, PLEASE` if the player
+deleted GUESS's extra line in March, or `REM IS ANYONE READING THIS` plus `16 REM YES. SOMEONE IS` if they kept it. CHECK
+parts from the printed sums at line 15, so comparing finds it.
+
+**P7. Answer ORACLE.** ORACLE is on the May tape but not on the magazine's list or ABOUT's (OK came with it). Its eight
+answers are now the code, as quoted strings: `WHO ARE YOU` and `ANSWER ME IN DATA`. The player decodes it (by hand from
+the table, or as DATA under the decoder), then writes their own message as DATA in the code (the article's "Send One
+Back") and RUNs or CSAVEs it. Any message that is not one of the known ones counts, unscored; it is kept in `coco2.reply`.
+Flags: `oracle-passed` (the tape wound past or loaded it), `oracle-asked` (it printed a coded answer), `oracle-read` (the
+question decoded on the machine), `oracle-answered`.
+
+Not detected: decoding by hand. A player who does that never sets `oracle-read`, but `oracle-answered` still works.
 
 ## The notebook page (built)
 

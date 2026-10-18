@@ -1,5 +1,6 @@
-/** The May issue, as far as it has come: its cover (a COMING SOON banner across it) and the printer's notice inside. */
-import { BAND, Ctx, MARGIN, PAGE_H, PAGE_W, SANS, SCRIPT, SERIF, colWidth, flow, headline, rng, rowsFor, text } from './paper';
+/** The May issue's cover: a painted cassette floating in the night sky, and the month's cover lines. */
+import { BAND, Ctx, PAGE_H, PAGE_W, SANS, SCRIPT, rng, text } from './paper';
+import { pageNo } from './pages';
 import { STRIP } from './coverArt';
 import { paintify } from './coverPaint';
 import { drawMasthead, drawSky, sparkle } from './cover';
@@ -175,28 +176,12 @@ function cassette(ctx: Ctx): void {
   ctx.restore();
 }
 
-/** A yellow banner across the lower right corner, stripped in like type. */
-function banner(ctx: Ctx, s: string): void {
-  ctx.save();
-  ctx.translate(PAGE_W - 200, PAGE_H - 210);
-  ctx.rotate(-Math.PI / 4);
-  ctx.fillStyle = 'rgba(5,5,30,0.6)';
-  ctx.fillRect(-460, -42, 920, 96);
-  ctx.fillStyle = '#f4c61c';
-  ctx.fillRect(-460, -48, 920, 96);
-  ctx.fillStyle = '#d93a2b';
-  ctx.fillRect(-460, -48, 920, 8);
-  ctx.fillRect(-460, 40, 920, 8);
-  text(ctx, s, 0, 20, `bold 52px ${SANS}`, '#1a1640', 'center');
-  ctx.restore();
-}
-
 function line(ctx: Ctx, s: string, x: number, y: number, color: string, size: number): void {
   text(ctx, s, x + 2, y + 2, `bold ${size}px ${SANS}`, 'rgba(5,5,30,0.8)');
   text(ctx, s, x, y, `bold ${size}px ${SANS}`, color);
 }
 
-/** The May cover: the masthead over a painted cassette, a COMING SOON banner across it. */
+/** The May cover: the masthead over a painted cassette, and what is inside. */
 export function drawMayCover(ctx: Ctx): void {
   drawSky(ctx, 12);
   cassette(ctx);
@@ -205,22 +190,9 @@ export function drawMayCover(ctx: Ctx): void {
   sparkle(ctx, 760, 470, 26, 6);
   paintify(ctx);
   drawMasthead(ctx, 'May 1986');
-  text(ctx, 'Advance Copy', STRIP + 50, 400, `italic bold 64px ${SCRIPT}`, '#f4e24a');
-  line(ctx, 'The rest of this issue, and', STRIP + 50, 1140, '#dfe8ff', 34);
-  line(ctx, 'its tape, are coming soon.', STRIP + 50, 1182, '#dfe8ff', 34);
-  banner(ctx, 'COMING SOON');
-}
-
-/** Inside the May cover: the editor's notice that the rest of the issue, and its tape, are still on their way. */
-export function drawMayNotice(ctx: Ctx): void {
-  const y = headline(ctx, 'To Our Readers', ['The May issue is late . . .', 'The cover is here; the pages and the tape are coming . . .'], 'Margaret Hale, Editor');
-  const w = PAGE_W - MARGIN * 2;
-  const paras = [
-    'This copy reached you ahead of the rest of the issue. The cover was printed on time. The pages that belong inside it were not, and neither was the tape.',
-    'We will not pretend there is a good reason. There were delays at the printer and delays at the duplicator, and between them the May RAINBOW is going to be late.',
-    'The rest of the issue, and its tape, are coming soon. They will reach you in the same way this did, so there is nothing you need to do but keep an eye on the mail.',
-    'In the meantime the March issue is still on your table, and so is its tape. If you have not finished the adventure, now is a good time. If you have, you know more about your CoCo than most people who own one.',
-    'Thank you for your patience. We are glad to have you with us.',
-  ].map((text, i) => ({ text, before: i ? 12 : 0, font: `19px ${SERIF}`, lh: 25, drop: i === 0 }));
-  flow(ctx, rowsFor(ctx, paras, colWidth(w, 2)), MARGIN, y + 10, w, PAGE_H - 140 - y, 2);
+  text(ctx, 'Secret Messages', STRIP + 50, 392, `italic bold 64px ${SCRIPT}`, '#f4e24a');
+  line(ctx, `DATA, READ and a code to crack, page ${pageNo('maySecret')}`, STRIP + 54, 436, '#dfe8ff', 26);
+  line(ctx, 'Keeping Your Small System Healthy', STRIP + 50, 1110, '#ffffff', 34);
+  line(ctx, `Type-in: HANGMAN, page ${pageNo('mayHangman')}`, STRIP + 50, 1152, '#dfe8ff', 28);
+  line(ctx, `A Quiet Hour: the Clear Mind meets, page ${pageNo('mayClearMind')}`, STRIP + 50, 1190, '#dfe8ff', 28);
 }

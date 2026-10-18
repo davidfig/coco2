@@ -9,9 +9,12 @@ export const BOOK_FRAG = /* glsl */ `#version 300 es
 precision highp float;
 precision highp sampler2DArray;
 uniform vec2 uRes;
-uniform vec4 uRect;       // x0 y0 x1 y1 in pixels: where the magazine may draw
-uniform float uScale;     // pixels per book unit at the pivot (fit × zoom)
-uniform vec2 uView;       // book-space point at the rect's centre
+uniform vec4 uClip;       // x0 y0 x1 y1 in pixels: where it may draw
+uniform vec3 uRayO;       // the camera (bookLayout.ts's Cam): the eye in book space,
+uniform mat3 uRayM;       // and the ray through pixel g along uRayM · (g, 1)
+uniform float uScale;     // pixels per book unit at the page (fit × zoom)
+uniform float uFocal;     // pixels per book unit at ray distance 1
+uniform float uLight;     // the room's light on the paper (1 held out; less lying on the dim table)
 uniform float uH;         // page height (page width is 1)
 uniform float uTheta;     // turning leaf's angle: 0 flat on the right, PI flat on the left
 uniform float uFlipOn;
@@ -22,8 +25,6 @@ uniform vec4 uExt;        // x extents (min, max), then the paper's thickness le
 uniform vec2 uWin;        // the part of the book in view (one page): drawn as a clean cut, no paper side shows there
 uniform float uTexW;
 uniform float uLastPage; // layer of the back cover (the front is 0): the glossy ones
-uniform vec2 uTilt;       // sin, cos of the camera's tilt
-uniform float uCam;       // camera distance
 uniform sampler2DArray uPages;
 out vec4 outColor;
 
@@ -67,14 +68,13 @@ float sdBox(vec2 p, vec2 b) {
 }
 
 void main() {
-  vec2 frag = gl_FragCoord.xy;
-  if (frag.x < uRect.x || frag.y < uRect.y || frag.x > uRect.z || frag.y > uRect.w) { outColor = vec4(0.0); return; }
-  float s = uTilt.x, c = uTilt.y;
-  vec2 p = (frag - 0.5 * (uRect.xy + uRect.zw)) / uScale;
-  vec3 dc = normalize(vec3(p, -uCam));
-  vec3 d = vec3(dc.x, dc.y * c - dc.z * s, dc.y * s + dc.z * c);
-  vec3 o = vec3(uView, 0.0) + vec3(0.0, -uCam * s, uCam * c);
+  vec2 g = gl_FragCoord.xy;
+  vec3 d = normalize(uRayM * vec3(g, 1.0));
+  vec3 o = uRayO;
   float hh = uH * 0.5;
+  // The outline's fwidth below needs every pixel of each 2x2 block to get there, so nothing returns before it: a pixel
+  // whose neighbour had left (at the clip's edge, or the horizon) got a garbage width and drew a speck of paper.
+  vec3 dc = vec3(d.xy, min(d.z, -1e-4));
 
   // How much of this pixel the book covers. The march below only says hit or miss, which leaves its outline stepped, so
   // the outline is also found where the ray meets the paper's top (a few plane hits that settle onto the curled surface)
@@ -82,13 +82,16 @@ void main() {
   vec2 xr = vec2(max(uExt.x, uWin.x), min(uExt.y, uWin.y));
   if (uL < 0.0) xr.x = max(xr.x, 0.0);
   if (uR < 0.0) xr.y = min(xr.y, 0.0);
-  vec3 E = atHeight(o, d, heightAt(vec2(0.5 * (xr.x + xr.y), 0.0)));
-  for (int i = 0; i < 3; i++) E = atHeight(o, d, heightAt(clamp(E.xy, vec2(xr.x, -hh), vec2(xr.y, hh))));
-  float dFoot = -hh - atHeight(o, d, 0.0).y;
+  vec3 E = atHeight(o, dc, heightAt(vec2(0.5 * (xr.x + xr.y), 0.0)));
+  for (int i = 0; i < 3; i++) E = atHeight(o, dc, heightAt(clamp(E.xy, vec2(xr.x, -hh), vec2(xr.y, hh))));
+  float dFoot = -hh - atHeight(o, dc, 0.0).y;
   float dEdge = max(max(xr.x - E.x, E.x - xr.y), max(E.y - hh, dFoot));
   float cover = clamp(0.5 - dEdge / max(fwidth(dEdge), 1e-6), 0.0, 1.0);
+  if (g.x < uClip.x || g.y < uClip.y || g.x > uClip.z || g.y > uClip.w) { outColor = vec4(0.0); return; }
+  // Lying on the table, the room's camera sees past the horizon: a ray going up never meets the book or its shadow.
+  if (d.z > -1e-4) { outColor = vec4(0.0); return; }
   // A book unit at ray distance t spans about this many pixels.
-  float pxUnit = uScale * uCam;
+  float pxUnit = uFocal;
 
   // The book's top and sides: march the slab it lives in, then bisect onto the surface.
   float tBook = 1e9;
@@ -234,5 +237,5 @@ void main() {
       a += lc * (1.0 - a);
     }
   }
-  outColor = vec4(col, a);
+  outColor = vec4(col * uLight, a);
 }`;

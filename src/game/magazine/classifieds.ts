@@ -37,15 +37,19 @@ export const CLASSIFIEDS: readonly [string, string][] = [
 ];
 
 /** The classified page: readers' small ads in three narrow columns, and a notice to readers boxed below. */
-export function drawClassifieds(ctx: Ctx): void {
+export const drawClassifieds = (ctx: Ctx): void =>
+  classifiedsPage(ctx, CLASSIFIEDS, 'Advertisers are reminded that all hardware offered in these columns must fall within the Federal computing limit. The editors cannot accept notices for any machine above it, and will not forward replies to them.');
+
+/** A month's classified page: its small ads, and the notice to readers under them. */
+export function classifiedsPage(ctx: Ctx, ads: readonly [string, string][], notice: string): void {
   const y = headline(ctx, 'Classified', ['Readers writing to readers . . .', 'Ten cents a word. Box number extra . . .'], null);
-  const paras = CLASSIFIEDS.flatMap(([head, body], i) => ad(head, body, i === 0));
+  const paras = ads.flatMap(([head, body], i) => ad(head, body, i === 0));
   const ny = BOTTOM - 150;
   flow(ctx, rowsFor(ctx, paras, CW), MARGIN, y, W, ny - y - 20, 3, GAP);
   sidebar(ctx, 'Notice To Readers', MARGIN, ny, W, 150);
   flow(
     ctx,
-    rowsFor(ctx, [{ text: 'Advertisers are reminded that all hardware offered in these columns must fall within the Federal computing limit. The editors cannot accept notices for any machine above it, and will not forward replies to them.', before: 0 }], W - 60),
+    rowsFor(ctx, [{ text: notice, before: 0 }], W - 60),
     MARGIN + 30,
     ny + 62,
     W - 60,

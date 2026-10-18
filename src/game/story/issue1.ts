@@ -5,7 +5,7 @@ import { isAdvent, isGuess } from '../puzzles/rules';
 import { ADVENT, FIRST_PROGRAM, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../puzzles/listings';
 import { programIs, type Rule } from '../puzzles/watcher';
 import type { Tv } from '../tv/tv';
-import { screenCode } from '../vdg/charset';
+import { rowText } from './screenText';
 import { COLS, ROWS } from '../vdg/vdg';
 
 /** Where the player's name is kept between sessions (the first program asks for it). */
@@ -31,10 +31,6 @@ const KEEP_AFTER_GOING_ON = 8;
 const LAMP_AFTER = 2.5;
 /** Seconds between the player having the whole picture (deleted line) and OK putting the line back. */
 const PLEAD_AFTER = 5;
-
-/** Screen byte → character, for reading the screen back. */
-const CHAR = new Map<number, string>();
-for (let a = 0x20; a <= 0x5d; a++) CHAR.set(screenCode(String.fromCharCode(a))!, String.fromCharCode(a));
 
 function savedName(): string {
   try {
@@ -67,9 +63,7 @@ export class Issue1Story {
 
   /** The screen's text on one row, one character per cell ("?" for a block). */
   rowText(row: number): string {
-    let s = '';
-    for (let c = 0; c < COLS; c++) s += CHAR.get(this.screen.vram[row * COLS + c]) ?? '?';
-    return s;
+    return rowText(this.screen, row);
   }
 
   /** The cell where `text` first appears on the screen, searching from the bottom row up (-1: not there). */

@@ -1,8 +1,8 @@
 import type { Magazine } from './book';
-import type { PageId } from './pages';
+import type { AnyPageId } from './pages';
 
 /** Pages the story waits for the player to have looked at: each sets the flag `seen-<id>`. */
-const WATCHED: readonly PageId[] = ['guess'];
+const WATCHED: readonly AnyPageId[] = ['guess', 'mayHangman'];
 
 /** How long a page must stay open in front of the player before it counts as looked at (not just flipped past). */
 const DWELL = 1.2;
@@ -31,7 +31,7 @@ export class SeenTracker {
     if (this.held < DWELL) return;
     for (const i of [spread * 2 - 1, spread * 2]) {
       const id = mag.pageId(i);
-      if (id && WATCHED.includes(id as PageId)) mag.setFlag(`seen-${id}`);
+      if (id && WATCHED.includes(id)) mag.setFlag(`seen-${id}`);
     }
   }
 }

@@ -9,7 +9,7 @@ const GAP = 24;
 const CW = colWidth(W, 3, GAP);
 
 /** A type-in page: heading, intro, the listing (32 characters to a row, as on the CoCo) and its RAINBOW CHECK table. */
-interface TypeIn {
+export interface TypeIn {
   banner: string;
   title: string;
   subtitle: string;
@@ -44,7 +44,7 @@ const GUESS_MY_NUMBER: TypeIn = {
   lines: GUESS_PRINTED,
 };
 
-function drawTypeIn(ctx: Ctx, p: TypeIn): void {
+export function drawTypeIn(ctx: Ctx, p: TypeIn): void {
   banner(ctx, p.banner, MARGIN, 70, 250);
   text(ctx, p.title, PAGE_W / 2, 150, `italic bold 44px ${SERIF}`, INK, 'center');
   text(ctx, p.subtitle, PAGE_W / 2, 192, `bold 26px ${SERIF}`, INK, 'center');
@@ -56,16 +56,19 @@ function drawTypeIn(ctx: Ctx, p: TypeIn): void {
   text(ctx, 'Listing:', MARGIN, ly + 34, `bold 20px ${SANS}`);
   let y = ly + 74;
   const lw = W * 0.56;
+  // A long listing is set closer, so that it and its table still fit on the page.
+  const rows = p.lines.reduce((n, l) => n + Math.ceil(l.length / 32), 0);
+  const lh = rows > 24 ? 21 : 24;
   for (const l of p.lines) {
     for (let k = 0; k < l.length; k += 32) {
       text(ctx, l.slice(k, k + 32), MARGIN + 10, y, `bold 19px ${MONO}`);
-      y += 24;
+      y += lh;
     }
   }
   ctx.fillRect(MARGIN, y + 6, lw, 2);
   const bx = MARGIN + lw + 30;
   const bw = W - lw - 30;
-  const rowH = p.lines.length > 8 ? 26 : 28;
+  const rowH = p.lines.length > 16 ? 22 : p.lines.length > 8 ? 26 : 28;
   const boxH = Math.max(420, 140 + p.lines.length * rowH + 130);
   ctx.strokeStyle = INK;
   ctx.lineWidth = 2;

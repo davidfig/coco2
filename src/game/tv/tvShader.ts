@@ -15,7 +15,7 @@ export type TamperStyle = (typeof TAMPER_STYLES)[number];
 /**
  * The whole picture in one pass: room → cabinet → tube. On the tube the VDG image goes through a CRT: barrel curve,
  * 192 beam-shaped scanlines, slot mask, glow and halation, warm-up, then the curved glass on top (room reflection, a
- * window, the glare and the rim highlight).
+ * desk lamp, the glare and the rim highlight).
  */
 export const TV_FRAG = /* glsl */ `#version 300 es
 precision highp float;
@@ -79,6 +79,9 @@ void main() {
   vec2 pic = TUBE * ACTIVE;
   float s = max(pic.y + uFrame, (pic.x + uFrame) / aspect);
   vec2 p = (frag - (uTvRect.xy + 0.5 * uTvRect.zw)) / (0.5 * uTvRect.w) * s + TUBE_C;
+  float px = abs(dFdy(p.y)); // tube units per pixel (here, while every pixel still runs together)
+  linesPerPx = px / (2.0 * TUBE.y * ACTIVE.y) * LINES;
+  dotsPerPx = px / (2.0 * TUBE.x * ACTIVE.x) * 256.0;
   p -= vec2(sin(uSmack * 55.0), cos(uSmack * 47.0)) * 0.012 * exp(-uSmack * 9.0); // a smack shakes the set
 
   float on = uPower < 0.0 ? 0.0 : uPower;

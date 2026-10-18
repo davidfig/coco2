@@ -1,20 +1,23 @@
-import { FULLSCREEN_VERT, Program, createTexture, linkProgram, uploadTexture } from '../../engine';
-import type { Rect } from '../magazine/bookLayout';
+import { FULLSCREEN_VERT, Program, createTexture, linkProgram } from '../../engine';
+import { NOTE_STRIP, type Rect } from '../magazine/bookLayout';
+import type { IssueId } from '../magazine/pages';
 import type { Shade } from '../tv/tv';
 import { NOTE_FRAG } from './noteShader';
 import { NOTES } from './notes';
-import { DEAL_TIME, type Deal, type Layer, type Sheet, inside, layers, pulled } from './pile';
-import { type PageLink, SHEET_H, SHEET_W, drawSheet, paginate } from './sheet';
+import { DEAL_TIME, type Deal, type Layer, type Sheet, inside, layers, openTime, pulled } from './pile';
+import { type PageLink, SHEET_DPI, SHEET_H, SHEET_W, drawSheet, paginate } from './sheet';
 import { readHandled, saveHandled } from './wear';
+import type { DeskSpot } from '../computer/layout';
+import { DESK_LIGHT, type Quad, inQuadPx, onTable } from './onDesk';
+import { drawPile } from './pileDraw';
 
 const RATIO = SHEET_W / SHEET_H;
+/** At rest, this much of the peeking page (share of its height: its heading) shows above the window's bottom. */ const PEEK_SHOW = 0.11;
 /** A new note makes the peeking page bounce this many times, each this long (seconds): up and back down. */
 const BOUNCES = 2;
 const BOUNCE_TIME = 0.55;
-/** A real 8.5 in sheet against the picture of a 13 in set (about 10.4 in across), so the page keeps that share of the TV's width. */
-const PAGE_IN_TV = 8.5 / 10.4;
-
-
+/** The real sheet (`SHEET_DPI`) against the picture of a 13 in set (about 10.4 in across), so the page keeps that share of the TV's width. */
+const PAGE_IN_TV = SHEET_W / SHEET_DPI / 10.4;
 const smooth = (t: number): number => t * t * (3 - 2 * t);
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 /** Flags that change what the notebook page says. */
@@ -22,9 +25,9 @@ const WATCHED = [...new Set(NOTES.flatMap((n) => [n.when, n.solved, n.orSolved, 
 
 /**
  * The player's notebook page. It peeks up from the bottom-left corner of the window (as the magazine peeks in from the
- * right); a new line makes it rise a little, pointing at it lifts it, and a click holds it up to read over a dimmed
+ * right); a new line makes it rise a little, pointing at it lifts it, and a click holds it up to read in front of the
  * room. Its pixels come from `drawSheet`, written fresh by hand each time the flags change, and again each time it is
- * put down, as every reading wears it a little more (wear.ts).
+ * back down, as every reading wears it a little more (wear.ts).
  */
 export class Notebook {
   private readonly program: Program;
@@ -37,6 +40,7 @@ export class Notebook {
   private flagSig: string | null = null;
   /** How many times the page has been held up and put down again; set it from the console to see it age. */
   handled = readHandled();
+  /** The wear the sheets show: `handled` catches up only once the page is back down, so the rewrite (tens of ms a sheet) never stalls its animation. */ private worn = this.handled;
   private openT = 0;
   private lift = 0;
   private nudge = 0;
@@ -66,8 +70,15 @@ export class Notebook {
   /** Turns waiting for the one in progress: +1 sends the top sheet under, -1 brings the bottom one up. */
   private queue: (1 | -1)[] = [];
   open = false;
+  /**
+   * Put down, how far the pile lies on the table instead of peeking in (0..1: main.ts, from `Computer.tableT`, as the
+   * view pulls back to the desk) and where the set's picture is (`Tv.picture`), which places the room's camera on screen.
+   */
+  desk: () => { t: number; spot?: DeskSpot; picture: readonly number[] } = () => ({ t: 0, picture: [] });
+  /** Whether something lying over the paper on the table takes pixel (x, y) (bottom-left origin): the magazine, if it was read last. */
+  covered: (x: number, y: number) => boolean = () => false;
 
-  constructor(private readonly gl: WebGL2RenderingContext, private readonly canvas: HTMLCanvasElement, private readonly flags: () => ReadonlySet<string>, private readonly tv: () => Rect, private readonly glow: () => readonly number[], private readonly picture: () => readonly number[], private readonly onPage: (index: number) => void) {
+  constructor(private readonly gl: WebGL2RenderingContext, private readonly canvas: HTMLCanvasElement, private readonly flags: () => ReadonlySet<string>, private readonly tv: () => Rect, private readonly tuck: () => number, private readonly glow: () => readonly number[], private readonly picture: () => readonly number[], private readonly onPage: (index: number, issue: IssueId) => void) {
     this.program = linkProgram(gl, FULLSCREEN_VERT, NOTE_FRAG);
     this.vao = gl.createVertexArray()!;
     this.page.width = SHEET_W;
@@ -81,17 +92,21 @@ export class Notebook {
     const set = this.flags();
     const flagSig = WATCHED.filter((f) => set.has(f)).join(',');
     const wrote = this.flagSig !== null && flagSig !== this.flagSig;
-    const sig = `${flagSig}|${this.handled}`;
+    const sig = `${flagSig}|${this.worn}`;
     if (sig === this.sig) return;
     const first = this.sig === null;
     this.sig = sig;
     this.flagSig = flagSig;
-    const ctx = this.page.getContext('2d', { willReadFrequently: true })!;
+    const ctx = this.page.getContext('2d')!;
+    const gl = this.gl;
     this.sheets = paginate(set).length;
     for (let k = 0; k < this.sheets; k++) {
-      this.texs[k] ??= createTexture(this.gl, SHEET_W, SHEET_H);
-      this.links[k] = drawSheet(ctx, set, this.handled, k).links;
-      uploadTexture(this.gl, this.texs[k], SHEET_W, SHEET_H, new Uint8Array(ctx.getImageData(0, 0, SHEET_W, SHEET_H).data.buffer));
+      this.texs[k] ??= createTexture(gl, SHEET_W, SHEET_H);
+      this.links[k] = drawSheet(ctx, set, this.worn, k).links;
+      // Straight from the canvas: no read back into script.
+      gl.bindTexture(gl.TEXTURE_2D, this.texs[k]);
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.page);
+      gl.generateMipmap(gl.TEXTURE_2D);
     }
     if (first || wrote || this.sheet >= this.sheets) this.settle(this.sheets - 1);
     // One announcement per change: flags that arrive while it is still bouncing do not start it again.
@@ -110,17 +125,20 @@ export class Notebook {
   /** Where the sheet is, in pixels with a bottom-left origin: eased between peeking and held up. */
   private shape(W: number, H: number): Sheet {
     const e = smooth(this.openT);
-    // The peeking page is sized by the picture it sits on, so it shrinks with the TV (reading mode) and stays in its corner.
+    // The peeking page is sized by the set with the book put away, so it keeps its size beside the book and shrinks only
+    // with the TV in reading mode, staying in its corner.
     const r = this.tv();
-    const [tx, ty, tw, th] = [r.x * W, r.y * H, r.w * W, r.h * H];
+    const [tx, tw, th] = [r.x * W, r.w * W, r.h * H];
     const unit = Math.min(tw, th * (4 / 3));
     const pw = unit * PAGE_IN_TV;
     const ph = pw / RATIO;
-    // Most of the page stays tucked below the corner, over the set under the picture (see NOTE_ROOM): only its top edge shows,
-    // a little more when pointed at, but never over the screen until it's held up.
+    // Most of the page stays tucked below the corner, over the set under the picture (see NOTE_ROOM): only its top edge shows
+    // (just its heading, however much room there is), more when pointed at, never over the screen until held up.
     const pic = this.picture();
     const below = pic[1] - pic[3] - Math.max(4, unit * 0.006);
-    const top = lerp(lerp(ty, below, 0.5), below, this.lift);
+    // With the book out in a tall window it would hang over the pages: there it tucks down to a strip along the window's bottom.
+    const rest = Math.min(below, ph * PEEK_SHOW);
+    const top = lerp(lerp(rest, below, this.lift), H * NOTE_STRIP * (1 + this.lift), this.tuck());
     const rot = -0.06;
     const px = tx + pw * 0.5 - unit * 0.04;
     // The top edge's highest point in view: its left corner, or where it leaves the window's left side.
@@ -137,7 +155,23 @@ export class Notebook {
     };
   }
 
+  /** How far the pile lies on the table: none once it is held up. */
+  onDesk(): number {
+    const d = this.desk();
+    return d.spot ? d.t * (1 - smooth(this.openT)) : 0;
+  }
+
+  /** Every sheet that shows, from the bottom up, as drawn: eased from where `layers` puts it onto the table by `onDesk`. */
+  private placed(): (Layer & { quad: Quad })[] {
+    const d = this.desk();
+    return onTable(this.layers(), this.onDesk(), d.spot!, this.sheets, this.sheet, d.picture);
+  }
+
   private hit(x: number, y: number): boolean {
+    if (!this.open && this.onDesk() > 0) {
+      const top = this.placed().at(-1);
+      return !!top && inQuadPx(top.quad, x, y) && !this.covered(x, y);
+    }
     return inside(this.shape(this.gl.drawingBufferWidth, this.gl.drawingBufferHeight), x, y);
   }
 
@@ -151,6 +185,11 @@ export class Notebook {
   /** Every sheet that shows, from the bottom of the pile up. */
   private layers(): Layer[] {
     return layers(this.shape(this.gl.drawingBufferWidth, this.gl.drawingBufferHeight), this.sheets, this.sheet, this.off, this.deal);
+  }
+
+  /** Every sheet that shows, where it lies (canvas pixels, bottom-left origin): what lies over the magazine's stickers. */
+  covers(): Sheet[] {
+    return this.layers();
   }
 
   /** How many places down the held-up pile the sheet under window point (x, y) is; the top sheet covers the rest. */
@@ -192,7 +231,7 @@ export class Notebook {
     return (this.links[this.sheet] ?? []).find((l) => sx >= l.x && sx <= l.x + l.w && sy >= l.y && sy <= l.y + l.h);
   }
 
-  /** Put the notes down: one more reading's worth of wear, which the page picks up as it goes back, newest sheet on top. */
+  /** Put the notes down: one more reading's worth of wear, which the page picks up once it is back down, newest sheet on top. */
   private putDown(): void {
     this.open = false;
     saveHandled(++this.handled);
@@ -286,7 +325,7 @@ export class Notebook {
               const link = this.linkAt(...px(e as PointerEvent));
               this.putDown();
               this.overLink = this.overTop = false;
-              if (link) this.onPage(link.page);
+              if (link) this.onPage(link.page, link.issue);
             }
           }
           if (type === 'wheel' && this.open && e.timeStamp - this.lastTurn > 300) {
@@ -306,8 +345,9 @@ export class Notebook {
 
   /** Move the paper on; call before the TV draws, which needs `shade`. */
   update(dt: number): void {
+    if (this.openT === 0) this.worn = this.handled;
     this.refresh(true);
-    this.openT = Math.min(1, Math.max(0, this.openT + (this.open ? dt : -dt) / 0.35));
+    this.openT = Math.min(1, Math.max(0, this.openT + (this.open ? dt : -dt) / openTime(Math.min(this.canvas.clientHeight, this.canvas.clientWidth / RATIO) * 0.93)));
     this.nudge = Math.max(0, this.nudge - dt);
     // Each bounce rises from rest to full lift and settles back, so it starts and ends where it was.
     const goal = this.hover ? 1 : this.nudge > 0 ? Math.abs(Math.sin((Math.PI * this.nudge) / BOUNCE_TIME)) : 0;
@@ -341,50 +381,13 @@ export class Notebook {
       ox: 10,
       oy: -(8 + 10 * this.lift + 14 * open),
       soft: 10 + 18 * this.lift + 30 * open,
-      k: 0.95 - 0.15 * open,
+      k: (0.95 - 0.15 * open) * (1 - this.onDesk()),
     };
   }
 
   draw(): void {
-    const gl = this.gl;
-    const W = gl.drawingBufferWidth;
-    const H = gl.drawingBufferHeight;
-    gl.viewport(0, 0, W, H);
-    gl.useProgram(this.program.prog);
-    const u = this.program.u;
-    const open = smooth(this.openT);
-    gl.uniform1f(u.uOpen, open);
-    gl.uniform1f(u.uLift, this.lift);
-    const g = this.glow();
-    gl.uniform3f(u.uGlow, g[0], g[1], g[2]);
-    const pic = this.picture();
-    gl.uniform4f(u.uPicture, pic[0], pic[1], pic[2], pic[3]);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.uniform1i(u.uTex, 0);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    gl.bindVertexArray(this.vao);
-    // The pile from the bottom up, each sheet with its own writing. The light from the screen behind reaches each one
-    // through the sheets already drawn (the four nearest it). The room is dimmed once, by the first sheet drawn.
-    const order = this.layers();
-    const under = new Float32Array(16);
-    const rots = new Float32Array(4);
-    order.forEach((p, i) => {
-      const behind = order.slice(Math.max(0, i - 4), i);
-      behind.forEach((b, j) => {
-        under.set([b.cx, b.cy, b.hx, b.hy], j * 4);
-        rots[j] = b.rot;
-      });
-      gl.uniform4fv(u.uUnder, under);
-      gl.uniform1fv(u.uUnderRot, rots);
-      gl.uniform1i(u.uUnderN, behind.length);
-      gl.bindTexture(gl.TEXTURE_2D, this.texs[p.sheet]);
-      gl.uniform2f(u.uCenter, p.cx, p.cy);
-      gl.uniform2f(u.uHalf, p.hx, p.hy);
-      gl.uniform1f(u.uRot, p.rot);
-      gl.uniform1f(u.uDim, i === 0 ? 0.5 * open : 0);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    });
-    gl.disable(gl.BLEND);
+    const sheets = this.placed().map((p) => ({ quad: p.quad, tex: this.texs[p.sheet] }));
+    const light = 1 + (DESK_LIGHT - 1) * this.onDesk();
+    drawPile(this.gl, this.program, this.vao, sheets, { open: smooth(this.openT), lift: this.lift, glow: this.glow(), picture: this.picture(), light });
   }
 }

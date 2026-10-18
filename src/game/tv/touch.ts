@@ -81,7 +81,7 @@ export class Touch {
   }
 
   /** What part of the set a point in buffer pixels is on, with the point in tube coordinates for the glass. */
-  private at(x: number, y: number): { part: 'on' | 'off' | 'glass' | 'smack'; tx: number; ty: number } | null {
+  at(x: number, y: number): { part: 'on' | 'off' | 'glass' | 'smack'; tx: number; ty: number } | null {
     if (!this.view.covers(x, y)) return null;
     const [px, py] = this.view.toPanel(x, y);
     const tx = (px - TUBE_C[0]) / TUBE[0];

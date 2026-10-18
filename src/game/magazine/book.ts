@@ -1,15 +1,21 @@
-import { FULLSCREEN_VERT, Program, linkProgram } from '../../engine';
+import { FULLSCREEN_VERT, Program, linkProgram, scissor } from '../../engine';
+import type { DeskSpot } from '../computer/layout';
+import { camBounds, onTable, setCam } from './bookCam';
 import { BOOK_FRAG } from './bookShader';
-import { CAM_DIST, Flip, PAGE_FIT_H, PAGE_FIT_W, PAGE_UNIT_H, Rect, TILT, View, clamp, layoutAt, lerp, screenToBook, smooth, spreadView } from './bookLayout';
+import { CLOSED_FRAME, Flip, READ_FRAME, SIDE_FRAME, PAGE_FIT_H, PAGE_FIT_W, PAGE_UNIT_H, Rect, TILT, View, bookBounds, clamp, layoutAt, leafLayers, lerp, putAway, screenToBook, smooth, spreadView } from './bookLayout';
 import { IssueState, newState } from './data';
-import { MAX_PAGES, drawPage } from './issue';
-import { ISSUES, ISSUE_ORDER, type AnyPageId, type IssueId } from './pages';
+import { PagePainter } from './pagePainter';
+import { PageTextures } from './pageTextures';
+import { linkAt } from './pageLinks';
+import { ISSUES, ISSUE_ORDER, pageIndex, type AnyPageId, type IssueId } from './pages';
 import { readSave, writeSave } from './bookSave';
 import { loadFonts } from './fonts';
 import { PAGE_H, PAGE_W } from './paper';
 
 const FLIP_SECONDS = 0.8;
 const MAX_ZOOM = 4;
+/** Pages are readied only after this long (seconds), when the set has warmed up. */
+const PRELOAD_AFTER = 2.5;
 
 /**
  * The reference magazine: its state (open or closed, which spread, mid-turn, zoom), its slide-in beside the TV, and the
@@ -44,20 +50,28 @@ export class Magazine {
   pan = { x: 0, y: 0 };
   /** Where a zoom is anchored: a screen point (window fractions) and the book point under it. */
   anchor: { nx: number; ny: number; px: number; py: number } | null = null;
-  v: View = { W: 1, H: 1, rect: [0, 0, 1, 1], scale: 1, fit: 1, vx: 0, vy: 0, c: 0, ext: [0, 1, 0, 1], win: [0, 1] };
+  v: View = { W: 1, H: 1, rect: [0, 0, 1, 1], scale: 1, fit: 1, vx: 0, vy: 0, c: 0, ext: [0, 1, 0, 1], win: [0, 1], tilt: 0, roll: 0, pivot: [0, 0], clip: [0, 0, 1, 1] };
   /** The arrangement of window now: the TV's rectangle and how much of the set is in view. */
   tv: Rect = { x: 0, y: 0, w: 1, h: 1 };
   book: Rect = { x: 1, y: 0, w: 0.5, h: 1 };
   frame = 0.08;
+  /** How far the notebook page tucks down to the window's bottom, out of the open book's way (tall windows). */
+  notesTuck = 0;
+  /** The set the notebook page is sized by: the TV with the book put away, or shrunk to reading mode's strip. */
+  notesTv: Rect = { x: 0, y: 0, w: 1, h: 1 };
+  /**
+   * Put away, how far it lies on the table instead (0..1: main.ts, from `Computer.tableT`, as the view pulls back to the
+   * desk) and where the set's picture is (`Tv.picture`), which places the room's camera on screen.
+   */
+  desk: () => { t: number; spot?: DeskSpot; picture: readonly number[] } = () => ({ t: 0, picture: [] });
 
   private readonly program: Program;
   private readonly vao: WebGLVertexArrayObject;
-  private readonly tex: WebGLTexture;
-  private readonly paint = document.createElement('canvas');
-  private readonly pctx: CanvasRenderingContext2D;
-  /** Pages painted onto the GPU. */
-  readonly have = new Set<number>();
-  private preload = 0;
+  private readonly pages: PageTextures;
+  /** Paints the pages (in a worker) and puts them on the GPU. */
+  private readonly painter: PagePainter;
+  /** Seconds since the book was made (`PRELOAD_AFTER`). */
+  private age = 0;
   private fontsReady = false;
   private savedView = ''; // `viewKey()` (page, open, reading) as last saved; `update` saves when it changes
 
@@ -65,25 +79,13 @@ export class Magazine {
     this.load();
     this.program = linkProgram(gl, FULLSCREEN_VERT, BOOK_FRAG);
     this.vao = gl.createVertexArray()!;
-    // Pages painted before the typefaces arrive are painted again once they have, then all of them are readied.
+    this.pages = new PageTextures(gl);
+    this.painter = new PagePainter(this.pages, this.state);
+    // Pages are painted once the typefaces are in (any painted before then, again), then all of them are readied.
     void loadFonts().then(() => {
-      this.have.clear();
-      this.preload = 0;
+      this.painter.fontsLoaded();
       this.fontsReady = true;
     });
-    this.paint.width = PAGE_W;
-    this.paint.height = PAGE_H;
-    this.pctx = this.paint.getContext('2d')!;
-    this.tex = gl.createTexture()!;
-    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tex);
-    const levels = Math.floor(Math.log2(Math.max(PAGE_W, PAGE_H))) + 1;
-    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, PAGE_W, PAGE_H, MAX_PAGES);
-    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    const aniso = gl.getExtension('EXT_texture_filter_anisotropic');
-    if (aniso) gl.texParameterf(gl.TEXTURE_2D_ARRAY, aniso.TEXTURE_MAX_ANISOTROPY_EXT, 4);
   }
 
   /** How many pages the issue on the table has, and the id of its page `i`. */
@@ -101,8 +103,8 @@ export class Magazine {
   setIssue(id: IssueId): void {
     if (id === this.issue) return;
     this.pagesAt[this.issue] = this.pageId(this.pageGoal);
-    [this.issue, this.preload, this.flip, this.zoomGoal] = [id, 0, null, 1];
-    this.have.clear();
+    [this.issue, this.flip, this.zoomGoal] = [id, null, 1];
+    this.painter.forget();
     const at = this.pagesAt[id];
     this.place(at ? (ISSUES[id] as readonly AnyPageId[]).indexOf(at) : 0);
     this.save();
@@ -207,6 +209,22 @@ export class Magazine {
     return screenToBook(this.v, nx, ny);
   }
 
+  /** The page a link under a screen point (window fractions) goes to, if the book is lying open there and not mid-turn. */
+  linkUnder(nx: number, ny: number): AnyPageId | undefined {
+    if (!this.open || this.openT < 0.97 || this.flip || this.goal !== this.spread || !this.inRect(this.book, nx, ny)) return undefined;
+    const [px, py] = this.toBook(nx, ny);
+    const page = this.pageId(px >= 0 ? 2 * this.spread : 2 * this.spread - 1);
+    const u = px >= 0 ? px : px + 1;
+    const v = 0.5 - py / PAGE_UNIT_H;
+    if (!page || u < 0 || u > 1 || v < 0 || v > 1) return undefined;
+    return linkAt(page, u * PAGE_W, v * PAGE_H);
+  }
+
+  /** Follow a link: turn to that page of the issue on the table. */
+  follow(to: AnyPageId): void {
+    this.goto(pageIndex(to));
+  }
+
   inRect(r: Rect, nx: number, ny: number): boolean {
     return nx >= r.x && nx <= r.x + r.w && ny >= r.y && ny <= r.y + r.h;
   }
@@ -228,15 +246,23 @@ export class Magazine {
     this.hoverT = step(this.hoverT, this.hover && !this.open ? 1 : 0, 0.2);
     this.advanceFlip(dt);
     if (this.viewKey() !== this.savedView) this.save();
-    // Every page is on the GPU before it is needed (one a frame, from the start, once the fonts are in), so turning never paints.
-    if (this.fontsReady && this.preload < this.count) this.ensure(this.preload++);
+    // Every page is readied before it is needed, so turning rarely waits: one asked for a frame once the fonts are in, none
+    // while the set warms up or the book moves (painting is the worker's, but each page still goes up to the GPU here).
+    this.age += dt;
+    const still = !this.flip && this.zoom === this.zoomGoal && [this.openT, this.readT, this.hoverT].every((t) => t === 0 || t === 1);
+    this.painter.update();
+    let next = 0;
+    while (next < this.count && this.painter.asked(next)) next++;
+    if (this.fontsReady && this.age > PRELOAD_AFTER && still && next < this.count) this.painter.ensure(this.issue, next);
 
     const lay = layoutAt(W / H, this.hoverT, this.openT, this.readT);
     this.tv = lay.tv;
     this.book = lay.book;
+    this.notesTuck = lay.notes;
+    this.notesTv = lay.notesTv;
     const open = smooth(this.openT);
     const read = smooth(this.readT);
-    this.frame = lerp(0.08, lerp(0.95, 0.4, read), open);
+    this.frame = lerp(CLOSED_FRAME, lerp(SIDE_FRAME, READ_FRAME, read), open);
 
     const sv = spreadView(this.phi(), this.count / 2);
     const rw = lay.book.w * W;
@@ -261,9 +287,8 @@ export class Magazine {
     this.pan.x = clamp(this.pan.x, -limX, limX);
     this.pan.y = clamp(this.pan.y, -limY, limY);
     const win: View['win'] = [Math.max(sv.xmin, this.camX - 0.5), Math.min(sv.xmax, this.camX + 0.5)];
-    // Put away, the book sits with its edge just inside the window: slide the view so the page's left edge meets the rect's.
-    const tuck = (1 - open) * (win[0] + rw / 2 / scale - this.camX);
-    this.v = { W, H, rect, scale, fit, vx: this.camX + this.pan.x + tuck, vy: this.pan.y, c: this.camX, ext: [sv.xmin, sv.xmax, sv.stackL, sv.stackR], win };
+    const v: View = { W, H, rect, scale, fit, vx: this.camX + this.pan.x, vy: this.pan.y, c: this.camX, ext: [sv.xmin, sv.xmax, sv.stackL, sv.stackR], win, tilt: TILT, roll: 0, pivot: [0, 0], clip: rect };
+    this.v = putAway(v, open);
   }
 
   private advanceFlip(dt: number): void {
@@ -289,28 +314,21 @@ export class Magazine {
 
   draw(): void {
     const gl = this.gl;
-    const v = this.v;
-    if (v.rect[0] >= v.W || v.rect[1] >= v.H || v.rect[2] <= 0 || v.rect[3] <= 0) return;
+    const desk = this.desk();
+    const { view: v, cam, light } = onTable(this.v, desk.spot ? desk.t * (1 - smooth(this.openT)) : 0, desk.spot!, desk.picture);
+    this.v = v;
+    if (v.clip[0] >= v.W || v.clip[1] >= v.H || v.clip[2] <= 0 || v.clip[3] <= 0) return;
     const f = this.flip;
-    const layer = (i: number) => (i >= 0 && i < this.count ? i : -1);
-    let L: number, R: number, F = -1, B = -1;
-    if (f) {
-      L = layer(2 * f.leaf - 1);
-      R = layer(2 * f.leaf + 2);
-      F = layer(2 * f.leaf);
-      B = layer(2 * f.leaf + 1);
-    } else {
-      L = layer(2 * this.spread - 1);
-      R = layer(2 * this.spread);
-    }
+    const [L, R, F, B] = leafLayers(f, this.spread, this.count);
     for (const i of [L, R, F, B]) if (i >= 0) this.ensure(i);
+    const [x0, y0, x1, y1] = v.cam ? camBounds(cam, v, !!f) : bookBounds(v, !!f);
+    if (!scissor(gl, x0, y0, x1, y1)) return;
     const angle = f ? Math.PI * (f.dir > 0 ? smooth(f.t) : 1 - smooth(f.t)) : 0;
     gl.useProgram(this.program.prog);
     const u = this.program.u;
     gl.uniform2f(u.uRes, v.W, v.H);
-    gl.uniform4f(u.uRect, ...v.rect);
-    gl.uniform1f(u.uScale, v.scale);
-    gl.uniform2f(u.uView, v.vx, v.vy);
+    gl.uniform4f(u.uClip, ...v.clip);
+    setCam(gl, u, cam, light);
     gl.uniform1f(u.uH, PAGE_UNIT_H);
     gl.uniform1f(u.uTheta, angle);
     gl.uniform1f(u.uFlipOn, f ? 1 : 0);
@@ -323,30 +341,28 @@ export class Magazine {
     gl.uniform4f(u.uExt, ...v.ext);
     gl.uniform2f(u.uWin, ...v.win);
     gl.uniform1f(u.uTexW, PAGE_W); gl.uniform1f(u.uLastPage, this.count - 1);
-    gl.uniform2f(u.uTilt, Math.sin(TILT), Math.cos(TILT));
-    gl.uniform1f(u.uCam, CAM_DIST);
     gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tex);
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.pages.tex);
     gl.uniform1i(u.uPages, 1);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.disable(gl.BLEND);
+    gl.disable(gl.SCISSOR_TEST);
     gl.activeTexture(gl.TEXTURE0);
   }
 
   // ---- pages ----
 
-  /** Paint page `i` and put it on the GPU, unless it already is. */
+  /** Paint every page again (the story flags changed under them: the debug menu). */
+  repaint(): void {
+    this.painter.forget(false);
+  }
+
+  /** Page `i` is in view: get it painted and onto the GPU first, unless it already is (until then it is bare paper). */
   private ensure(i: number): void {
-    if (this.have.has(i)) return;
-    const gl = this.gl;
-    drawPage(this.issue, i, this.pctx, this.state);
-    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tex);
-    gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, PAGE_W, PAGE_H, 1, gl.RGBA, gl.UNSIGNED_BYTE, this.paint);
-    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
-    this.have.add(i);
+    this.painter.ensure(this.issue, i, true);
   }
 
   private viewKey(): string {

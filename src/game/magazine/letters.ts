@@ -5,7 +5,7 @@ const W = PAGE_W - MARGIN * 2;
 const GAP = 22;
 
 /** One letter in the magazine's way: a centred bold caps head, "Editor:" in italic, the body, a right-aligned signature. */
-function letter(head: string, body: string, who: string, where: string, reply?: string): { text: string; font?: string; align?: 'center' | 'right' | 'left' | 'justify'; before?: number; keep?: boolean }[] {
+export function letter(head: string, body: string, who: string, where: string, reply?: string): { text: string; font?: string; align?: 'center' | 'right' | 'left' | 'justify'; before?: number; keep?: boolean }[] {
   const items: { text: string; font?: string; align?: 'center' | 'right' | 'left' | 'justify'; before?: number; keep?: boolean }[] = [
     { text: head, font: `bold 15px ${SANS}`, align: 'center', before: 16, keep: true },
     { text: 'Editor:', font: `italic 15px ${SERIF}`, align: 'left', before: 3, keep: true },
@@ -18,7 +18,7 @@ function letter(head: string, body: string, who: string, where: string, reply?: 
 }
 
 /** Letters to RAINBOW, set as the original is: a huge masthead word, then dense three-column mail. */
-export function drawLetters(ctx: Ctx): void {
+export function lettersPage(ctx: Ctx, items: ReturnType<typeof letter>): void {
   text(ctx, 'letters to', MARGIN, 120, `italic bold 40px ${SERIF}`);
   ctx.save();
   ctx.translate(MARGIN + 200, 138);
@@ -29,8 +29,12 @@ export function drawLetters(ctx: Ctx): void {
   ctx.restore();
   ctx.fillStyle = INK;
   ctx.fillRect(MARGIN, 152, W, 3);
-  const cw = colWidth(W, 3, GAP);
-  const items = [
+  flow(ctx, rowsFor(ctx, items, colWidth(W, 3, GAP)), MARGIN, 176, W, PAGE_H - 176 - 90, 3, GAP);
+}
+
+/** March's letters. */
+export function drawLetters(ctx: Ctx): void {
+  lettersPage(ctx, [
     ...letter('OK MEANS READY', 'I turned on my CoCo and it just says OK. Is it broken? I have waited a long time and nothing else has happened. My husband says to call the store, but I thought I would write to you first.', 'Walter D.', 'Dayton, OH', 'Not at all. OK means the machine is ready and waiting for you. See page ' + pageNo('screen') + '.'),
     ...letter('NOTHING BUT SNOW', 'My brother borrowed the set to watch the game and now the CoCo shows nothing but snow. The computer is on and I have checked every plug twice.', 'Diane F.', 'Wichita, KS', 'Turn the dial back to channel 3. That is where the CoCo sends its picture. Channel 4 picks up a little of it, but not enough to read.'),
     ...letter('?SN ERROR BLUES', 'Every time I type LOOK I get ?SN ERROR. I have tried it a dozen ways, in capitals and in small letters, with spaces and without. Nothing helps.', 'Ellen P.', 'Tucson, AZ', 'Until the adventure is running, BASIC will say that to LOOK. Start the adventure first.'),
@@ -42,6 +46,5 @@ export function drawLetters(ctx: Ctx): void {
     ...letter('A QUESTION OF MEMORY', 'I have a 4K CoCo. Everyone seems to say I need 16K. How much is enough? I only want to play adventures and maybe write a very short one.', 'Rosa M.', 'Albuquerque, NM', 'Enough is whatever the program asks for on the label. Read the label.'),
     ...letter('LIKE THE OLD DAYS', 'My son brought home a CoCo and I had to sit down. I worked on the big systems before they were switched off, and I never thought I would hear a keyboard again. It is small and slow and it asks nothing of me. Thank you for printing a magazine for it.', 'Arthur L.', 'Lexington, KY', 'You are very welcome. Mind the Act, and enjoy it.'),
     ...letter('LONGER LISTINGS?', 'Please print more programs with fewer lines. My fingers hurt after the second page, and my mother says I should go outside.', 'Kevin R.', 'Akron, OH'),
-  ];
-  flow(ctx, rowsFor(ctx, items, cw), MARGIN, 176, W, PAGE_H - 176 - 90, 3, GAP);
+  ]);
 }

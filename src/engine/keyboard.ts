@@ -29,6 +29,11 @@ export class Keyboard {
     return this.queue.splice(0);
   }
 
+  /** Queue one key as if pressed (the CoCo's own keyboard, clicked). */
+  push(k: TypedKey): void {
+    this.queue.push(k);
+  }
+
   /** Queue a string as if typed ("\n" is Enter, "\b" is Backspace). */
   type(text: string): void {
     for (const ch of text) {

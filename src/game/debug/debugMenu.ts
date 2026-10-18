@@ -1,3 +1,5 @@
+import { TAPE_KEY } from '../basic/tape';
+import { MAY_TAPE_KEY } from '../tapes';
 import type { ColorBasic } from '../coco/basic';
 import type { Magazine } from '../magazine/book';
 import type { Notebook } from '../notes';
@@ -100,7 +102,7 @@ export class DebugMenu {
         el(
           'div',
           { className: 'grid' },
-          button('Erase CSAVEs', () => this.forget('coco2.tape', false)),
+          button('Erase CSAVEs', () => [TAPE_KEY, MAY_TAPE_KEY].forEach((k) => this.forget(k, false))),
           button('Reload', () => location.reload()),
           button('Wipe everything (?clear)', () => {
             const url = new URL(location.href);
@@ -153,7 +155,7 @@ export class DebugMenu {
     magazine.state.flags.clear();
     for (const f of list) magazine.state.flags.add(f);
     magazine.save();
-    magazine.have.clear();
+    magazine.repaint();
     this.refresh();
   }
 
@@ -164,6 +166,8 @@ export class DebugMenu {
 
   private jump(c: Checkpoint): void {
     this.setFlags(c.flags);
+    // The issue on the table goes with the checkpoint (the tape in the recorder follows the flags by itself).
+    this.h.magazine.setIssue(c.flags.includes('issue2-waiting') ? 'may' : 'march');
     if (c.named) {
       if (!readName()) writeName(this.nameInput.value.trim().toUpperCase() || DEFAULT_NAME);
     } else writeName('');

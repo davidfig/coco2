@@ -1,14 +1,12 @@
 import type { Area } from './coverPaint';
-import { Ctx, rng } from './paper';
+import { Ctx, rng, scratch } from './paper';
 
 /**
  * Paints `draw` (in page coordinates) on a canvas `k` times smaller and scales it up over `a`, so it comes out sprayed,
  * with no hard edge. Clip `ctx` first to keep the spray inside a mask.
  */
 export function airbrush(ctx: Ctx, a: Area, k: number, draw: (sc: Ctx) => void): void {
-  const c = document.createElement('canvas');
-  c.width = Math.ceil(a.w / k) + 2;
-  c.height = Math.ceil(a.h / k) + 2;
+  const c = scratch(Math.ceil(a.w / k) + 2, Math.ceil(a.h / k) + 2);
   const sc = c.getContext('2d')!;
   sc.scale(1 / k, 1 / k);
   sc.translate(k - a.x, k - a.y);

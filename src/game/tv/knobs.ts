@@ -149,7 +149,7 @@ export class Knobs {
   }
 
   /** Which knob (if any) is under a point in buffer pixels, and the point's angle round it. */
-  private at(x: number, y: number): { which: Which; angle: number; near: number } | null {
+  at(x: number, y: number): { which: Which; angle: number; near: number } | null {
     if (!this.view.covers(x, y)) return null;
     for (const which of ['channel', 'fine', 'volume', 'hold'] as const) {
       const a = this.angle(which, x, y);

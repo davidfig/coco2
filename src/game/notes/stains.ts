@@ -46,35 +46,47 @@ export function blot(ctx: CanvasRenderingContext2D, x: number, y: number, size: 
   }
 }
 
-/** A mug set down on the page: a pale wash, a dark rim where the coffee dried at the edge, broken where the cup tilted. */
+/**
+ * A mug set down on the page: only the wet foot of the cup touched it, so the mark is a ring with a clean middle,
+ * and only where coffee had run down the side: one long arc that thins out at its ends, sometimes a stray piece.
+ */
 export function coffee(ctx: CanvasRenderingContext2D, x: number, y: number, R: number, r: Rand): void {
-  const gap = r() * Math.PI * 2;
-  const gapLen = 0.5 + r() * 1.4;
+  const TAU = Math.PI * 2;
   const [f1, f2, f3] = [r() * 6, r() * 6, r() * 6];
   // Sometimes the mug was set down twice, a little apart.
   const rims = r() < 0.35 ? 2 : 1;
   for (let k = 0; k < rims; k++) {
     const [cx, cy] = k ? [x + (r() - 0.5) * 30, y + (r() - 0.5) * 30] : [x, y];
     const fade = k ? 0.55 : 1;
-    // The coffee dried outward to the rim: a tan wash darkening towards it.
-    const wash = ctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, R);
-    wash.addColorStop(0, `rgba(170,115,55,${0.04 * fade})`);
-    wash.addColorStop(0.8, `rgba(160,105,45,${0.08 * fade})`);
-    wash.addColorStop(1, `rgba(140,85,30,${0.16 * fade})`);
-    ctx.fillStyle = wash;
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fill();
+    // Where the drip reached: [start, length] arcs. The second setting-down left less.
+    const arcs: [number, number][] = [[r() * TAU, TAU * (k ? 0.2 + r() * 0.3 : 0.4 + r() * 0.45)]];
+    if (r() < 0.6) arcs.push([arcs[0][0] + arcs[0][1] + 0.3 + r() * 1.2, 0.25 + r() * 0.7]);
+    // How wet the foot was at angle t: full along an arc, thinning to nothing over its last quarter at each end.
+    const wet = (t: number): number => {
+      let w = 0;
+      for (const [s, len] of arcs) {
+        const u = (((t - s) % TAU) + TAU) % TAU;
+        if (u < len) w = Math.max(w, Math.min(1, Math.min(u, len - u) / (len * 0.25)));
+      }
+      return w;
+    };
     const N = 140;
     for (let i = 0; i < N; i++) {
-      const t0 = (i / N) * Math.PI * 2;
-      const t1 = ((i + 1.3) / N) * Math.PI * 2;
-      const d = Math.abs(((t0 - gap + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-      const open = Math.min(1, (d / (gapLen / 2)) ** 2);
-      const a = (0.32 + 0.14 * Math.sin(t0 * 3 + f1) + 0.08 * Math.sin(t0 * 7 + f2)) * open * fade;
+      const t0 = (i / N) * TAU;
+      const t1 = ((i + 1.3) / N) * TAU;
+      const w = wet(t0);
+      if (w <= 0) continue;
       const rr = R + 1.2 * Math.sin(t0 * 5 + f3);
+      // A faint tan band just inside, where the coffee spread a little before drying…
+      ctx.strokeStyle = `rgba(155,100,40,${0.07 * w * fade})`;
+      ctx.lineWidth = R * 0.14;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rr - R * 0.07, t0, t1);
+      ctx.stroke();
+      // …and the dark edge where it dried, thinner where less of it got there.
+      const a = (0.32 + 0.14 * Math.sin(t0 * 3 + f1) + 0.08 * Math.sin(t0 * 7 + f2)) * w * fade;
       ctx.strokeStyle = `rgba(110,60,18,${a})`;
-      ctx.lineWidth = 1.4 + 1.6 * (0.5 + 0.5 * Math.sin(t0 * 2 + f1));
+      ctx.lineWidth = (1.4 + 1.6 * (0.5 + 0.5 * Math.sin(t0 * 2 + f1))) * (0.4 + 0.6 * w);
       ctx.beginPath();
       ctx.arc(cx, cy, rr, t0, t1);
       ctx.stroke();
@@ -94,39 +106,6 @@ export function coffee(ctx: CanvasRenderingContext2D, x: number, y: number, R: n
     ctx.lineWidth = 0.8;
     ctx.stroke();
   }
-}
-
-/** A greasy thumb: a faint pad of dirt and the broken loops of its ridges. */
-export function fingerprint(ctx: CanvasRenderingContext2D, x: number, y: number, rot: number, s: number, inky: boolean, r: Rand): void {
-  const col = inky ? '40,60,150' : '62,50,38';
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(rot);
-  const pad = ctx.createRadialGradient(0, 0, 0, 0, 0, 28 * s);
-  pad.addColorStop(0, `rgba(${col},${inky ? 0.08 : 0.13})`);
-  pad.addColorStop(1, `rgba(${col},0)`);
-  ctx.fillStyle = pad;
-  ctx.fillRect(-30 * s, -30 * s, 60 * s, 60 * s);
-  ctx.lineWidth = 1.4 * s;
-  for (let k = 1; k <= 10; k++) {
-    // Ridges are broken in places where the thumb pressed lightly.
-    const start = r() * Math.PI * 2;
-    const span = Math.PI * 2 * (0.55 + r() * 0.4);
-    const a = (inky ? 0.22 : 0.18) * (1 - k / 12) * (0.6 + r() * 0.5);
-    ctx.strokeStyle = `rgba(${col},${a})`;
-    ctx.beginPath();
-    const n = 40;
-    for (let i = 0; i <= n; i++) {
-      const t = start + (i / n) * span;
-      const wob = 1 + 0.06 * Math.sin(t * 3 + k);
-      // The loop's centre drifts towards the tip, as a thumb's whorl does.
-      const [px, py] = [Math.cos(t) * k * 2.3 * s * wob, Math.sin(t) * k * 2.9 * s * wob - k * 0.6 * s];
-      if (i) ctx.lineTo(px, py);
-      else ctx.moveTo(px, py);
-    }
-    ctx.stroke();
-  }
-  ctx.restore();
 }
 
 /** Where the page was folded to go in a pocket: a dark valley beside a pale ridge, a shade on one side, dirt caught in it. */

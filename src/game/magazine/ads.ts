@@ -64,8 +64,11 @@ function clearMind(ctx: Ctx, x: number, y: number, w: number): void {
   );
 }
 
-/** a dense mail-order catalogue page, packed in the manner of mid-80s software houses (and rather less honest). */
-export function drawAds(ctx: Ctx): void {
+/**
+ * a dense mail-order catalogue page, packed in the manner of mid-80s software houses (and rather less honest). By May the
+ * tape copier is no longer sold, and Ned has quietly dropped it from the list.
+ */
+export function drawAds(ctx: Ctx, tapeCopier = true): void {
   const top = 72;
   ctx.strokeStyle = INK;
   ctx.lineWidth = 3;
@@ -92,7 +95,7 @@ export function drawAds(ctx: Ctx): void {
   const util = [
     ...entry('COLOR MONITOR', 'Written in position-independent code (that means it can be anywhere in memory). Very compact. Only occupies 1174 bytes, including the ones you were using. Displays memory in hex, and also in a confusing mixture of both.', 'MACHINE LANGUAGE $24.95'),
     ...entry('SCREEN PRINT ROUTINE', 'Prints the screen on any printer you own. Or any printer you can borrow. Requires 16K, a printer, and patience.', '$17.95'),
-    ...entry('TAPE DUPE NOW', 'An all-new tape backup program. Copies those hard-to-copy tapes. Copies the easy ones too. Probably the finest tape copier program ever, according to us.', 'TAPE $21.95 • DISK $25.95'),
+    ...(!tapeCopier ? [] : entry('TAPE DUPE NOW', 'An all-new tape backup program. Copies those hard-to-copy tapes. Copies the easy ones too. Probably the finest tape copier program ever, according to us.', 'TAPE $21.95 • DISK $25.95')),
     ...entry('DISK TO TAPE', 'Dump the contents of most disks to tape automatically. Why? We never asked.', '$17.95'),
     ...entry('MAIL LIST', 'Maintains a complete mailing list with up to twelve names. Fourteen if they are short.', '$17.95'),
     ...entry('THE FIXER', 'Having trouble moving those 600 hex programs to disk? The Fixer will help. Completely automatic, except where it is not.', '$17.95'),

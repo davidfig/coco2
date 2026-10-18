@@ -48,7 +48,7 @@ float channelNumbers(vec2 p) {
   float a = CH_START + i * CH_STEP;
   vec2 q = (d - CH_KNOB.z * (FINE_RING + 0.46) * vec2(sin(a), cos(a))) / DIAL_CELL + 0.5;
   if (q.x < 0.0 || q.x > 1.0 || q.y < 0.0 || q.y > 1.0) return 0.0;
-  return texture(uDial, vec2((i + q.x) / LABEL_CELLS, 1.0 - q.y)).a * (0.75 + 0.25 * hash(vec2(i, 7.0))); // each its own ink
+  return texture(uDial, vec2((i + q.x) / LABEL_CELLS, 1.0 - q.y)).a * (0.88 + 0.12 * hash(vec2(i, 7.0))); // each its own ink
 }
 
 /** ON and OFF printed right of the power rocker's two halves: the last two cells of \`dialLabels.ts\`'s strip. */
@@ -93,14 +93,14 @@ float silkscreen(vec2 p, float a) {
   if (a <= 0.0) return 0.0;
   float rough = noise(p * 380.0) * 0.6 + noise(p * 950.0) * 0.4;
   float ink = smoothstep(0.32, 0.68, a + (rough - 0.5) * 0.5);
-  ink *= 1.0 - 0.75 * step(0.88, hash(floor(p * 650.0)));
-  ink *= 0.72 + 0.28 * noise(p * 70.0);
+  ink *= 1.0 - 0.5 * step(0.92, hash(floor(p * 650.0)));
+  ink *= 0.86 + 0.14 * noise(p * 70.0);
   float grip = max(smoothstep(CH_KNOB.z * 1.9, CH_KNOB.z * 1.2, length(p - CH_KNOB.xy)),
                    smoothstep(VOL_KNOB.z * 1.6, VOL_KNOB.z * 1.05, length(p - VOL_KNOB.xy)));
-  float worn = 0.3 + 0.13 * grip;
+  float worn = 0.18 + 0.1 * grip;
   ink *= smoothstep(worn, worn + 0.08, fbm(p * 30.0 + 4.0));
   vec2 s = mat2(0.83, -0.56, 0.56, 0.83) * p;
-  ink *= 1.0 - 0.8 * smoothstep(0.9, 0.96, noise(vec2(s.x * 14.0, s.y * 420.0))) * step(0.55, noise(s * 9.0));
+  ink *= 1.0 - 0.5 * smoothstep(0.9, 0.96, noise(vec2(s.x * 14.0, s.y * 420.0))) * step(0.55, noise(s * 9.0));
   return ink;
 }
 

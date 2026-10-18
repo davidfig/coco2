@@ -13,6 +13,11 @@ const float LINES = 192.0;
 const float TAMPER_LIFE = 2.5; // seconds after which no effect is left
 const float SCAN = 0.16;       // seconds the beam takes to repaint a row of text
 
+// How many scanlines and VDG dots one screen pixel spans (main() sets them): drawn smaller than that, the lines and the
+// herringbone beat against the pixels in moiré, so they fade into an evenly lit picture instead.
+float linesPerPx = 0.0;
+float dotsPerPx = 0.0;
+
 /** How long ago the cell was tampered with: -1 if it never was, or if BASIC has written over it since (the mark is gone). */
 float tamperMark(ivec2 cell) {
   float age = uTamperNow - texelFetch(uTamper, cell, 0).r;
@@ -177,7 +182,9 @@ vec3 picture(vec2 q, float on, float off) {
   st.x += (hash(vec2(floor(uv.y * LINES), floor(uTime * 24.0))) - 0.5) * 0.012 * weak * step(0.02, uSignal);
   vec3 col = vec3(0.0);
   if (uSignal > 0.01) {
-    col = scanlines(st);
+    float fine = smoothstep(0.3, 0.6, linesPerPx); // too few pixels to show the lines between the lines
+    col = fine < 1.0 ? scanlines(st) : vec3(0.0);
+    if (fine > 0.0) col = mix(col, glow(st, max(log2(max(linesPerPx, dotsPerPx)), 0.0)) * 0.85, fine); // the beams' average
     col += glow(st, 2.0) * 0.10 + glow(st, 4.5) * 0.07; // bloom, then halation across the glass
     col = mix(vec3(dot(col, vec3(0.3, 0.6, 0.1))), col, 0.4 + 0.6 * uSignal);
   }
@@ -185,13 +192,14 @@ vec3 picture(vec2 q, float on, float off) {
     // A far station: its colour lost on the way, and a ghost of it to the right where the signal also came off a hill.
     vec3 s = textureLod(uStation, st, 0.5).rgb + 0.35 * textureLod(uStation, st + vec2(0.04, 0.0), 1.0).rgb;
     float inside = step(0.0, st.x) * step(st.x, 1.0) * step(0.0, st.y) * step(st.y, 1.0);
-    col += vec3(dot(s, vec3(0.3, 0.6, 0.1))) * inside * uStationSignal * (0.8 + 0.2 * cos(fract(st.y * LINES) * 6.2832));
+    col += vec3(dot(s, vec3(0.3, 0.6, 0.1))) * inside * uStationSignal * (0.8 + 0.2 * cos(fract(st.y * LINES) * 6.2832) * (1.0 - smoothstep(0.3, 0.6, linesPerPx)));
   }
   vec2 sp = vec2(c.x, -c.y) * 0.5 + 0.5;
   sp.x += tearX;
   col = col * (1.0 - pow(weak, 2.2)) + snow(sp) * pow(weak, 1.6);
   // Off tune: the sound carrier beats with the picture, herringbone crawling across it and soft bars rolling up.
   float hb = smoothstep(0.2, 0.6, uDetune) * max(uSignal, uStationSignal);
+  hb *= 1.0 - smoothstep(0.5, 1.0, dotsPerPx); // its stripes are finer than the dots
   col *= 1.0 + hb * (0.14 * sin(uv.x * 540.0 + uv.y * LINES * 2.3 + uTime * 41.0) - 0.08 * (0.5 + 0.5 * sin(uv.y * 22.0 - uTime * 7.0)));
   float shifted = max(smoothstep(0.05, 0.3, j), max(smoothstep(0.02, 0.1, sm), step(0.003, min(uRoll, 1.0 - uRoll))));
   float blank = smoothstep(0.14, 0.06, 1.04 - abs(c.y));                           // the blanking bar rolling through

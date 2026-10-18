@@ -58,7 +58,7 @@ strength is set to 0.85 there, style `both` (the beam repaints the changed lette
 |------|----------|--------------|
 | `issue1-done` | The player has seen OK's answer (`saw-pleads` or `saw-thanks`) | The notes close the evening: "Enough for tonight. Switch it off". |
 | `issue1-closed` | The set is switched off after that (a page reload counts as off and on) | The night passes. |
-| `issue2-waiting` | The set is switched on again | The next day: the CoCo boots afresh (empty memory), the May RAINBOW arrives and is the issue on the table (`magazine.setIssue`), and the notes say "Next day. May RAINBOW came: cover only!". May is a placeholder until issue 2 is written: its cover (COMING SOON banner), the editor's notice that the pages and tape are late, and the March ads again (`magazine/may.ts`). The book's corner button switches between March and May. This is where issue 2's pages and tape will go. |
+| `issue2-waiting` | The set is switched on again | The next day: the CoCo boots afresh (empty memory), the May RAINBOW arrives and is the issue on the table (`magazine.setIssue`), and the notes say "Next day. May RAINBOW came, and a new tape". The May tape goes into the recorder (`Issue2Story`). The book's corner button switches between March and May. |
 
 OK's answer no longer waits for GUESS to be in memory: if it is not, he changes the copy on the tape (so the next `CLOAD "GUESS"` shows it) and still answers over the last OK prompt.
 
@@ -68,12 +68,32 @@ Still open for issue 1:
 - The kept path is a guess at when a player has decided: running GUESS or loading something else (8 s), otherwise 12 s.
   A real player may sit and think for longer. Playtesting should check it.
 
+## Issue 2 (built, first pass)
+
+The code is `src/game/story/issue2.ts`; the puzzles are in puzzles.md (P6, P7).
+
+| Beat | Trigger | What happens |
+|------|---------|--------------|
+| The May tape | `issue2-waiting` (and on every load after it) | The recorder holds ABOUT, HANGMAN and ORACLE; HANGMAN's line 15 answers the player's March choice. |
+| A late OK | From `issue2-waiting` until `oracle-answered` | Every OK prompt comes up 0.6 s late (`Interpreter.promptLag`; the cursor is off meanwhile and typing waits). |
+| Colours out of order | The same stretch, every 18–34 s at the prompt | The cursor's colour steps swap two colours once (`TextScreen.misstep`). |
+| His hand | Any LIST that leaves one of OK's lines on the screen, or the decoder printing his message | The words are claimed (`TextScreen.claim`), so they shimmer and keep the story's ripple, like line 125 in March. |
+| On time | Two prompts after `oracle-answered` | `prompt-on-time`; the notes: "The OK comes up on time again. Was it slow all day?". Then `issue2-done` ("Enough for tonight"), and switching off sets `issue2-closed`. Issue 3 is not built. |
+
+The cover feature ("Keeping It Healthy", by the Clear Mind's committee) lists "Three Signs Of A Sick System": slow to
+answer, colours wrong, says what you did not type. Those are exactly the glitches above, and its advice is to switch off
+and call the Line. The book's other plants: a Clear Mind page of Tuesday meetings (the Prospect one led by the Elder, the
+same Line as March); a letter about a modem whistle before the Line answers (the Elder's machine); Arthur L., March's
+letter writer, visited and asked about his manuals; TAPE DUPE NOW gone from Ned's catalogue; the editorial on the lower
+limit (no fast modems, second drives or tape copiers).
+
 ## What OK remembers (the list the puzzle agent should store)
 
 | Memory | Set by | Used |
 |--------|--------|------|
 | `name` | `first-program` | The uncanny moment, then issue 4's direct address. |
-| `deleted-extra-line` | P5 | Issue 2's first glitch. |
+| `deleted-extra-line` | P5 | Issue 2's first glitch (built). |
+| `reply` (`coco2.reply`) | `oracle-answered` | Not used yet: what the player told ORACLE they are. |
 | `shutdown-answer` | The issue 3 dialogue choice | OK's phrasing from issue 3 on. |
 | `bad-answer` | The issue 4 dialogue choice | OK's tone from issue 4 on, and the ending. |
 
