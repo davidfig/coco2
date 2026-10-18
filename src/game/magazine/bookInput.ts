@@ -266,8 +266,10 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers
       if (!show) hintLeft = 0;
       hint.classList.toggle('show', show && !learned && hintLeft < 8);
       if (!show) return;
-      hint.style.left = `${(mag.book.x + mag.book.w / 2) * canvas.clientWidth}px`;
-      hint.style.bottom = `${Math.max(8, mag.book.y * canvas.clientHeight + 8)}px`;
+      // Fixed to the window, which may hold more than the canvas (the touch keyboard, a phone's safe-area margins).
+      const r = canvas.getBoundingClientRect();
+      hint.style.left = `${r.left + (mag.book.x + mag.book.w / 2) * r.width}px`;
+      hint.style.bottom = `${innerHeight - r.bottom + Math.max(8, mag.book.y * r.height + 8)}px`;
     },
   };
 }

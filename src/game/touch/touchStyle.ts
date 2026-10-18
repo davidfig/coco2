@@ -9,7 +9,7 @@ body.coco-touch canvas#game { flex: 1 1 auto; height: auto; min-height: 0; }
   /* One key: the row fills the width, but never more than 46px, nor so tall the set has no room (a phone on its side). */
   --u: min(calc((100vw - 12px) / 13.75), 46px, 7.2dvh);
   flex: 0 0 auto; position: relative; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
-  padding: 7px 6px calc(8px + env(safe-area-inset-bottom)); gap: calc(var(--u) * 0.1);
+  padding: 7px 6px 8px; gap: calc(var(--u) * 0.1);
   background: linear-gradient(#232220, #161514 30%, #121110); border-top: 1px solid #34322e;
   touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent; transition: margin-bottom 0.25s ease-out;
@@ -46,8 +46,8 @@ body.coco-touch canvas#game { flex: 1 1 auto; height: auto; min-height: 0; }
   body.coco-touch { flex-direction: row; }
   body.coco-touch canvas#game { height: 100%; min-width: 0; }
   .coco-kb {
-    --u: min(calc((48vw - 12px) / 13.75), 42px);
-    justify-content: center; padding: 6px calc(6px + env(safe-area-inset-right)) 6px 6px; gap: calc(var(--u) * 0.14);
+    --u: min(calc(((100vw - env(safe-area-inset-left) - env(safe-area-inset-right)) * 0.48 - 12px) / 13.75), 42px);
+    justify-content: center; padding: 6px; gap: calc(var(--u) * 0.14);
     border-top: none; border-left: 1px solid #34322e; transition: margin-right 0.25s ease-out;
   }
   .coco-kb.hidden { margin-bottom: 0; margin-right: calc(-1 * var(--kb-w, 400px) + 22px); }

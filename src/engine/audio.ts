@@ -9,6 +9,9 @@ export class Sound {
 
   constructor(readonly enabled: boolean) {
     if (!enabled) return;
+    // iOS Safari (17+) treats Web Audio as a ringer sound, muted by the silent switch; playback is the media kind, which plays.
+    const session = (navigator as { audioSession?: { type: string } }).audioSession;
+    if (session) session.type = 'playback';
     const start = (): void => {
       window.removeEventListener('pointerdown', start, true);
       window.removeEventListener('keydown', start, true);

@@ -242,8 +242,10 @@ export function attachCorner(mag: Magazine, canvas: HTMLCanvasElement, covers: (
         x = Math.max(MARGIN, Math.min(x, cw - MARGIN - w));
         y = Math.max(MARGIN, Math.min(y, ch - MARGIN - h));
       }
-      bar.style.left = `${x - PAD}px`;
-      bar.style.top = `${y - PAD}px`;
+      // Fixed to the window, which may hold more than the canvas (the touch keyboard, a phone's safe-area margins).
+      const r = canvas.getBoundingClientRect();
+      bar.style.left = `${r.left + x - PAD}px`;
+      bar.style.top = `${r.top + y - PAD}px`;
       hide(x - PAD, y - PAD);
     },
   };
