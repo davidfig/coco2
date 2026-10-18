@@ -1,6 +1,6 @@
 import { EYE, EYE_AT, type DeskSpot, TABLE, pictureView, rayMatrix, spotAxes } from '../computer/layout';
 import { type Quat, axesOf, quatFromAxes, slerp } from '../computer/pose';
-import { CAM_DIST, PAGE_UNIT_H, type View, lerp } from './bookLayout';
+import { CAM_DIST, PAGE_UNIT_H, PAPER_THICKNESS, type View, lerp } from './bookLayout';
 
 /**
  * The camera the book shader casts its rays from (`uRayO`, `uRayM`): the eye in book space, and the ray through pixel
@@ -141,6 +141,9 @@ export function camBounds(cam: Cam, v: View, turning: boolean): [number, number,
 /** How much of the light the paper keeps lying on the dim table, against held out under the lamp. */
 export const DESK_LIGHT = 0.72;
 
+/** The whole block of paper lying on the table, in page widths: a fat 1980s issue, about 3/16 in. */
+const DESK_PAPER_THICKNESS = 0.022;
+
 /**
  * Put away with the desk in view, the magazine lies on the table at `spot`, seen through the room's camera (`t` of the way there:
  * coming out, it rises off it). The view to draw and point with (its `cam` set while on the table), the camera, the light.
@@ -151,7 +154,10 @@ export function onTable(v: View, t: number, spot: DeskSpot, picture: readonly nu
   const cam = mixCam(own, deskCam(spot, picture, v.win), t, [0.5 * (v.win[0] + v.win[1]), 0, 0]);
   const c = v.clip;
   const clip: View['clip'] = [lerp(c[0], 0, t), lerp(c[1], 0, t), lerp(c[2], v.W, t), lerp(c[3], v.H, t)];
-  return { view: { ...v, cam, clip }, cam, light: lerp(1, DESK_LIGHT, t) };
+  // Seen from across the room the block of paper shows its true thickness, its sides a band of sheet edges.
+  const k = lerp(1, DESK_PAPER_THICKNESS / PAPER_THICKNESS, t);
+  const ext: View['ext'] = [v.ext[0], v.ext[1], v.ext[2] * k, v.ext[3] * k];
+  return { view: { ...v, cam, clip, ext }, cam, light: lerp(1, DESK_LIGHT, t) };
 }
 
 /** Hand camera `cam` and the room's `light` to the book shader (`uRayO`, `uRayM`, `uScale`, `uFocal`, `uLight`). */

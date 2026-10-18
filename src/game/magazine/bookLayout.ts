@@ -28,7 +28,7 @@ export const PAGE_UNIT_H = PAGE_H / PAGE_W;
 /** Window room round one page, in page widths / heights. */
 export const PAGE_FIT_W = 1.02;
 export const PAGE_FIT_H = 1.03;
-/** The whole block of paper, in page widths (kept tiny: no slab of paper edge shows; the 3D comes from the curl and the light). */
+/** The whole block of paper, in page widths held out (kept tiny: no slab of paper edge shows; the 3D comes from the curl and the light). Lying on the table it is thicker (`onTable`). */
 export const PAPER_THICKNESS = 0.004;
 /**
  * The camera looks down at the open book from this tilt (radians back from straight on) and distance (page widths). Put

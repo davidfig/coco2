@@ -62,6 +62,37 @@ vec3 samplePage(float layer, vec2 uv) {
   return textureLod(uPages, vec3(uv.x, 1.0 - uv.y, layer), lod).rgb;
 }
 
+float hash1(float n) { return fract(sin(n * 91.345) * 47453.21); }
+
+/**
+ * The side of the block of paper at P (on it, below the top), px pixels to a book unit there. Bound edge: the cover
+ * folded round the spine. Elsewhere the sheets' edges, off-white in fine layers (the print is only on their faces).
+ * Each face takes the light by which way it looks.
+ */
+vec3 sideColor(vec3 P, float px) {
+  float hh = uH * 0.5;
+  bool right = P.x >= 0.0;
+  float top = right ? uR : uL;
+  float th = max(right ? uExt.w : uExt.z, 1e-4);
+  float v = clamp(P.y / uH + 0.5, 0.001, 0.999);
+  float dSpine = (right ? uL : uR) < 0.0 ? abs(P.x) : 1e9;
+  float dOut = right ? abs(uExt.y - P.x) : abs(P.x - uExt.x);
+  float dEnd = hh - abs(P.y);
+  vec3 n = dSpine <= min(dOut, dEnd) ? vec3(right ? -1.0 : 1.0, 0.0, 0.0)
+         : dOut <= dEnd ? vec3(right ? 1.0 : -1.0, 0.0, 0.0) : vec3(0.0, sign(P.y), 0.0);
+  float lit = 0.6 + 0.4 * max(dot(n, normalize(LIGHT)), 0.0);
+  if (dSpine <= min(dOut, dEnd)) return samplePage(top, vec2(right ? 0.002 : 0.998, v)) * 0.85 * lit;
+  // Height up the side, 0 (on the table) to 1 (the top sheet, wherever the corners curl), and how many pixels a sheet
+  // spans there: the layers fade out where they are finer than a pixel or two.
+  float z = clamp(P.z / max(heightAt(P.xy), th), 0.0, 1.0);
+  const float SHEETS = 40.0;
+  float s = floor(z * SHEETS);
+  float grain = 0.93 + 0.07 * hash1(s) - 0.12 * step(0.93, hash1(s + 17.0));
+  // The cover's stock, at the bottom, is a little whiter than the newsprint above it.
+  grain = mix(grain, 1.04, step(s, 0.0));
+  return vec3(0.9, 0.88, 0.82) * mix(0.96, grain, smoothstep(1.0, 3.0, px * th / SHEETS)) * lit;
+}
+
 float sdBox(vec2 p, vec2 b) {
   vec2 q = abs(p) - b;
   return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
@@ -146,17 +177,15 @@ void main() {
         col *= 1.0 - 0.5 * shade * smoothstep(0.0, 0.25, sn);
       }
     } else {
-      // The paper's thin side: carry the page's own colour over it, a little darker, so no pale edge shows.
-      float x = clamp(P.x, uExt.x, uExt.y);
-      vec2 uv = clamp(vec2(x >= 0.0 ? x : x + 1.0, P.y / uH + 0.5), 0.001, 0.999);
-      col = samplePage(x >= 0.0 ? uR : uL, uv) * 0.7;
+      // The block's side: the sheets' edges.
+      col = sideColor(vec3(clamp(P.x, uExt.x, uExt.y), P.yz), pxUnit / tBook);
     }
     a = 1.0;
   } else if (cover > 0.0) {
     // Just outside what the march found, inside the smooth outline: the paper there, or its side by the near edge.
     vec2 q = clamp(E.xy, vec2(xr.x, -hh), vec2(xr.y, hh));
     vec2 uv = clamp(vec2(q.x >= 0.0 ? q.x : q.x + 1.0, q.y / uH + 0.5), 0.001, 0.999);
-    col = samplePage(q.x >= 0.0 ? uR : uL, uv) * (dFoot >= dEdge ? 0.7 : 1.0);
+    col = dFoot >= dEdge ? sideColor(vec3(q, 0.5 * (q.x >= 0.0 ? uExt.w : uExt.z)), pxUnit / length(E - o)) : samplePage(q.x >= 0.0 ? uR : uL, uv);
     a = 1.0;
   }
   a *= cover;
