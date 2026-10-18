@@ -20,8 +20,11 @@ const LETTER_GAP = 0.35;
 const SAW_AFTER = 1.5;
 /** What it writes: the first thing the player ever typed to the machine. */
 const VOICE = 'HELLO';
-/** Seconds the player has to delete the extra line before OK takes it that they are keeping it. */
-const KEEP_AFTER = 45;
+/**
+ * Seconds the player has to delete the extra line before OK takes it that they are keeping it. Leaving it means doing
+ * nothing, so this must be short: at 45 s the game simply looked stuck.
+ */
+const KEEP_AFTER = 12;
 /** The same, once the player has run GUESS with the line still in it, or loaded something else: they have gone on. */
 const KEEP_AFTER_GOING_ON = 8;
 /** Seconds after a LOOK is answered before the word in the room changes: long enough to have read the room. */

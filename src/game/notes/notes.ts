@@ -48,6 +48,7 @@ export const NOTES: readonly Note[] = [
   { id: 'won', when: 'adventure-won', text: 'Took the gold. WON! 100/100', mood: 0.15 },
   { id: 'voice', when: 'tamper-voice', text: 'Strange: after the game, HELLO came up on the screen by itself. Shimmering. What is that?', mood: 0.34 },
   { id: 'guess', when: 'tamper-voice', text: `"Mistakes are mine." Check GUESS against p.${pageNo('guess')}`, mood: 0.3, ask: true, solved: ['found-extra-line', 'seen-guess'] },
+  { id: 'oddline', when: 'found-extra-line', text: `Odd line in GUESS. Is it on p.${pageNo('guess')}?`, mood: 0.35, ask: true, solved: 'seen-guess', skipIf: 'seen-guess' },
   { id: 'line75', when: ['found-extra-line', 'seen-guess'], text: (f) => `Line ${GUESS_EXTRA_LINE}: "${GUESS_EXTRA_TEXT.charAt(0)}${GUESS_EXTRA_TEXT.slice(1).toLowerCase()}"${f.has('deleted-extra-line') ? ' - deleted' : ''}`, reads: ['deleted-extra-line'], mood: 0.5 },
   { id: 'who', when: ['found-extra-line', 'seen-guess'], text: 'Who is asking?', mood: 0.72, ask: true },
   { id: 'choice', when: ['found-extra-line', 'seen-guess'], text: `Delete it (type ${GUESS_EXTRA_LINE})? Or leave it?`, mood: 0.6, ask: true, solved: 'deleted-extra-line', orSolved: 'ok-thanks' },
