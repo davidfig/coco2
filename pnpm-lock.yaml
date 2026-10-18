@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      server-geometry-client:
-        specifier: link:../server-geometry/client
-        version: link:../server-geometry/client
     devDependencies:
       '@fontsource/archivo':
         specifier: ^5.3.0

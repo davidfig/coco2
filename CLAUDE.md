@@ -17,8 +17,9 @@ Run `typecheck` and `check:size` before finishing any change. Design notes: `doc
   VDG's field rate). The game layer still imports it only through the barrel.
 - Sound is all synthesized (`tv/tvSound.ts`, no recordings), and only the TV's so far. `?nosound` turns it off; test
   tabs always use it. To check the sound graph silently, `build` a `TvSound` into an `OfflineAudioContext`.
-- No online play yet: `server-geometry-client` is linked but nothing uses it and there is no entry in
-  `../server-geometry/src/games.ts`. If it goes online, copy astronaut-geometry's `net/roomClient.ts`.
+- No online play and no dependency on `../server-geometry` (only its `claude/games.md` rules, above). If it goes
+  online, add `server-geometry-client`, an entry in `../server-geometry/src/games.ts`, and copy astronaut-geometry's
+  `net/roomClient.ts`.
 
 ## Playtesting
 

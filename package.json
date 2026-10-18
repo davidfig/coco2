@@ -6,14 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:server": "pnpm --dir ../server-geometry dev",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "check:size": "node scripts/check-size.mjs"
-  },
-  "dependencies": {
-    "server-geometry-client": "link:../server-geometry/client"
   },
   "devDependencies": {
     "@fontsource/archivo": "^5.3.0",
