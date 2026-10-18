@@ -14,6 +14,8 @@
         font: 14px/1 Helvetica, Arial, sans-serif; cursor: pointer; opacity: 0.55; transition: opacity 0.15s, background 0.15s;
       }
       .book-corner button:hover { opacity: 1; background: rgba(90, 70, 48, 0.9); }
+      .book-corner button.issue { width: auto; padding: 0 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; }
+      .book-corner button[hidden] { display: none; }
       .book-corner button.on { opacity: 1; background: #7a3b1c; }
       .book-hint {
         position: fixed; transform: translateX(-50%); padding: 6px 12px; border-radius: 14px; pointer-events: none;
@@ -21,24 +23,6 @@
         letter-spacing: 0.03em; white-space: nowrap; opacity: 0; transition: opacity 0.6s;
       }
       .book-hint.show { opacity: 1; }
-      .coming-soon {
-        position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(340px, calc(100vw - 32px));
-        padding: 22px 24px 20px; border-radius: 10px; background: rgba(18, 14, 10, 0.92); color: #f2e6c8;
-        font: 14px/1.4 Helvetica, Arial, sans-serif; text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-        display: none; user-select: none;
-      }
-      .coming-soon.show { display: block; }
-      .coming-soon-stripe { display: flex; height: 8px; margin: 0 auto 14px; width: 120px; border-radius: 2px; overflow: hidden; }
-      .coming-soon-stripe span { flex: 1; }
-      .coming-soon-title { font: 900 30px/1 Helvetica, Arial, sans-serif; letter-spacing: 0.02em; }
-      .coming-soon-title i { font: italic 400 18px Georgia, serif; margin-right: 4px; }
-      .coming-soon-date { margin: 6px 0 12px; font-weight: 600; color: #f4c61c; letter-spacing: 0.08em; text-transform: uppercase; font-size: 12px; }
-      .coming-soon-text { color: #e8dcc0; }
-      .coming-soon-close {
-        position: absolute; right: 8px; top: 8px; width: 26px; height: 26px; border: 0; border-radius: 13px;
-        background: transparent; color: #f2e6c8; font: 18px/1 Helvetica, Arial, sans-serif; cursor: pointer; opacity: 0.6;
-      }
-      .coming-soon-close:hover { opacity: 1; background: rgba(90, 70, 48, 0.9); }
     </style>
   </head>
   <body>

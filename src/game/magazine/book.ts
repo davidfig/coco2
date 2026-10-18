@@ -1,9 +1,9 @@
 import { FULLSCREEN_VERT, Program, linkProgram } from '../../engine';
 import { BOOK_FRAG } from './bookShader';
-import { CAM_DIST, PAGE_FIT_H, PAGE_FIT_W, PAGE_UNIT_H, Rect, TILT, clamp, layoutAt, lerp, smooth, spreadView } from './bookLayout';
+import { CAM_DIST, Flip, PAGE_FIT_H, PAGE_FIT_W, PAGE_UNIT_H, Rect, TILT, View, clamp, layoutAt, lerp, screenToBook, smooth, spreadView } from './bookLayout';
 import { IssueState, newState } from './data';
-import { PAGE_COUNT, drawPage } from './issue';
-import { PAGE_IDS, pageIndex } from './pages';
+import { MAX_PAGES, drawPage } from './issue';
+import { ISSUES, ISSUE_ORDER, pageIndex, type AnyPageId, type IssueId } from './pages';
 import { readSave, writeSave } from './bookSave';
 import { loadFonts } from './fonts';
 import { Hotspot, PAGE_H, PAGE_W } from './paper';
@@ -11,38 +11,15 @@ import { Hotspot, PAGE_H, PAGE_W } from './paper';
 const FLIP_SECONDS = 0.8;
 const MAX_ZOOM = 4;
 
-interface Flip {
-  /** The leaf turning: front page `2 * leaf`, back page `2 * leaf + 1`. */
-  leaf: number;
-  dir: 1 | -1;
-  /** 0..1 along the way. */
-  t: number;
-  /** Where it is heading: 1 = finish the turn, 0 = fall back. */
-  to: 0 | 1;
-  /** A hand is holding the leaf; `t` follows the pointer. */
-  held: boolean;
-}
-
-/** What the last frame drew; pointer maths and the toolbar use it. */
-interface View {
-  W: number;
-  H: number;
-  rect: [number, number, number, number];
-  scale: number;
-  fit: number;
-  vx: number;
-  vy: number;
-  c: number;
-  ext: [number, number, number, number];
-  win: [number, number];
-}
-
 /**
  * The reference magazine: its state (open or closed, which spread, mid-turn, zoom), its slide-in beside the TV, and the
  * WebGL pass that draws it. Input lives in `bookInput.ts`; the story reaches it through `setFlag`.
  */
 export class Magazine {
   readonly state: IssueState = newState();
+  /** The issue on the table (the others are in the pile beside it), and the page each was last left at. */
+  issue: IssueId = 'march';
+  private readonly pagesAt: Partial<Record<IssueId, AnyPageId>> = {};
   open = false;
   reading = false;
   hover = false;
@@ -101,13 +78,42 @@ export class Magazine {
     this.tex = gl.createTexture()!;
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tex);
     const levels = Math.floor(Math.log2(Math.max(PAGE_W, PAGE_H))) + 1;
-    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, PAGE_W, PAGE_H, PAGE_COUNT);
+    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, PAGE_W, PAGE_H, MAX_PAGES);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     const aniso = gl.getExtension('EXT_texture_filter_anisotropic');
     if (aniso) gl.texParameterf(gl.TEXTURE_2D_ARRAY, aniso.TEXTURE_MAX_ANISOTROPY_EXT, 4);
+  }
+
+  /** How many pages the issue on the table has, and the id of its page `i`. */
+  get count(): number {
+    return ISSUES[this.issue].length;
+  }
+  pageId = (i: number): AnyPageId | undefined => ISSUES[this.issue][i];
+
+  /** The issues the player has: March from the start, May once it has come in the mail. */
+  issues(): IssueId[] {
+    return ISSUE_ORDER.filter((id) => id === 'march' || this.state.flags.has('issue2-waiting'));
+  }
+
+  /** Put another issue on the table, open at the page it was left on. No page-turn: it is a different magazine. */
+  setIssue(id: IssueId): void {
+    if (id === this.issue) return;
+    this.pagesAt[this.issue] = this.pageId(this.pageGoal);
+    [this.issue, this.preload, this.flip, this.zoomGoal] = [id, 0, null, 1];
+    this.have.clear();
+    this.spots.length = 0;
+    const at = this.pagesAt[id];
+    this.place(at ? (ISSUES[id] as readonly AnyPageId[]).indexOf(at) : 0);
+    this.save();
+  }
+
+  /** Rest the book open at page `page` at once. */
+  private place(page: number): void {
+    page = clamp(page, 0, this.count - 1);
+    [this.pageGoal, this.goal, this.spread, this.camX] = [page, Math.ceil(page / 2), Math.ceil(page / 2), page % 2 === 0 ? 0.5 : -0.5];
   }
 
   // ---- what the reader and the story can do ----
@@ -134,7 +140,7 @@ export class Magazine {
 
   /** Turn to a page (0-based), one leaf at a time. */
   goto(page: number): void {
-    this.pageGoal = clamp(Math.round(page), 0, PAGE_COUNT - 1);
+    this.pageGoal = clamp(Math.round(page), 0, this.count - 1);
     this.goal = Math.ceil(this.pageGoal / 2);
     this.zoomGoal = 1;
   }
@@ -147,7 +153,7 @@ export class Magazine {
   grab(dir: 1 | -1): boolean {
     const next = this.pageGoal + dir;
     const onRight = this.pageGoal % 2 === 0;
-    if (this.flip || this.goal !== this.spread || next < 0 || next >= PAGE_COUNT || onRight !== (dir > 0)) return false;
+    if (this.flip || this.goal !== this.spread || next < 0 || next >= this.count || onRight !== (dir > 0)) return false;
     this.zoomGoal = 1;
     this.flip = { leaf: dir > 0 ? this.spread : this.spread - 1, dir, t: 0, to: 1, held: true };
     return true;
@@ -173,9 +179,10 @@ export class Magazine {
     else this.zoomAt(2.4, nx, ny);
   }
 
-  /** Jump to page `index` (0-based). */
-  showPage(index: number): void {
+  /** Jump to page `index` (0-based) of an issue (the notebook's pointers are all into March). */
+  showPage(index: number, issue: IssueId = 'march'): void {
     this.show();
+    this.setIssue(issue);
     this.goto(index);
   }
 
@@ -192,20 +199,22 @@ export class Magazine {
   setFlag(flag: string): void {
     if (this.state.flags.has(flag)) return;
     this.state.flags.add(flag);
+    // The May issue comes in the mail: it is the one on the table now.
+    if (flag === 'issue2-waiting') this.setIssue('may');
     this.save();
   }
 
   reveal(id: string): void {
     this.state.revealed.add(id);
     this.save();
-    this.have.delete(pageIndex('hints'));
+    if (this.issue === 'march') this.have.delete(pageIndex('hints'));
   }
 
   /** The hotspot under book point (px, py) on a resting page, if any. */
   hotspotAt(px: number, py: number): string | null {
     if (this.flip || Math.abs(py) > PAGE_UNIT_H / 2) return null;
     const page = px >= 0 ? this.spread * 2 : this.spread * 2 - 1;
-    if (px < -1 || px > 1 || page < 0 || page >= PAGE_COUNT) return null;
+    if (px < -1 || px > 1 || page < 0 || page >= this.count) return null;
     this.ensure(page);
     const x = (px >= 0 ? px : px + 1) * PAGE_W;
     const y = (0.5 - py / PAGE_UNIT_H) * PAGE_H;
@@ -215,22 +224,7 @@ export class Magazine {
 
   /** Book-space point under a screen point (window fractions, origin bottom-left). */
   toBook(nx: number, ny: number): [number, number] {
-    const v = this.v;
-    const px = (nx * v.W - 0.5 * (v.rect[0] + v.rect[2])) / v.scale;
-    const py = (ny * v.H - 0.5 * (v.rect[1] + v.rect[3])) / v.scale;
-    // The same camera ray the shader casts, met with the page plane.
-    const s = Math.sin(TILT);
-    const c = Math.cos(TILT);
-    const len = Math.hypot(px, py, CAM_DIST);
-    const dx = px / len;
-    const dy = py / len;
-    const dz = -CAM_DIST / len;
-    const ey = dy * c - dz * s;
-    const ez = dy * s + dz * c;
-    const oy = -CAM_DIST * s;
-    const oz = CAM_DIST * c;
-    const t = -oz / ez;
-    return [v.vx + dx * t, v.vy + oy + ey * t];
+    return screenToBook(this.v, nx, ny);
   }
 
   inRect(r: Rect, nx: number, ny: number): boolean {
@@ -255,7 +249,7 @@ export class Magazine {
     this.advanceFlip(dt);
     if (this.viewKey() !== this.savedView) this.save();
     // Every page is on the GPU before it is needed (one a frame, from the start, once the fonts are in), so turning never paints.
-    if (this.fontsReady && this.preload < PAGE_COUNT) this.ensure(this.preload++);
+    if (this.fontsReady && this.preload < this.count) this.ensure(this.preload++);
 
     const lay = layoutAt(W / H, this.hoverT, this.openT, this.readT);
     this.tv = lay.tv;
@@ -264,7 +258,7 @@ export class Magazine {
     const read = smooth(this.readT);
     this.frame = lerp(0.08, lerp(0.95, 0.4, read), open);
 
-    const sv = spreadView(this.phi());
+    const sv = spreadView(this.phi(), this.count / 2);
     const rw = lay.book.w * W;
     const rh = lay.book.h * H;
     // One page at a time: the view eases to centre on it, and only that page's width of the book is drawn.
@@ -318,7 +312,7 @@ export class Magazine {
     const v = this.v;
     if (v.rect[0] >= v.W || v.rect[1] >= v.H || v.rect[2] <= 0 || v.rect[3] <= 0) return;
     const f = this.flip;
-    const layer = (i: number) => (i >= 0 && i < PAGE_COUNT ? i : -1);
+    const layer = (i: number) => (i >= 0 && i < this.count ? i : -1);
     let L: number, R: number, F = -1, B = -1;
     if (f) {
       L = layer(2 * f.leaf - 1);
@@ -348,7 +342,7 @@ export class Magazine {
     gl.uniform1f(u.uB, B);
     gl.uniform4f(u.uExt, ...v.ext);
     gl.uniform2f(u.uWin, ...v.win);
-    gl.uniform1f(u.uTexW, PAGE_W); gl.uniform1f(u.uLastPage, PAGE_COUNT - 1);
+    gl.uniform1f(u.uTexW, PAGE_W); gl.uniform1f(u.uLastPage, this.count - 1);
     gl.uniform2f(u.uTilt, Math.sin(TILT), Math.cos(TILT));
     gl.uniform1f(u.uCam, CAM_DIST);
     gl.activeTexture(gl.TEXTURE1);
@@ -368,7 +362,7 @@ export class Magazine {
   private ensure(i: number): void {
     if (this.have.has(i)) return;
     const gl = this.gl;
-    this.spots[i] = drawPage(i, this.pctx, this.state);
+    this.spots[i] = drawPage(this.issue, i, this.pctx, this.state);
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tex);
     gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, PAGE_W, PAGE_H, 1, gl.RGBA, gl.UNSIGNED_BYTE, this.paint);
     gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
@@ -376,13 +370,15 @@ export class Magazine {
   }
 
   private viewKey(): string {
-    return `${this.pageGoal} ${this.open} ${this.reading}`;
+    return `${this.issue} ${this.pageGoal} ${this.open} ${this.reading}`;
   }
 
   save(): void {
     this.savedView = this.viewKey();
     const { flags, revealed } = this.state;
-    writeSave({ flags: [...flags], revealed: [...revealed], page: PAGE_IDS[this.pageGoal], open: this.open, reading: this.reading });
+    const page = this.pageId(this.pageGoal) ?? ISSUES[this.issue][0];
+    this.pagesAt[this.issue] = page;
+    writeSave({ flags: [...flags], revealed: [...revealed], issue: this.issue, pages: { ...this.pagesAt }, page, open: this.open, reading: this.reading });
   }
 
   /** Restore the journal, and the book where the reader left it: already out and on that page, no slide or page-turn. */
@@ -390,8 +386,11 @@ export class Magazine {
     const s = readSave();
     for (const f of s.flags ?? []) this.state.flags.add(f);
     for (const r of s.revealed ?? []) this.state.revealed.add(r);
-    const page = s.page ? pageIndex(s.page) : 0;
-    [this.pageGoal, this.goal, this.spread, this.camX] = [page, Math.ceil(page / 2), Math.ceil(page / 2), page % 2 === 0 ? 0.5 : -0.5];
+    Object.assign(this.pagesAt, s.pages);
+    // A save from before issues could be switched, made after May came, opens on May.
+    const issue = s.issue ?? (this.state.flags.has('issue2-waiting') ? 'may' : 'march');
+    if (this.issues().includes(issue)) this.issue = issue;
+    this.place(s.page ? (ISSUES[this.issue] as readonly AnyPageId[]).indexOf(s.page) : 0);
     [this.open, this.reading] = [s.open === true, s.open === true && s.reading === true];
     [this.openT, this.readT] = [+this.open, +this.reading];
     this.savedView = this.viewKey();

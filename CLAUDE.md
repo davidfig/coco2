@@ -66,15 +66,16 @@ src/game/
   handwriting/        the player's pen, no font: glyphs (stroke skeletons, some letters with two forms), hand (rebuilds every
                       letter on each use with its own size, tilt, slant, shaken points, pressure; `mood` loosens it all)
   notes/              the notebook page that peeks up from the bottom-left: notes (what the player has worked out, one per
-                      flag, open questions that point at a page or tape), sheet (ruled paper + the writing), note (GL quad,
-                      hover/click, input captured before the book's), wear (the page ages with each reading and note:
+                      flag, open questions that point at a page or tape), sheet (ruled paper + the writing), note (GL quads,
+                      one texture per sheet; hover/click, drag a held-up sheet aside to send it under, input captured before the book's)
+                      + noteShader (the screen's light dims through each sheet behind) + pile (where each sheet lies, the turn animation), wear (the page ages with each reading and note:
                       yellowing, folds, coffee rings, thumbprints, pen blots; `handled` in localStorage) + stains (the marks), doodles (what the pen draws in the
                       margins beside each note: its own picture or an idle one, uneasier as the mood climbs; heading, ringed holes)
   puzzles/            the puzzle watcher: listings (programs the magazine asks the player to type, single source), rules
                       (one function per puzzle, ticks a flag), watcher (feeds it the interpreter's `BasicEvent`s; see docs/puzzles.md)
   tapes/              Rainbow On Tape, the cassette in the recorder: index (tape order) and one .bas file per program
   magazine/           the RAINBOW: book (state, slide-in, GPU pass), bookShader (page-turn), bookLayout (TV/book split), bookInput
-                      (TAB, PAGE UP/DOWN, wheel zoom, toolbar), pages (the ordered list of page ids; `pageNo(id)` gives a page's number), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), articles, letters, extras (hints/type-in), learn (tutorials), classifieds, scratch + foil (scratch-off), ads + adsColor (parody ads)
+                      (TAB, PAGE UP/DOWN, wheel zoom, toolbar), pages (the ordered list of page ids; `pageNo(id)` gives a page's number), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May issue so far: its COMING SOON cover and the editor's notice), articles, letters, extras (hints/type-in), learn (tutorials), classifieds, scratch + foil (scratch-off), ads + adsColor (parody ads)
   tv/                 tv (uploads the VDG frame, uniforms, power-on, `broadcast`), tvShader (uniforms, main: room → cabinet → tube),
                       pictureShader (the beam: RF colour smear, scanlines, warm-up and switch-off, jolts, roll, herringbone,
                       a far station), glassShader (reflections, fingerprints, dust), cabinetShader (room, wood, panel,
@@ -126,7 +127,7 @@ src/game/
 
 ## The magazine
 
-- An 18-page issue (`magazine/pages.ts` lists the pages in order; the cover is page 1) drawn with Canvas 2D into a texture array, one page per layer, lazily. The shader does the
+- Issues (`magazine/pages.ts`: `ISSUES` lists each issue's pages in order, the cover being page 1; March has 18, May only its cover, a notice and the back so far; `pageNo` is March's). The book holds one issue at a time (`Magazine.issue`, `setIssue`; a corner button switches once May has come), each drawn with Canvas 2D into a texture array, one page per layer, lazily. The shader does the
   turning leaf in perspective. Window split: TV left / book right (top / bottom when tall); the ⤢ button (reading mode) shrinks the TV to a strip.
 - The TV pulls back as the book opens: `Tv.draw(..., rect, frame)` takes the rectangle it fits in and how much of the set shows.
 - **Never write a page number by hand.** Name a page by id and ask `pageNo(id)` (`magazine/pages.ts`): contents, editorial,

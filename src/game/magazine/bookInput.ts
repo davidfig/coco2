@@ -1,6 +1,6 @@
 import type { Magazine } from './book';
 import { scratch } from './scratch';
-import { PAGE_COUNT } from './issue';
+import { ISSUE_DATE, type IssueId } from './pages';
 
 /** Clicks and drags shorter than this (CSS px) are clicks. */
 const CLICK_SLOP = 6;
@@ -74,7 +74,7 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
         const dir = e.clientX < down.x ? 1 : -1;
         const next = mag.pageGoal + dir;
         if (mag.grab(dir)) hold = { dir, x0: down.x, vel: 0, lastX: e.clientX, lastT: e.timeStamp };
-        else if (!mag.flip && next >= 0 && next < PAGE_COUNT && Math.ceil(next / 2) === Math.ceil(mag.pageGoal / 2)) {
+        else if (!mag.flip && next >= 0 && next < mag.count && Math.ceil(next / 2) === Math.ceil(mag.pageGoal / 2)) {
           // No leaf to carry (the other half of the same spread): the view slides across under the hand instead.
           slide = { dir, from: mag.camX, x0: down.x, t: 0, vel: 0, lastX: e.clientX, lastT: e.timeStamp };
           mag.camHeld = true;
@@ -252,7 +252,14 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
   };
   const read = button('⤢', 'Bigger / smaller magazine', () => mag.setReading(!mag.reading));
   const shut = button('✕', 'Put the magazine away (Tab)', () => mag.close());
-  bar.append(read, shut);
+  // Once a second issue has come, this swaps to the other one in the pile (it names the issue it goes to).
+  const nextIssue = (): IssueId => {
+    const have = mag.issues();
+    return have[(have.indexOf(mag.issue) + 1) % have.length];
+  };
+  const swap = button('', '', () => mag.setIssue(nextIssue()));
+  swap.classList.add('issue');
+  bar.append(swap, read, shut);
   document.body.append(bar);
 
   const hint = document.createElement('div');
@@ -293,6 +300,14 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement): { upd
       hint.style.left = `${(mag.book.x + mag.book.w / 2) * canvas.clientWidth}px`;
       hint.style.bottom = `${Math.max(8, mag.book.y * canvas.clientHeight + 8)}px`;
       read.classList.toggle('on', mag.reading);
+      const other = nextIssue();
+      swap.hidden = other === mag.issue;
+      const month = ISSUE_DATE[other].split(' ')[0];
+      if (swap.textContent !== month.slice(0, 3)) {
+        swap.textContent = month.slice(0, 3);
+        swap.title = `Pick up the ${month} issue`;
+        swap.setAttribute('aria-label', swap.title);
+      }
     },
   };
 }

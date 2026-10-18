@@ -6,7 +6,6 @@ import { Magazine } from './game/magazine/book';
 import { Notebook } from './game/notes';
 import { attachBookInput } from './game/magazine/bookInput';
 import { SeenTracker } from './game/magazine/seen';
-import { ComingSoon } from './game/story/comingSoon';
 import { ISSUE_1_RULES, PuzzleWatcher } from './game/puzzles';
 import { Issue1Story } from './game/story';
 import { Tv } from './game/tv/tv';
@@ -33,7 +32,6 @@ const notebook = new Notebook(engine.gl, canvas, () => magazine.state.flags, () 
 const bookInput = attachBookInput(magazine, canvas);
 const seen = new SeenTracker();
 /** Placeholder for issue 2, shown once issue 1's night has passed. */
-const comingSoon = new ComingSoon();
 /** `?book` starts with the magazine open (for playtesting). */
 if (params.has('book')) magazine.show();
 
@@ -84,7 +82,6 @@ engine.lateUpdaters.push((dt) => {
   magazine.draw();
   notebook.draw();
   bookInput.update();
-  comingSoon.update(magazine.state.flags.has('issue2-waiting'));
   tv.knobs.cursor();
   tv.touch.cursor();
   notebook.cursor();

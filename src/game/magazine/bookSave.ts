@@ -1,4 +1,4 @@
-import { PAGE_IDS, PageId } from './pages';
+import { ISSUES, type AnyPageId, type IssueId } from './pages';
 
 const SAVE_KEY = 'coco2.rainbow';
 
@@ -10,7 +10,11 @@ const SAVE_KEY = 'coco2.rainbow';
 export interface Save {
   flags: string[];
   revealed: string[];
-  page: PageId;
+  /** The issue on the table, and the page each issue was last left open at. */
+  issue: IssueId;
+  pages: Partial<Record<IssueId, AnyPageId>>;
+  /** The page of `issue` (kept as well as `pages`, so a save from before May still opens where it was). */
+  page: AnyPageId;
   open: boolean;
   reading: boolean;
 }
@@ -18,7 +22,9 @@ export interface Save {
 export function readSave(): Partial<Save> {
   try {
     const raw = JSON.parse(localStorage.getItem(SAVE_KEY) ?? 'null') as Partial<Save> | null;
-    if (raw?.page && !PAGE_IDS.includes(raw.page)) delete raw.page;
+    if (raw?.issue && !(raw.issue in ISSUES)) delete raw.issue;
+    const ids: readonly AnyPageId[] = ISSUES[raw?.issue ?? 'march'];
+    if (raw?.page && !ids.includes(raw.page)) delete raw.page;
     return raw ?? {};
   } catch {
     return {}; // unreadable save: start fresh

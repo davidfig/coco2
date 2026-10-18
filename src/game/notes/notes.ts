@@ -56,7 +56,7 @@ export const NOTES: readonly Note[] = [
   { id: 'saw-pleads', when: 'saw-pleads', text: 'Deleted it. Then the screen: IS ANYONE READING THIS, PLEASE. Line is back', mood: 0.55 },
   { id: 'saw-thanks', when: 'saw-thanks', text: 'Left it. Then THANK YOU, on the screen. The line says it too', mood: 0.4 },
   { id: 'night', when: 'issue1-done', text: 'Enough for tonight. Switch it off', mood: 0.3, ask: true, solved: 'issue1-closed' },
-  { id: 'nextday', when: 'issue2-waiting', text: 'Next day. Mail: no May RAINBOW yet', mood: 0.2 },
+  { id: 'nextday', when: 'issue2-waiting', text: 'Next day. May RAINBOW came: cover only!', mood: 0.2 },
 ];
 
 /** The words of a note, given what the player has done. */

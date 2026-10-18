@@ -1,5 +1,5 @@
 import type { Magazine } from './book';
-import { PAGE_IDS, type PageId } from './pages';
+import type { PageId } from './pages';
 
 /** Pages the story waits for the player to have looked at: each sets the flag `seen-<id>`. */
 const WATCHED: readonly PageId[] = ['guess'];
@@ -30,8 +30,8 @@ export class SeenTracker {
     this.held += dt;
     if (this.held < DWELL) return;
     for (const i of [spread * 2 - 1, spread * 2]) {
-      const id = PAGE_IDS[i];
-      if (id && WATCHED.includes(id)) mag.setFlag(`seen-${id}`);
+      const id = mag.pageId(i);
+      if (id && WATCHED.includes(id as PageId)) mag.setFlag(`seen-${id}`);
     }
   }
 }

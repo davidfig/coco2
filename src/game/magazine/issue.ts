@@ -7,11 +7,12 @@ import type { IssueState } from './data';
 import { HINT_STOCK, drawGuessListing, drawHints, drawListing } from './extras';
 import { drawFirstProgram, drawStopping, drawTape } from './learn';
 import { drawLetters } from './letters';
-import { PAGE_IDS, type PageId } from './pages';
+import { ISSUES, ISSUE_DATE, type AnyPageId, type IssueId } from './pages';
+import { drawMayCover, drawMayNotice } from './may';
 import { Ctx, Hotspot, PAGE_H, PAGE_W, furniture, inkPass, paperBase } from './paper';
 
-/** The issue on the table: its pages in `pages.ts` order, the cover being page 1 (index 0). */
-export const PAGE_COUNT = PAGE_IDS.length;
+/** The most pages any issue has: the book's texture array holds that many layers. */
+export const MAX_PAGES = Math.max(...Object.values(ISSUES).map((ids) => ids.length));
 
 interface PageDef {
   draw: (ctx: Ctx, s: IssueState) => Hotspot[] | void;
@@ -23,7 +24,7 @@ interface PageDef {
   noFoot?: boolean;
 }
 
-const PAGES: Record<PageId, PageDef> = {
+const PAGES: Record<AnyPageId, PageDef> = {
   cover: { draw: drawCover, colour: true },
   insideFront: { draw: drawInsideCoverAd, colour: true },
   contents: { draw: drawContents },
@@ -42,19 +43,24 @@ const PAGES: Record<PageId, PageDef> = {
   marketplace: { draw: drawAds },
   insideBack: { draw: drawInsideBackAd, colour: true },
   backCover: { draw: drawBackCover, colour: true },
+  // May: only the cover and the notice are new; the advertisers ran the same colour ads again.
+  mayCover: { draw: drawMayCover, colour: true },
+  mayNotice: { draw: drawMayNotice },
+  mayInsideBack: { draw: drawInsideBackAd, colour: true },
+  mayBackCover: { draw: drawBackCover, colour: true },
 };
 
-/** Draw page `i` (0-based) onto a PAGE_W × PAGE_H canvas and return its clickable regions. */
-export function drawPage(i: number, ctx: Ctx, s: IssueState): Hotspot[] {
+/** Draw page `i` (0-based) of an issue onto a PAGE_W × PAGE_H canvas and return its clickable regions. */
+export function drawPage(issue: IssueId, i: number, ctx: Ctx, s: IssueState): Hotspot[] {
   ctx.clearRect(0, 0, PAGE_W, PAGE_H);
-  const def = PAGES[PAGE_IDS[i]];
+  const def = PAGES[ISSUES[issue][i]];
   if (def.colour) {
     def.draw(ctx, s);
     return [];
   }
   paperBase(ctx, 1000 + i, def.stock);
   const spots = def.draw(ctx, s) ?? [];
-  if (!def.noFoot) furniture(ctx, i);
+  if (!def.noFoot) furniture(ctx, i, ISSUE_DATE[issue]);
   inkPass(ctx, 1000 + i);
   return spots;
 }

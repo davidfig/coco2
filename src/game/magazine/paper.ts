@@ -283,7 +283,7 @@ export function sidebar(ctx: Ctx, title: string, x: number, y: number, w: number
 }
 
 /** Running foot, as the magazine sets it: date, the title (italic "the", bold "RAINBOW") and the folio. */
-export function furniture(ctx: Ctx, index: number): void {
+export function furniture(ctx: Ctx, index: number, month = 'March 1986'): void {
   const n = String(index + 1);
   const y = PAGE_H - 40;
   const left = index % 2 === 1;
@@ -298,7 +298,7 @@ export function furniture(ctx: Ctx, index: number): void {
     }
   };
   ctx.textBaseline = 'alphabetic';
-  const date: [string, string] = ['March 1986', `14px ${SANS}`];
+  const date: [string, string] = [month, `14px ${SANS}`];
   const the: [string, string] = ['the', `italic 14px ${SERIF}`];
   const name: [string, string] = ['RAINBOW', `bold 15px ${SANS}`];
   if (left) parts(ctx, MARGIN, 1, [[n, `bold 18px ${SANS}`], the, name, date]);

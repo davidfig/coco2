@@ -1,4 +1,3 @@
-import { PAGE_COUNT } from './issue';
 import { PAGE_H, PAGE_W } from './paper';
 
 /** A rectangle in window fractions, origin bottom-left (like gl_FragCoord). */
@@ -26,8 +25,6 @@ export const TILT = 0.42;
 export const CAM_DIST = 4.5;
 /** With the book put away, the TV sits this far (window fraction) off the bottom: room for the notebook page to peek up over the set without covering the picture. */
 export const NOTE_ROOM = 0.08;
-/** The spreads run 0 (cover alone) to this (back cover alone). */
-export const LAST_SPREAD = PAGE_COUNT / 2;
 
 export const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 export const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
@@ -57,14 +54,14 @@ export function layouts(aspect: number, peek: number): { closed: Layout; side: L
   return { closed: { tv: { x: 0, y: NOTE_ROOM, w: 1, h: 1 - NOTE_ROOM }, book: { ...side.book, y: peek - side.book.h } }, side, read };
 }
 
-/** Where the book sits on screen for a (fractional) spread: view centre, visible extent, page-stack thickness. */
-export function spreadView(phi: number): { c: number; xmin: number; xmax: number; stackL: number; stackR: number } {
+/** Where the book sits on screen for a (fractional) spread: view centre, visible extent, page-stack thickness. The spreads run 0 (cover alone) to `last` (back cover alone). */
+export function spreadView(phi: number, last: number): { c: number; xmin: number; xmax: number; stackL: number; stackR: number } {
   const open = smooth(phi);
-  const close = smooth(phi - (LAST_SPREAD - 1));
+  const close = smooth(phi - (last - 1));
   const c = 0.5 * (1 - open) - 0.5 * close;
   const xmin = -open;
   const xmax = 1 - close;
-  const frac = clamp(phi / LAST_SPREAD, 0, 1);
+  const frac = clamp(phi / last, 0, 1);
   return {
     c,
     xmin,
@@ -82,4 +79,49 @@ export function layoutAt(aspect: number, hoverT: number, openT: number, readT: n
   const read = smooth(readT);
   const a: Layout = { tv: lerpRect(L.closed.tv, L.side.tv, open), book: lerpRect(L.closed.book, L.side.book, open) };
   return { tv: lerpRect(a.tv, L.read.tv, read), book: lerpRect(a.book, L.read.book, read) };
+}
+
+export interface Flip {
+  /** The leaf turning: front page `2 * leaf`, back page `2 * leaf + 1`. */
+  leaf: number;
+  dir: 1 | -1;
+  /** 0..1 along the way. */
+  t: number;
+  /** Where it is heading: 1 = finish the turn, 0 = fall back. */
+  to: 0 | 1;
+  /** A hand is holding the leaf; `t` follows the pointer. */
+  held: boolean;
+}
+
+/** What the last frame drew; pointer maths and the toolbar use it. */
+export interface View {
+  W: number;
+  H: number;
+  rect: [number, number, number, number];
+  scale: number;
+  fit: number;
+  vx: number;
+  vy: number;
+  c: number;
+  ext: [number, number, number, number];
+  win: [number, number];
+}
+
+/** Book-space point under a screen point (window fractions, origin bottom-left), for the view `v` last drawn. */
+export function screenToBook(v: View, nx: number, ny: number): [number, number] {
+  const px = (nx * v.W - 0.5 * (v.rect[0] + v.rect[2])) / v.scale;
+  const py = (ny * v.H - 0.5 * (v.rect[1] + v.rect[3])) / v.scale;
+  // The same camera ray the shader casts, met with the page plane.
+  const s = Math.sin(TILT);
+  const c = Math.cos(TILT);
+  const len = Math.hypot(px, py, CAM_DIST);
+  const dx = px / len;
+  const dy = py / len;
+  const dz = -CAM_DIST / len;
+  const ey = dy * c - dz * s;
+  const ez = dy * s + dz * c;
+  const oy = -CAM_DIST * s;
+  const oz = CAM_DIST * c;
+  const t = -oz / ez;
+  return [v.vx + dx * t, v.vy + oy + ey * t];
 }

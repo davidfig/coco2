@@ -58,7 +58,7 @@ strength is set to 0.85 there, style `both` (the beam repaints the changed lette
 |------|----------|--------------|
 | `issue1-done` | The player has seen OK's answer (`saw-pleads` or `saw-thanks`) | The notes close the evening: "Enough for tonight. Switch it off". |
 | `issue1-closed` | The set is switched off after that (a page reload counts as off and on) | The night passes. |
-| `issue2-waiting` | The set is switched on again | The next day: the CoCo boots afresh (empty memory), and the notes say "Next day. Mail: no May RAINBOW yet". A "coming soon" card for the May RAINBOW (`story/comingSoon.ts`) shows over the screen (× closes it; it returns on the next load). Both are placeholders until issue 2 is written: this is where issue 2's magazine and tape will arrive. |
+| `issue2-waiting` | The set is switched on again | The next day: the CoCo boots afresh (empty memory), the May RAINBOW arrives and is the issue on the table (`magazine.setIssue`), and the notes say "Next day. May RAINBOW came: cover only!". May is a placeholder until issue 2 is written: its cover (COMING SOON banner), the editor's notice that the pages and tape are late, and the March ads again (`magazine/may.ts`). The book's corner button switches between March and May. This is where issue 2's pages and tape will go. |
 
 OK's answer no longer waits for GUESS to be in memory: if it is not, he changes the copy on the tape (so the next `CLOAD "GUESS"` shows it) and still answers over the last OK prompt.
 
