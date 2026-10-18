@@ -47,6 +47,15 @@ export class TouchKeys {
     tab.addEventListener('click', () => this.toggle());
     this.el.append(tab, this.pop);
     document.body.append(this.el);
+    // iOS Safari zooms on a quick double tap even under touch-action: none; a cancelled touchend stops it. The keys
+    // type on pointer events, which still come; only the tab needs the click a touchend makes.
+    this.el.addEventListener(
+      'touchend',
+      (e) => {
+        if (!(e.target as Element).closest('.tab')) e.preventDefault();
+      },
+      { passive: false },
+    );
     this.measure();
     const up = (e: PointerEvent): void => this.up(e.pointerId);
     window.addEventListener('pointerup', up);
