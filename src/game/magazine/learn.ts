@@ -42,7 +42,7 @@ export function drawFirstProgram(ctx: Ctx): void {
       { text: 'Until now the CoCo has forgotten each line the moment it obeyed it. Start a line with a number and that changes: the CoCo keeps it. A line with a number is part of a program.', before: 0 },
       { text: 'Type 10 PRINT "HI" and press ENTER. Nothing happens, because the line has been stored, not run. Type 20 PRINT "THERE", then type RUN. The lines run in number order, whatever order you typed them in. We count by tens so there is room to squeeze a line between.' },
       { text: 'LIST shows the CoCo what it remembers. To change a line, type it again with the same number. To remove one, type only its number. NEW wipes the lot. Try each; none of them can hurt.' },
-      { text: 'The program on page ' + pageNo('typeIn') + ' asks your name. INPUT waits for a reply and puts it in N$. The dollar sign means words, not figures. GOTO sends the CoCo back to line 20, so it asks again and again until you press BREAK (Esc).' },
+      { text: 'The program on page ' + pageNo('typeIn') + ' asks your name. INPUT waits for a reply and puts it in N$. The dollar sign means words, not figures. When the last line has run the program ends and OK comes back; type RUN to meet it again.' },
       { text: 'Type it in exactly as printed, one line at a time, and check your sums against the table. When you have finished, type RUN.' },
     ],
     y,
@@ -129,14 +129,15 @@ export function drawStopping(ctx: Ctx): void {
     rowsFor(
       ctx,
       [
-        { text: 'In Fig. 4 the password is plain to see in line 20. A real program will not always be so kind, and its lines may be a long way from the question. Use LIST with a range, and read a little before and after.', before: 0 },
+        { text: 'GOTO 10 in line 30 sends the CoCo back to line 10, so a wrong answer only brings the question round again, for ever. That is what BREAK is for.', before: 0 },
+        { text: 'In Fig. 4 the password is plain to see in line 20. A real program will not always be so kind, and its lines may be a long way from the question. Use LIST with a range, and read a little before and after.' },
       ],
       W - 470,
     ),
     MARGIN + 470,
     qy + 10,
     W - 470,
-    BOTTOM - qy - fy,
+    fy - qy - 10,
   );
   const ky = fy + 10;
   sidebar(ctx, 'Keys To Remember', MARGIN, ky, W, 120);

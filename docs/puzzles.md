@@ -26,17 +26,16 @@ Status: draft for discussion. Nothing here is built.
 
 **P1. Say hello.** (exists) `PRINT "HELLO"`. Flag `printed`.
 
-**P2. Hand-code a program.** The tutorial article walks through a six-line program that asks for the player's name
+**P2. Hand-code a program.** The tutorial article walks through a four-line program that asks for the player's name
 and answers:
 ```
 10 CLS
 20 PRINT "WHAT IS YOUR NAME"
 30 INPUT N$
 40 PRINT "HELLO, ";N$
-50 GOTO 20
 ```
-The RAINBOW CHECK table (already built for the page 11 listing) tells them which line is off. Detected by a program in memory whose
-lines match the listing; flag `first-program`. Payoff: the name goes in localStorage and OK uses it later. The first
+The RAINBOW CHECK table (already built for the page 11 listing) tells them which line is off. Detected when a program in memory whose
+lines match the listing reaches line 40 with a name in N$ (RUN alone, or ENTER with no answer, is not enough); flag `first-program`. Payoff: the name goes in localStorage and OK uses it later. The first
 time it says the name unprompted is the first uncanny moment.
 
 **P3. The adventure won't start.** `CLOAD "ADVENT"` then `RUN` stops with `?SN ERROR IN 30`. Line 30 has a typo in a
@@ -90,7 +89,7 @@ LIST), `code-tried`, `read-code`, `door-open`. The notebook writes down what was
 the exception, quoted once heard or found), and points at the map page for the order and at the stopping page for the 270s.
 Entering the vault with the door really unlocked sets `door-open`.
 
-**The ending.** Behind the door is a small vault, a room like the others (exit south) with a chest of gold (`EXAMINE GOLD`: old coins, heaped to the lid). `TAKE GOLD` (or `TAKE CHEST`) wins: the screen clears (still green: a black screen hid the shimmer) for "YOU TAKE THE GOLD. / *** YOU HAVE WON *** / SCORE: 100 OF 100", and the program ends with BASIC's OK; then HELLO writes itself above the prompt (see `docs/flags.md`). Flag `adventure-won`. The notebook: "A vault. A chest of gold!", then "Took the gold. WON! 100/100", once HELLO has appeared (`tamper-voice`), "Strange: after the game, HELLO came up on the screen by itself. Shimmering. What is that?", then the label's question. Kessler's note is on the real tape's label instead, noted the first time the tape is used (`tape-inserted`).
+**The ending.** Behind the door is a small vault, a room like the others (exit south) with a chest of gold (`EXAMINE GOLD`: old coins, heaped to the lid). `TAKE GOLD` (or `TAKE CHEST`) wins: the screen clears (still green: a black screen hid the shimmer) for "YOU TAKE THE GOLD. / *** YOU HAVE WON *** / SCORE: 100 OF 100", and the program ends with BASIC's OK; then HELLO writes itself above the prompt (see `docs/flags.md`). Flag `adventure-won`. The notebook: "Vault behind the door. Took the gold. WON! 100/100", then, once HELLO has appeared (`tamper-voice`), "After I won, HELLO wrote itself on the screen. I didn't type it", then the label's question. Kessler's note is on the real tape's label instead, noted the first time the tape is used (`tape-inserted`).
 
 **P5. The extra line.** After P4, the tape's GUESS lists one line longer than the printed GUESS listing in the
 magazine (a `REM` that reads like OK's first words: `REM IS ANYONE READING THIS`). The player compares with the
@@ -161,7 +160,7 @@ Not detected: decoding by hand. A player who does that never sets `oracle-read`,
 
 ## Note style
 
-The notes are what someone jots down for themselves: short fragments, not sentences ("Pitch dark. Feel around for a light", "Hall, north door locked. EXAMINE DOOR?"). Page references stay as `p.N`, since they are the links.
+The notes are what someone jots down for themselves: short fragments, not sentences ("Pitch dark. Feel around for a light", "Tower clock: one hand, pointing straight down"). Page references stay as `p.N`, since they are the links.
 
 ## Open questions
 

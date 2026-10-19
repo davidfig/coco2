@@ -12,8 +12,10 @@ export const FIRST_PROGRAM: readonly string[] = [
   '20 PRINT "WHAT IS YOUR NAME"',
   '30 INPUT N$',
   '40 PRINT "HELLO, ";N$',
-  '50 GOTO 20',
 ];
+
+/** FIRST_PROGRAM's line that greets the player: by then N$ holds the name they typed. */
+export const FIRST_PROGRAM_GREETS = 40;
 
 /**
  * ADVENT (`tapes/advent.bas`): the line numbers the rules watch. Change them together with the tape file.

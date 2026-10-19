@@ -1,9 +1,9 @@
 import type { Interpreter } from '../basic/interpreter';
 import { Program } from '../basic/program';
 import type { TextScreen } from '../coco/screen';
-import { isAdvent, isGuess } from '../puzzles/rules';
-import { ADVENT, FIRST_PROGRAM, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../puzzles/listings';
-import { programIs, type Rule } from '../puzzles/watcher';
+import { firstProgramName, isAdvent, isGuess } from '../puzzles/rules';
+import { ADVENT, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../puzzles/listings';
+import type { Rule } from '../puzzles/watcher';
 import type { Tv } from '../tv/tv';
 import { rowText } from './screenText';
 import { COLS, ROWS } from '../vdg/vdg';
@@ -81,8 +81,7 @@ export class Issue1Story {
 
   /** The player's name is kept when the first program has asked for it. */
   private readonly rememberName: Rule = (e, ctx) => {
-    if (e.type !== 'line' || e.num !== 40 || !programIs(ctx.interp.program, FIRST_PROGRAM)) return;
-    const name = String(ctx.interp.vars.get({ name: 'N$' })).trim().toUpperCase().slice(0, 12);
+    const name = firstProgramName(e, ctx.interp);
     try {
       if (name) localStorage.setItem(NAME_KEY, name);
     } catch {

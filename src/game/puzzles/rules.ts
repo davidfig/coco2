@@ -1,6 +1,6 @@
 import type { Program } from '../basic/program';
 import type { Interpreter } from '../basic/interpreter';
-import { ADVENT, ADVENT_CODE, ADVENT_WHISPER, FIRST_PROGRAM, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from './listings';
+import { ADVENT, ADVENT_CODE, ADVENT_WHISPER, FIRST_PROGRAM, FIRST_PROGRAM_GREETS, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from './listings';
 import type { BasicEvent } from '../basic/events';
 import { programIs, type PuzzleContext, type Rule } from './watcher';
 
@@ -22,9 +22,18 @@ const sayHello: Rule = (() => {
   };
 })();
 
-/** P2: RUN with exactly the tutorial's program in memory. */
+/**
+ * The name the player has just given the tutorial's program, as OK keeps it: at its greeting line, with exactly that program in
+ * memory. '' at any other moment, or when the answer was empty, so a bare RUN or ENTER alone does not count.
+ */
+export function firstProgramName(e: BasicEvent, interp: Interpreter): string {
+  if (e.type !== 'line' || e.num !== FIRST_PROGRAM_GREETS || !programIs(interp.program, FIRST_PROGRAM)) return '';
+  return String(interp.vars.get({ name: 'N$' })).trim().toUpperCase().slice(0, 12);
+}
+
+/** P2: the tutorial's program, typed in exactly, has been run and told a name (the story keeps it). */
 const firstProgram: Rule = (e, ctx) => {
-  if (e.type === 'run' && programIs(ctx.interp.program, FIRST_PROGRAM)) ctx.set('first-program');
+  if (firstProgramName(e, ctx.interp)) ctx.set('first-program');
 };
 
 /** True when the program in memory is ADVENT (the tape file's first line says so, and the player may have edited the rest). */
