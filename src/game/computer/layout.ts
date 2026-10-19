@@ -16,11 +16,11 @@ import { recorderExtent } from '../recorder/layout';
  */
 
 /**
- * The case: half width and depth; the rear hump's height; the keyboard deck's height at its back and front edge (it
- * falls a little toward the typist); where the deck starts (z) and where the hump's flat top ends, the sloped face
- * between them. The hump is 7 cm, under the museums' 8.3–8.8 (which looked too tall); the slope 0.4 of the deck's depth.
+ * The case: half width and depth; the rear hump's height; the keyboard deck's height at its back and front edge (a
+ * wedge, steeply raked toward the typist); where the deck starts (z) and where the hump's flat top ends, the short
+ * sloped step between them. Fitted to a front three-quarter photo (camera solved from the case's corners and the plate).
  */
-export const CASE = { hw: 1.375, hd: 0.985, hump: 0.52, deckBack: 0.36, deckFront: 0.27, deckZ: 0.0, humpZ: -0.42 } as const;
+export const CASE = { hw: 1.375, hd: 0.985, hump: 0.6, deckBack: 0.47, deckFront: 0.24, deckZ: 0.0, humpZ: -0.19 } as const;
 /** Where the case's footprint centre sits on the table: under the tube, out from the set enough to show its cords. */
 export const PLACE = { x: -0.45, z: 1.2 + CASE.hd } as const;
 /** The table top (the room shader's `tableY`). */
@@ -46,9 +46,9 @@ export function lowestPoint(): number {
 export const PITCH = (19.05 / 371) * 2 * 1.375;
 /** The keyboard's left edge (row 1, ↑…→, 14 keys, is centred) and the number row's centre, down the deck from `deckZ`. */
 export const KB_X0 = -7 * PITCH;
-export const KB_Z0 = 0.055 + 0.9 * PITCH;
-/** The black plate the keys come up through: half width, back and front edge down the deck (in the photos it is 1.1 times row 1's width and 5.8 rows deep). */
-export const PLATE = { hw: 1.107 * 7 * PITCH, z0: 0.055, z1: 0.055 + 5.8 * PITCH } as const;
+export const KB_Z0 = 0.105 + 0.9 * PITCH;
+/** The black plate the keys come up through: half width, back and front edge down the deck (in the photos it is 1.03 times row 2's width and 5.55 rows deep). */
+export const PLATE = { hw: 1.03 * 7 * PITCH, z0: 0.105, z1: 0.105 + 5.55 * PITCH } as const;
 
 /**
  * A cap: its top's height over the plate's surface and its skirt's (the stem shows between), and how far it goes down
@@ -61,17 +61,17 @@ export const PLATE_T = 0.03;
 
 /** The vents: two banks of six slots across the hump, each bank split by ribs (x ranges). */
 export const VENT_SEGMENTS: readonly (readonly [number, number])[] = [
-  [-1.07, -0.67],
-  [-0.67, -0.31],
-  [-0.31, -0.05],
-  [0.03, 0.29],
-  [0.29, 0.72],
-  [0.72, 1.06],
+  [-1.21, -0.75],
+  [-0.75, -0.34],
+  [-0.34, -0.04],
+  [0.05, 0.35],
+  [0.35, 0.83],
+  [0.83, 1.22],
 ];
 /** The first slot's centre z, how many rows, their pitch, a slot's width and a rib's. */
-export const VENT = { z0: -0.88, rows: 6, pitch: 0.056, w: 0.024, rib: 0.018 } as const;
-/** The badge, a black plate stuck on the slope a third of the way down from the hump's top: centre z (seen from above) and half size (`hd` along the slope). */
-export const BADGE = { z: -0.28, hw: 0.41, hd: 0.05 } as const;
+export const VENT = { z0: -0.88, rows: 6, pitch: 0.064, w: 0.024, rib: 0.018 } as const;
+/** The badge, a black plate stuck on the hump's top just behind the step: centre z and half size. */
+export const BADGE = { z: -0.32, hw: 0.46, hd: 0.058 } as const;
 
 /**
  * Where the magazine and the notebook lie on the table when the view pulls back to the whole desk, if the window has

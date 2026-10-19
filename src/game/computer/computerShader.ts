@@ -43,11 +43,14 @@ const float KEYS_TEXELS = ${f(PRINT_W / (PRINT_KEYS.w * PITCH))}, BADGE_TEXELS =
 const float PRINT_KB_V = ${f(PRINT_KB_V)}, PRINT_BADGE_V0 = ${f(PRINT_BADGE_V0)};
 const vec3 PLATE_C = vec3(0.0, 0.0, ${f((PLATE.z0 + PLATE.z1) / 2)});
 const vec3 PLATE_B = vec3(${f(PLATE.hw)}, ${f(PLATE_T)}, ${f((PLATE.z1 - PLATE.z0) / 2)});
-const float BADGE_S = ${f(((CASE.deckZ - BADGE.z) * Math.hypot(CASE.hump - CASE.deckBack, CASE.deckZ - CASE.humpZ)) / (CASE.deckZ - CASE.humpZ))}; // up the slope from the deck
+const vec3 BADGE_C = vec3(0.0, HUMP + 0.003, ${f(BADGE.z)});
 const vec3 BADGE_B = vec3(${f(BADGE.hw)}, 0.007, ${f(BADGE.hd)});
 const vec3 SLOT_C = vec3(HW, 0.33, -0.55), SLOT_B = vec3(0.12, 0.075, 0.2); // the cartridge slot, right side
-const float SEAM_Y = 0.11;
-const float FOOT = 0.02;
+// The top shell ends at the seam and overhangs the base, a shallower tray set in from every side; the base stands on
+// rubber feet set further in, so from the front the case shows a step and then shadow before the table.
+const float SEAM_Y = 0.12;
+const float FOOT = 0.06;
+const float BASE_IN = 0.08;
 const float CAP_H = ${f(CAP.h)};    // a cap's top over the plate
 const float CAP_LIFT = ${f(CAP.lift)}; // its skirt over the plate: the stem shows between
 // The box every key stands in (deck frame): over the plate, from its surface up to the caps' tops.
@@ -102,12 +105,6 @@ vec3 deck(vec3 p) {
   return vec3(q.x, q.y * c + q.z * s, q.z * c - q.y * s);
 }
 
-/** Into the badge's frame on the slope: x across, y off the slope's face, z down the slope from the badge's centre. */
-vec3 badgeFrame(vec3 p) {
-  vec2 q = vec2(p.z - DECK_Z, p.y - DECK_B);
-  return vec3(p.x, dot(q, SLOPE_N), BADGE_S - dot(q, vec2(-SLOPE_N.y, SLOPE_N.x)));
-}
-
 ${KEY_DIP_GLSL}
 /**
  * One cap, q from its centre on the deck's surface, \`hw\` its half width: it rides on its stem over the plate, its
@@ -138,8 +135,12 @@ ${ventsGlsl()}
 ${cordsGlsl()}
 ${RECORDER_GLSL}
 
-/** The shell's outer box, for the seam. */
-float shell(vec3 p) { return sdBox(p - vec3(0.0, 0.5 * (HUMP + FOOT), 0.0), vec3(HW, 0.5 * (HUMP - FOOT), HD), 0.045); }
+/** The top shell's outer box, from the seam up. */
+float shell(vec3 p) { return sdBox(p - vec3(0.0, 0.5 * (HUMP + SEAM_Y), 0.0), vec3(HW, 0.5 * (HUMP - SEAM_Y), HD), 0.045); }
+/** The base under it, from the feet up into the shell. */
+float base(vec3 p) {
+  return sdBox(p - vec3(0.0, 0.5 * (SEAM_Y + FOOT) + 0.01, 0.0), vec3(HW - BASE_IN, 0.5 * (SEAM_Y - FOOT) + 0.01, HD - BASE_IN), 0.02);
+}
 
 /** Distance and material: 0 case, 1 cap, 3 feet, 4 the badge, 5 the power cord, 6 the RF lead, 7–10 the cassette cable; 20 and up the recorder. */
 vec2 map(vec3 p) {
@@ -150,7 +151,7 @@ vec2 map(vec3 p) {
   float hump = smax(body, slope, 0.035);
   float d = smin(deckSlab, hump, 0.02);
   d = smax(d, -sdBox(q - PLATE_C, PLATE_B, 0.012), 0.004);                    // the plate's pocket
-  d = max(d, -max(abs(p.y - SEAM_Y) - 0.004, -body - 0.01));                   // the seam
+  d = min(d, base(p));
   if (p.z < HUMP_Z && p.y > HUMP - 0.1) d = smax(d, -vents(p), 0.004);
   d = max(d, -sdBox(p - SLOT_C, SLOT_B, 0.01));
   vec2 r = vec2(d, 0.0);
@@ -163,10 +164,10 @@ vec2 map(vec3 p) {
   } else if (kb < r.x) {
     r.x = kb;
   }
-  float badge = sdBox(badgeFrame(p) - vec3(0.0, 0.003, 0.0), BADGE_B, 0.004);
+  float badge = sdBox(p - BADGE_C, BADGE_B, 0.004);
   if (badge < r.x) r = vec2(badge, 4.0);
-  vec3 fp = vec3(abs(p.x) - HW + 0.18, p.y - FOOT * 0.5, abs(p.z) - HD + 0.15);
-  float foot = max(length(fp.xz) - 0.06, abs(fp.y) - FOOT * 0.5);
+  vec3 fp = vec3(abs(p.x) - HW + 0.42, p.y - FOOT * 0.5, abs(p.z) - HD + 0.32);
+  float foot = max(length(fp.xz) - 0.05, abs(fp.y) - FOOT * 0.5);
   if (foot < r.x) r = vec2(foot, 3.0);
   if (p.z < -HD + 0.05 || abs(p.x) > HW - 0.05) {
     vec2 c = cords(p, r.x);
@@ -234,9 +235,8 @@ vec3 shade(vec3 p, vec3 rd, float id, float fp) {
     gloss = 0.5;
     bump = 0.0;
   } else if (id == 4.0) {
-    vec3 bf = badgeFrame(p);
-    vec2 uv = (bf.xz + BADGE_B.xz) / (2.0 * BADGE_B.xz);
-    alb = dot(n, vec3(0.0, SLOPE_N.y, SLOPE_N.x)) > 0.9 ? textureLod(uPrint, vec2(uv.x, mix(PRINT_BADGE_V0, 1.0, uv.y)), log2(max(fp * BADGE_TEXELS, 1.0))).rgb * 0.8 : vec3(0.03);
+    vec2 uv = vec2((p.x - BADGE_C.x + BADGE_B.x) / (2.0 * BADGE_B.x), (p.z - BADGE_C.z + BADGE_B.z) / (2.0 * BADGE_B.z));
+    alb = n.y > 0.9 ? textureLod(uPrint, vec2(uv.x, mix(PRINT_BADGE_V0, 1.0, uv.y)), log2(max(fp * BADGE_TEXELS, 1.0))).rgb * 0.8 : vec3(0.03);
     gloss = 0.35;
     bump = 0.0; // a smooth printed plate
     alb = mix(alb, alb * 1.3 + 0.05, 0.6 * scratches(p, fp));

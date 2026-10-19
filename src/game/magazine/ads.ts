@@ -3,7 +3,7 @@ import { Ctx, INK, MARGIN, PAGE_H, PAGE_W, SANS, SERIF, colWidth, flow, rowsFor,
 const W = PAGE_W - MARGIN * 2;
 
 /** One catalogue entry: bold name-dash-description, with the price pushed right on its own line. */
-function entry(name: string, desc: string, price: string, font = 15): { text: string; font: string; lh: number; before: number; align: 'left' }[] {
+export function entry(name: string, desc: string, price: string, font = 15): { text: string; font: string; lh: number; before: number; align: 'left' }[] {
   return [
     { text: `${name}—${desc}`, font: `${font}px ${SERIF}`, lh: font + 3, before: 10, align: 'left' },
     { text: price, font: `bold ${font}px ${SANS}`, lh: font + 3, before: 1, align: 'left' },
@@ -64,16 +64,8 @@ function clearMind(ctx: Ctx, x: number, y: number, w: number): void {
   );
 }
 
-/**
- * a dense mail-order catalogue page, packed in the manner of mid-80s software houses (and rather less honest). By May the
- * tape copier is no longer sold, and Ned has quietly dropped it from the list.
- */
-export function drawAds(ctx: Ctx, tapeCopier = true): void {
-  const top = 72;
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(MARGIN, top, W, PAGE_H - 160);
-  // Masthead of the catalogue.
+/** Ned's catalogue masthead: the house mark, the name, the address line and the rule under them, at the frame's `top`. */
+export function nedMasthead(ctx: Ctx, top: number): void {
   ctx.fillStyle = INK;
   ctx.beginPath();
   ctx.moveTo(MARGIN + 18, top + 62);
@@ -90,12 +82,29 @@ export function drawAds(ctx: Ctx, tapeCopier = true): void {
   text(ctx, 'NIFTY NED’S SOFTWARE', MARGIN + 110, top + 58, `bold 52px ${SANS}`);
   text(ctx, '• FOR THE COLOR COMPUTER AND ANYTHING ELSE WE CAN FIT • BOX 17, WAHOO, NEBRASKA 68066 (402) 555-0100', MARGIN + 110, top + 82, `bold 12px ${SANS}`);
   ctx.fillRect(MARGIN, top + 94, W, 3);
+}
+
+/** Ned's footer strip: the BBS and its excuse, the postage line. */
+export function nedFooter(ctx: Ctx, top: number, excuse: string): void {
+  ctx.fillStyle = INK;
+  ctx.fillRect(MARGIN, top + PAGE_H - 160 - 62, W, 3);
+  text(ctx, 'Call our BBS 402-555-0199 24 Hours a Day*', PAGE_W / 2, top + PAGE_H - 160 - 36, `bold 18px ${SANS}`, INK, 'center');
+  text(ctx, `${excuse}   • ADD $1.00 POSTAGE & HANDLING • NEBRASKA RESIDENTS ADD 4% SALES TAX`, PAGE_W / 2, top + PAGE_H - 160 - 14, `11px ${SANS}`, INK, 'center');
+}
+
+/** A dense mail-order catalogue page, packed in the manner of mid-80s software houses (and rather less honest). */
+export function drawAds(ctx: Ctx): void {
+  const top = 72;
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(MARGIN, top, W, PAGE_H - 160);
+  nedMasthead(ctx, top);
   text(ctx, 'UTILITIES', PAGE_W / 2, top + 126, `bold 22px ${SANS}`, INK, 'center');
   const cw = colWidth(W - 40, 2, 30);
   const util = [
     ...entry('COLOR MONITOR', 'Written in position-independent code (that means it can be anywhere in memory). Very compact. Only occupies 1174 bytes, including the ones you were using. Displays memory in hex, and also in a confusing mixture of both.', 'MACHINE LANGUAGE $24.95'),
     ...entry('SCREEN PRINT ROUTINE', 'Prints the screen on any printer you own. Or any printer you can borrow. Requires 16K, a printer, and patience.', '$17.95'),
-    ...(!tapeCopier ? [] : entry('TAPE DUPE NOW', 'An all-new tape backup program. Copies those hard-to-copy tapes. Copies the easy ones too. Probably the finest tape copier program ever, according to us.', 'TAPE $21.95 • DISK $25.95')),
+    ...entry('TAPE DUPE NOW', 'An all-new tape backup program. Copies those hard-to-copy tapes. Copies the easy ones too. Probably the finest tape copier program ever, according to us.', 'TAPE $21.95 • DISK $25.95'),
     ...entry('DISK TO TAPE', 'Dump the contents of most disks to tape automatically. Why? We never asked.', '$17.95'),
     ...entry('MAIL LIST', 'Maintains a complete mailing list with up to twelve names. Fourteen if they are short.', '$17.95'),
     ...entry('THE FIXER', 'Having trouble moving those 600 hex programs to disk? The Fixer will help. Completely automatic, except where it is not.', '$17.95'),
@@ -121,9 +130,5 @@ export function drawAds(ctx: Ctx, tapeCopier = true): void {
   ];
   flow(ctx, rowsFor(ctx, edu, cw), MARGIN + 20, ey + 50, W - 40, 230, 2, 30);
   clearMind(ctx, MARGIN + 20, ey + 300, W - 40);
-  // Footer strip.
-  ctx.fillStyle = INK;
-  ctx.fillRect(MARGIN, top + PAGE_H - 160 - 62, W, 3);
-  text(ctx, 'Call our BBS 402-555-0199 24 Hours a Day*', PAGE_W / 2, top + PAGE_H - 160 - 36, `bold 18px ${SANS}`, INK, 'center');
-  text(ctx, '*The line is busy 24 hours a day.   • ADD $1.00 POSTAGE & HANDLING • NEBRASKA RESIDENTS ADD 4% SALES TAX', PAGE_W / 2, top + PAGE_H - 160 - 14, `11px ${SANS}`, INK, 'center');
+  nedFooter(ctx, top, '*The line is busy 24 hours a day.');
 }

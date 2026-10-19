@@ -12,6 +12,7 @@ import { drawFirstProgram, drawStopping, drawTape } from './learn';
 import { drawLetters } from './letters';
 import { ISSUES, ISSUE_DATE, type AnyPageId, type IssueId } from './pages';
 import { drawMayCover } from './may';
+import { drawMayNed } from './mayNed';
 import { drawClearMind, drawHealthy, drawMayContents, drawMayEditorial } from './mayArticles';
 import { drawMayTape, drawSecret } from './mayCode';
 import { drawShutdown, drawShutdownEnd, drawShutdownList } from './mayShutdown';
@@ -50,8 +51,8 @@ const PAGES: Record<AnyPageId, PageDef> = {
   classifieds: { draw: drawClassifieds },
   insideBack: { draw: drawInsideBackAd, colour: true },
   backCover: { draw: drawBackCover, colour: true },
-  marketplace: { draw: (ctx) => drawAds(ctx) },
-  // May: the advertisers ran the same colour ads again, and Ned's catalogue is back without its tape copier.
+  marketplace: { draw: drawAds },
+  // May: every ad is new (docs/issues.md, Advertisements), and Ned's catalogue is back without its tape copier.
   mayCover: { draw: drawMayCover, colour: true },
   mayInsideFront: { draw: drawInsideCoverAd, colour: true },
   mayContents: { draw: drawMayContents },
@@ -65,7 +66,7 @@ const PAGES: Record<AnyPageId, PageDef> = {
   mayTape: { draw: drawMayTape },
   mayClearMind: { draw: drawClearMind },
   mayClassifieds: { draw: drawMayClassifieds },
-  mayMarketplace: { draw: (ctx) => drawAds(ctx, false) },
+  mayMarketplace: { draw: drawMayNed },
   mayInsideBack: { draw: drawInsideBackAd, colour: true },
   mayBackCover: { draw: drawBackCover, colour: true },
 };

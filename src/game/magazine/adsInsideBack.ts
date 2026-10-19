@@ -15,7 +15,7 @@ const BLACK = '#161412';
 const HALF = 652;
 
 /** Body copy poured into columns. */
-function body(ctx: Ctx, paras: { text: string; font?: string; color?: string; before?: number; align?: 'justify' | 'left' | 'center' | 'right' }[], x: number, y: number, w: number, h: number, cols: number, color: string, size = 14.5, gap = 22): void {
+export function body(ctx: Ctx, paras: { text: string; font?: string; color?: string; before?: number; align?: 'justify' | 'left' | 'center' | 'right' }[], x: number, y: number, w: number, h: number, cols: number, color: string, size = 14.5, gap = 22): void {
   const cw = colWidth(w, cols, gap);
   flow(ctx, rowsFor(ctx, paras.map((p, i) => ({ font: `${size}px ${SERIF}`, lh: size + 3.5, before: i ? 7 : 0, color, ...p })), cw), x, y, w, h, cols, gap);
 }
@@ -93,7 +93,7 @@ function typeOMatic(ctx: Ctx): void {
 }
 
 /** One line of specials: the product, its price and the old one, and what it does in bullets. */
-function special(ctx: Ctx, y: number, name: string, dollars: string, cents: string, was: string, ship: string, bullets: string[], x0 = 60): void {
+export function special(ctx: Ctx, y: number, name: string, dollars: string, cents: string, was: string, ship: string, bullets: string[], x0 = 60): void {
   setType(ctx, name, x0, y, `bold 40px ${SANS}`, BLACK, 'left', 0.86, 760 - x0);
   price(ctx, dollars, cents, PAGE_W - 60, y + 2, 56, 'bold', SANS, BLACK, 'right');
   struck(ctx, was, PAGE_W - 60, y + 26, 19, BLACK);

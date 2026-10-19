@@ -25,7 +25,7 @@ export function sweep(ctx: Ctx, a: Area, wall: string, floor: string, light = 'r
 }
 
 /** A soft contact shadow under something standing on the sweep. */
-function shadow(ctx: Ctx, a: Area, x: number, y: number, rx: number, ry: number, alpha: number): void {
+export function shadow(ctx: Ctx, a: Area, x: number, y: number, rx: number, ry: number, alpha: number): void {
   airbrush(ctx, a, 4, (sc) => {
     sc.fillStyle = `rgba(20,22,30,${alpha})`;
     sc.beginPath();
@@ -34,7 +34,7 @@ function shadow(ctx: Ctx, a: Area, x: number, y: number, rx: number, ry: number,
   });
 }
 
-function quad(ctx: Ctx, p: [number, number][], fill: string | CanvasGradient): void {
+export function quad(ctx: Ctx, p: [number, number][], fill: string | CanvasGradient): void {
   ctx.fillStyle = fill;
   ctx.beginPath();
   p.forEach(([x, y]) => ctx.lineTo(x, y));
@@ -109,7 +109,7 @@ export function keyboardCoverShot(ctx: Ctx, a: Area): void {
 }
 
 /** One cassette, turned by `angle`: a dark shell, its label, the window with both reels, the screws. */
-function cassette(ctx: Ctx, cx: number, cy: number, w: number, angle: number, label: string, seed: number): void {
+export function cassette(ctx: Ctx, cx: number, cy: number, w: number, angle: number, label: string, seed: number): void {
   const h = w * 0.63;
   const r = rng(seed);
   ctx.save();
