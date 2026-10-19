@@ -73,7 +73,8 @@ set type.
   with the area. The painted ads do this: `adsGobbler.ts`, `adsLemonade.ts` and `adsDustCover.ts` build each picture
   (scene plus modelling, light chosen per picture), `adsDetail.ts` holds the shared painting helpers (`airbrush` for
   sprayed softness at any scale, `roundShade`, `glint`, `rimLight`, `cloud`, `grass`, `planks`), and `adsColor.ts`
-  frames them, paints each one, then sets the type. Logos over a painting get a dark drop shadow so they read over a
+  frames them, paints each one, then sets the type. The back pages' ads (`adsInsideBack.ts`, `adsBackCover.ts`) show
+  their products as studio photographs instead (`adsProducts.ts`: a seamless sweep, a contact shadow), painted the same way. Logos over a painting get a dark drop shadow so they read over a
   bright sky.
 - `printOnly` keeps just the press (uneven ink, grain, misregistration) with no edge drift, brushwork or spatter: the
   inside front cover's printed sky round its paintings, and the spot-colour inside back cover.
