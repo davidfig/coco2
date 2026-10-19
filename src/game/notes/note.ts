@@ -11,6 +11,7 @@ import { readHandled, saveHandled } from './wear';
 import type { DeskSpot } from '../computer/layout';
 import { DESK_LIGHT, type Quad, inQuadPx, onTable } from './onDesk';
 import { drawPile } from './pileDraw';
+import { LinkMark } from './linkMark';
 
 const RATIO = SHEET_W / SHEET_H;
 /** At rest, this much of the peeking page (share of its height: its heading) shows above the window's bottom. */ const PEEK_SHOW = 0.11;
@@ -47,13 +48,11 @@ export class Notebook {
   private lift = 0;
   private nudge = 0;
   private hover = false;
-  /** The held-up sheet has the pointer over a page reference. */
-  private overLink = false;
+  /** The page reference the pointer is over on the held-up sheet (`over`), shown gone over. */
+  private readonly linkMark = new LinkMark();
   /** The held-up sheet has the pointer over it (it can be dragged). */
   private overTop = false;
   private consumed = false;
-  /** Each sheet's page references as last written, in sheet pixels. */
-  private links: PageLink[][] = [];
   /** Which sheet is on top of the pile (0 = the first), and how many there are. New notes bring the newest to the top. */
   private sheet = 0;
   private sheets = 1;
@@ -109,7 +108,7 @@ export class Notebook {
   private apply(d: SheetsDone): void {
     this.sheets = d.count;
     uploadSheets(this.gl, this.texs, d);
-    for (const p of d.pages) this.links[p.sheet] = p.links;
+    for (const p of d.pages) this.linkMark.links[p.sheet] = p.links;
     if (d.fresh || this.sheet >= this.sheets) this.settle(this.sheets - 1);
     if (d.nudge) this.bounce();
   }
@@ -183,7 +182,7 @@ export class Notebook {
   /** A hand over the peeking page or a page reference, an open hand over the held-up sheet; call after anything else that sets the canvas's cursor. */
   cursor(): void {
     if (this.open && this.grab?.moved) this.canvas.style.cursor = 'grabbing';
-    else if (this.open ? this.overLink || this.overBack : this.hover) this.canvas.style.cursor = 'pointer';
+    else if (this.open ? !!this.linkMark.over || this.overBack : this.hover) this.canvas.style.cursor = 'pointer';
     else if (this.open && this.overTop) this.canvas.style.cursor = 'grab';
   }
 
@@ -223,7 +222,7 @@ export class Notebook {
     this.off = [0, 0];
   }
 
-  /** The page reference under window point (x, y) while the sheet is held up, if any. Nothing marks them: they are just words. */
+  /** The page reference under window point (x, y) while the sheet is held up, if any (the pen rings each one on the sheet). */
   private linkAt(x: number, y: number): PageLink | undefined {
     if (this.deal) return undefined;
     const s = pulled(this.shape(this.gl.drawingBufferWidth, this.gl.drawingBufferHeight), this.off);
@@ -233,7 +232,7 @@ export class Notebook {
     const n = Math.sin(s.rot);
     const sx = ((c * dx + n * dy) / s.hx / 2 + 0.5) * SHEET_W;
     const sy = (0.5 - (-n * dx + c * dy) / s.hy / 2) * SHEET_H;
-    return (this.links[this.sheet] ?? []).find((l) => sx >= l.x && sx <= l.x + l.w && sy >= l.y && sy <= l.y + l.h);
+    return this.linkMark.at(this.sheet, sx, sy);
   }
 
   /** Put the notes down: one more reading's worth of wear, which the page picks up once it is back down, newest sheet on top. */
@@ -269,7 +268,7 @@ export class Notebook {
         }
         // Held up: whether the pointer is on a page reference (`cursor()` shows it); otherwise whether it is on the peeking page.
         if (this.open) {
-          this.overLink = !this.grab?.moved && !!this.linkAt(x, y);
+          this.linkMark.over = !this.grab?.moved && (this.linkAt(x, y) ?? false);
           this.overBack = this.backAt(x, y) !== undefined;
           this.overTop = !this.deal && this.hit(x, y);
         } else this.hover = this.hit(x, y);
@@ -302,7 +301,7 @@ export class Notebook {
           }
           // The room behind: put the notes down.
           this.putDown();
-          this.overLink = this.overTop = this.overBack = false;
+          this.linkMark.over = this.overTop = this.overBack = false;
           return;
         }
         if (this.hit(x, y)) {
@@ -329,7 +328,7 @@ export class Notebook {
               // A click: on a page reference it puts the notes down and turns the magazine to that page; anywhere else it puts them down.
               const link = this.linkAt(...px(e as PointerEvent));
               this.putDown();
-              this.overLink = this.overTop = false;
+              this.linkMark.over = this.overTop = false;
               if (link) this.onPage(link.page, link.issue);
             }
           }
@@ -358,6 +357,7 @@ export class Notebook {
     // Each bounce rises from rest to full lift and settles back, so it starts and ends where it was.
     const goal = this.hover ? 1 : this.nudge > 0 ? Math.abs(Math.sin((Math.PI * this.nudge) / BOUNCE_TIME)) : 0;
     this.lift += (goal - this.lift) * (1 - Math.exp(-dt * 10));
+    this.linkMark.update(this.open, dt);
     if (!this.grab) {
       const k = Math.exp(-dt * 14);
       this.off = [this.off[0] * k, this.off[1] * k];
@@ -392,7 +392,7 @@ export class Notebook {
   }
 
   draw(): void {
-    const sheets = this.placed().map((p) => ({ quad: p.quad, tex: this.texs[p.sheet] }));
+    const sheets = this.placed().map((p) => ({ quad: p.quad, tex: this.texs[p.sheet], mark: p.sheet === this.sheet && !this.deal ? this.linkMark.mark() : undefined }));
     const light = 1 + (DESK_LIGHT - 1) * this.onDesk();
     drawPile(this.gl, this.program, this.vao, sheets, { open: smooth(this.openT), lift: this.lift, glow: this.glow(), picture: this.picture(), light });
   }

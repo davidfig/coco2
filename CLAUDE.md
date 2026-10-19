@@ -98,6 +98,7 @@ src/game/
                       flag, open questions that point at a page or tape), sheet (ruled paper + the writing), sheetPainter + sheetWorker
                       (sheets written off the main thread, only those that changed), note (GL quads,
                       one texture per sheet; hover/click, drag a held-up sheet aside to send it under, input captured before the book's)
+                      + linkMark (the page references, each ringed in red pen on a ring layer below the sheet in its texture, one colour channel per overlapping ring: under the pointer noteShader lifts that ring off and draws it again)
                       + noteShader (the screen's light dims through each sheet behind) + pile (where each sheet lies, the turn animation) + onDesk (the pile lying on the table, in perspective), wear (the page ages with each reading and note:
                       yellowing, folds, coffee rings, pen blots; `handled` in localStorage) + stains (the marks), doodles (what the pen draws in the
                       margins beside each note: its own picture or an idle one, uneasier as the mood climbs; heading, ringed holes)

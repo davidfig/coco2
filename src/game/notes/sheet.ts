@@ -1,5 +1,5 @@
 import { dash, hashSeed, measure, wrap, write } from '../handwriting';
-import { type Written, doodle } from './doodles';
+import { type Written, doodle, ringPath, ringRef } from './doodles';
 import { DAYS, type Note, isSolved, noteText, visibleNotes } from './notes';
 import { type InkMark, ageOver, ageUnder } from './wear';
 import type { IssueId } from '../magazine/pages';
@@ -11,6 +11,12 @@ import type { IssueId } from '../magazine/pages';
 export const SHEET_DPI = 104;
 export const SHEET_W = 800;
 export const SHEET_H = 1092;
+/**
+ * The page references' rings lie on a layer of their own under the sheet, in the same canvas and texture: from `RING_Y`
+ * down, black with each ring in one colour channel (doodles.ts's `ringRef`). The gap keeps the two apart in the mipmaps.
+ */
+export const RING_Y = SHEET_H + 16;
+export const TEX_H = RING_Y + SHEET_H;
 
 const LINE_H = 40;
 const TOP = 112;
@@ -179,6 +185,20 @@ export interface PageLink {
   h: number;
   page: number;
   issue: IssueId;
+  /** Its ring's shape (doodles.ts's `ringPath`): the hover traces the very same ring again. */
+  seed: number;
+  mood: number;
+  /** The ring layer's channel its ring is in: none that overlaps it shares it. */
+  slot: number;
+}
+
+/** The red pen the page references are ringed with, on a later read-through. */
+export const RING_INK: [number, number, number] = [185, 40, 35];
+
+/** The ring the pen draws round a page reference, in sheet pixels: drawn on the sheet, and traced again under the pointer. */
+export function ringPoints(l: PageLink): [number, number][] {
+  const [x, y, hw, hh] = [l.x + l.w / 2, l.y + l.h / 2, l.w / 2 + 6, l.h / 2 + 6];
+  return ringPath(hw / hh, l.seed, l.mood).map(([px, py]) => [x + px * hh, y - py * hh]);
 }
 
 type Entry = { note: Note; solved: boolean; lines: string[] };
@@ -217,6 +237,9 @@ export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<stri
   const sheets = paginate(flags);
   const k = Math.min(sheet ?? sheets.length - 1, sheets.length - 1);
   paper(ctx, k);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, RING_Y, SHEET_W, SHEET_H);
+  const rings: { box: number[]; slot: number }[] = [];
   ageUnder(ctx, SHEET_W, SHEET_H, EDGE, handled, k);
   // Only the first sheet is headed, with the title and the date; the later ones carry their page number there instead.
   let titleEnd = LEFT - 36;
@@ -256,7 +279,15 @@ export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<stri
       for (const m of line.matchAll(/(May )?p\.(\d+)/g)) {
         const a = spans[m.index!]?.[0];
         const b = spans[m.index! + m[0].length - 1]?.[1];
-        if (a !== undefined && b !== undefined) links.push({ x: a - 8, y: y - 6 - pen.size * 1.2, w: b - a + 16, h: pen.size * 1.6, page: Number(m[2]) - 1, issue: m[1] ? 'may' : 'march' });
+        if (a === undefined || b === undefined) continue;
+        const link = { x: a - 8, y: y - 6 - pen.size * 1.2, w: b - a + 16, h: pen.size * 1.6, page: Number(m[2]) - 1, issue: m[1] ? ('may' as const) : ('march' as const), seed: hashSeed(`${note.id}:ref:${m.index}`), mood: note.mood, slot: 0 };
+        const pts = ringPoints(link);
+        const box = [Math.min(...pts.map((p) => p[0])) - 4, Math.min(...pts.map((p) => p[1])) - 4, Math.max(...pts.map((p) => p[0])) + 4, Math.max(...pts.map((p) => p[1])) + 4];
+        const taken = rings.filter((o) => o.box[0] < box[2] && box[0] < o.box[2] && o.box[1] < box[3] && box[1] < o.box[3]).map((o) => o.slot);
+        link.slot = [0, 1, 2].find((n) => !taken.includes(n)) ?? 0;
+        rings.push({ box, slot: link.slot });
+        links.push(link);
+        ringRef(ctx, pts.map(([px, py]) => [px, py + RING_Y]), link.slot);
       }
       if (solved) dash(ctx, LEFT - 6, y - 14, LEFT + w + 6, y - 15, { ...pen, size: 24, mood: 0.5 });
       if (i === lines.length - 1) {

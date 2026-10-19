@@ -139,6 +139,61 @@ export interface Margins {
   ink: [number, number, number];
 }
 
+/**
+ * A page reference ringed in a red pen, the way you circle a cross-reference on a later read-through: one quick stroke
+ * round the words, never the same twice (`ringPath`). It goes on the sheet's ring layer (sheet.ts's `RING_Y`), in its own
+ * colour channel (`slot`: 0 red, 1 green, 2 blue) added to what is there, so rings that overlap keep apart: the shader
+ * inks them all in red, and can lift just one off to draw it again under the pointer.
+ */
+export function ringRef(ctx: CanvasRenderingContext2D, pts: readonly (readonly [number, number])[], slot: number): void {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = ['#f00', '#0f0', '#00f'][slot];
+  ctx.lineCap = 'round';
+  let along = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const [[x0, y0], [x1, y1]] = [pts[i - 1], pts[i]];
+    const len = Math.hypot(x1 - x0, y1 - y0);
+    ctx.lineWidth = 2 * ringWidth(along + len / 2);
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+    along += len;
+  }
+  ctx.restore();
+}
+
+/** The ring's half width (sheet pixels) at `along` pixels into its stroke: thin where the pen touches down, its pressure wavering. noteShader.ts traces it with the same. */
+export function ringWidth(along: number): number {
+  const t = Math.min(1, Math.max(0, along / 10));
+  return 1.2 * (0.45 + 0.55 * t * t * (3 - 2 * t)) * (0.85 + 0.2 * Math.sin(along * 0.07));
+}
+
+/** The ring's one stroke, in units of its half height (x right, y up, round 0, 0), `aspect` times as wide as it is tall; `ringRef` draws it, and the shader traces it again under the pointer (linkMark.ts). */
+export function ringPath(aspect: number, seed: number, mood: number): [number, number][] {
+  const r = rand(seed);
+  const g = (): number => r() + r() - 1;
+  const turns = r() < 0.2 + mood * 0.4 ? 1.6 + r() * 0.5 : 1.08 + r() * 0.25;
+  const dir = r() < 0.75 ? 1 : -1;
+  const start = r() * Math.PI * 2;
+  const tilt = g() * 0.12;
+  // How far round the ring wanders from an ellipse: a lopsided bulge and a flattening, each its own way up.
+  const [b1, p1, b2, p2] = [0.05 + r() * 0.08, r() * 6.3, 0.03 + r() * 0.06, r() * 6.3];
+  const drift = (r() < 0.5 ? 1 : -1) * (0.08 + r() * 0.12);
+  const [ox, oy] = [g() * 0.1, g() * 0.12];
+  const n = Math.round(turns * 28);
+  const pts: [number, number][] = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const a = start + dir * t * turns * Math.PI * 2;
+    const k = 1 + b1 * Math.sin(a + p1) + b2 * Math.sin(2 * a + p2) + drift * (t - 0.5) + g() * 0.015;
+    const [ex, ey] = [aspect * k * Math.cos(a), k * Math.sin(a)];
+    pts.push([ox + ex * Math.cos(tilt) - ey * Math.sin(tilt), oy + ex * Math.sin(tilt) + ey * Math.cos(tilt)]);
+  }
+  return pts;
+}
+
 const pick = <T>(list: readonly T[], r: Rand): T => list[Math.floor(r() * list.length)];
 
 /** Draw the doodles for the notes written on one sheet. */

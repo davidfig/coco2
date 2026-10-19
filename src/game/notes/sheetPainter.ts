@@ -1,6 +1,6 @@
 import { createTexture } from '../../engine';
 import { savedReply } from './notes';
-import { type PageLink, SHEET_H, SHEET_W, drawSheet } from './sheet';
+import { type PageLink, SHEET_W, TEX_H, drawSheet } from './sheet';
 import type { FromSheetWorker, SheetJob } from './sheetWorker';
 import { wearSeed } from './wear';
 
@@ -100,7 +100,7 @@ export class SheetPainter {
   private paintHere(ask: SheetAsk): void {
     const set = new Set(ask.flags);
     const pages = ask.sheets.map((sheet) => {
-      const c = (this.here[sheet] ??= Object.assign(document.createElement('canvas'), { width: SHEET_W, height: SHEET_H }));
+      const c = (this.here[sheet] ??= Object.assign(document.createElement('canvas'), { width: SHEET_W, height: TEX_H }));
       return { sheet, page: c, links: drawSheet(c.getContext('2d')!, set, ask.worn, sheet).links };
     });
     this.done.push({ count: ask.count, fresh: ask.fresh, nudge: ask.nudge, pages });
@@ -115,7 +115,7 @@ function merge(a: SheetAsk, b: SheetAsk): SheetAsk {
 /** Put a rewrite's sheets into their textures (`texs`, one a sheet, made as they are first needed). */
 export function uploadSheets(gl: WebGL2RenderingContext, texs: WebGLTexture[], d: SheetsDone): void {
   for (const p of d.pages) {
-    texs[p.sheet] ??= createTexture(gl, SHEET_W, SHEET_H);
+    texs[p.sheet] ??= createTexture(gl, SHEET_W, TEX_H);
     gl.bindTexture(gl.TEXTURE_2D, texs[p.sheet]);
     gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, p.page);
     gl.generateMipmap(gl.TEXTURE_2D);

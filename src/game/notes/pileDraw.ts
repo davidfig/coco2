@@ -10,11 +10,20 @@ export interface PileLight {
   light: number;
 }
 
+/** A page reference's ring being drawn again on a sheet (linkMark.ts): its points and bounds in sheet pixels, and how far along it the pen has got (pixels). */
+export interface Mark {
+  pts: Float32Array;
+  box: readonly number[];
+  drawn: number;
+  /** Its channel on the ring layer, lifted off while it is drawn again. */
+  slot: number;
+}
+
 /**
  * Draw the pile from the bottom up (`sheets`, each a quad on screen with its texture), each sheet with its own
  * writing. The light from the screen behind reaches each one through the sheets already drawn (the four nearest it).
  */
-export function drawPile(gl: WebGL2RenderingContext, program: Program, vao: WebGLVertexArrayObject, sheets: readonly { quad: Quad; tex: WebGLTexture }[], p: PileLight): void {
+export function drawPile(gl: WebGL2RenderingContext, program: Program, vao: WebGLVertexArrayObject, sheets: readonly { quad: Quad; tex: WebGLTexture; mark?: Mark }[], p: PileLight): void {
   gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.useProgram(program.prog);
   const u = program.u;
@@ -43,6 +52,14 @@ export function drawPile(gl: WebGL2RenderingContext, program: Program, vao: WebG
     gl.bindTexture(gl.TEXTURE_2D, s.tex);
     gl.uniformMatrix3fv(u.uToSheet, true, s.m);
     gl.uniform2f(u.uHalf, ...s.half);
+    const k = s.mark;
+    gl.uniform1i(u.uRingN, k ? k.pts.length / 2 : 0);
+    if (k) {
+      gl.uniform2fv(u.uRing, k.pts);
+      gl.uniform4f(u.uRingBox, k.box[0], k.box[1], k.box[2], k.box[3]);
+      gl.uniform1f(u.uRingLen, k.drawn);
+      gl.uniform3f(u.uRingSlot, k.slot === 0 ? 1 : 0, k.slot === 1 ? 1 : 0, k.slot === 2 ? 1 : 0);
+    }
     // Only the sheet's own pixels.
     const xs = s.quad.map((q) => q[0]);
     const ys = s.quad.map((q) => q[1]);

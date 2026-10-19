@@ -1,5 +1,5 @@
 import { tellReply } from './notes';
-import { type PageLink, SHEET_H, SHEET_W, drawSheet } from './sheet';
+import { type PageLink, SHEET_W, TEX_H, drawSheet } from './sheet';
 import { useWearSeed } from './wear';
 
 /**
@@ -19,7 +19,7 @@ interface Scope {
 }
 const scope = self as unknown as Scope;
 
-const canvas = typeof OffscreenCanvas === 'undefined' ? null : new OffscreenCanvas(SHEET_W, SHEET_H);
+const canvas = typeof OffscreenCanvas === 'undefined' ? null : new OffscreenCanvas(SHEET_W, TEX_H);
 const ctx = canvas?.getContext('2d') as CanvasRenderingContext2D | null | undefined;
 
 scope.onmessage = async (e) => {
