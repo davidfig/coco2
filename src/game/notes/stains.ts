@@ -147,15 +147,18 @@ export function fold(ctx: CanvasRenderingContext2D, a: [number, number], b: [num
   }
 }
 
-/** The bottom-right corner, turned down once and smoothed back: a crease across it and the corner dirtier than the rest. */
-export function dogEar(ctx: CanvasRenderingContext2D, W: number, H: number, r: Rand): void {
-  const a: [number, number] = [W - 80 - r() * 40, H];
-  const b: [number, number] = [W, H - 80 - r() * 40];
+/**
+ * A corner turned down once and smoothed back: a crease across it and the corner dirtier than the rest. (x, y) is the
+ * corner, (dx, dy) point into the page.
+ */
+export function dogEar(ctx: CanvasRenderingContext2D, x: number, y: number, dx: number, dy: number, r: Rand): void {
+  const a: [number, number] = [x + dx * (80 + r() * 40), y];
+  const b: [number, number] = [x, y + dy * (80 + r() * 40)];
   ctx.fillStyle = 'rgba(95,75,45,0.09)';
   ctx.beginPath();
   ctx.moveTo(a[0], a[1]);
   ctx.lineTo(b[0], b[1]);
-  ctx.lineTo(W, H);
+  ctx.lineTo(x, y);
   ctx.fill();
   fold(ctx, a, b, r);
 }

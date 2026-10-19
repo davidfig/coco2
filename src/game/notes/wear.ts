@@ -126,23 +126,75 @@ export function ageOver(ctx: CanvasRenderingContext2D, W: number, H: number, edg
   ctx.save();
   ctx.globalCompositeOperation = 'source-atop';
   for (const mark of inks) penMark(ctx, mark);
-  if (handled >= FOLDS[0]) {
-    const r = seeded(sheet * 1009 + 71);
-    const y = H * (0.47 + r() * 0.06);
-    fold(ctx, [edge, y + (r() - 0.5) * 10], [W, y + (r() - 0.5) * 14], r);
-  }
-  if (handled >= FOLDS[1]) {
-    const r = seeded(sheet * 1009 + 72);
-    const x = W * (0.5 + r() * 0.06);
-    fold(ctx, [x + (r() - 0.5) * 10, 0], [x + (r() - 0.5) * 14, H], r);
-  }
-  if (handled >= DOG_EAR) dogEar(ctx, W, H, seeded(sheet * 1009 + 91));
+  if (sheet === 0) firstCreases(ctx, W, H, edge, handled);
+  else laterCreases(ctx, W, H, edge, handled, sheet);
   COFFEE.forEach((at, i) => {
     if (handled < at) return;
     const r = seeded(sheet * 1009 + 1301 + i * 17);
     coffee(ctx, edge + 90 + r() * (W - edge - 180), 90 + r() * (H - 180), 62 + r() * 18, r);
   });
   ctx.restore();
+}
+
+/** The first sheet: folded in half twice to go in a pocket, and its bottom-right corner turned down. */
+function firstCreases(ctx: CanvasRenderingContext2D, W: number, H: number, edge: number, handled: number): void {
+  if (handled >= FOLDS[0]) {
+    const r = seeded(71);
+    const y = H * (0.47 + r() * 0.06);
+    fold(ctx, [edge, y + (r() - 0.5) * 10], [W, y + (r() - 0.5) * 14], r);
+  }
+  if (handled >= FOLDS[1]) {
+    const r = seeded(72);
+    const x = W * (0.5 + r() * 0.06);
+    fold(ctx, [x + (r() - 0.5) * 10, 0], [x + (r() - 0.5) * 14, H], r);
+  }
+  if (handled >= DOG_EAR) dogEar(ctx, W, H, -1, -1, seeded(91));
+}
+
+/**
+ * The later sheets, torn out after the first and handled differently: each folds its own way (in thirds like a
+ * letter, once corner to corner, or crumpled and smoothed flat) and turns down a corner other than the first's,
+ * stepping through them so neighbouring sheets never match.
+ */
+function laterCreases(ctx: CanvasRenderingContext2D, W: number, H: number, edge: number, handled: number, sheet: number): void {
+  // One offset for the whole run, so each sheet steps on from the one before.
+  const pick = seeded(70);
+  const style = (sheet - 1 + Math.floor(pick() * 3)) % 3;
+  if (style === 0) {
+    // In thirds, the way a letter goes in an envelope.
+    FOLDS.forEach((at, i) => {
+      if (handled < at) return;
+      const r = seeded(sheet * 1009 + 71 + i);
+      const y = H * ((i + 1) / 3 + (r() - 0.5) * 0.03);
+      fold(ctx, [edge, y + (r() - 0.5) * 10], [W, y + (r() - 0.5) * 14], r);
+    });
+  } else if (style === 1) {
+    // Once from corner to corner, the long way.
+    if (handled >= FOLDS[0]) {
+      const r = seeded(sheet * 1009 + 71);
+      const flip = r() < 0.5;
+      const [y0, y1] = [H * (0.04 + r() * 0.08), H * (0.88 + r() * 0.08)];
+      fold(ctx, [edge, flip ? y1 : y0], [W, flip ? y0 : y1], r);
+    }
+  } else {
+    // Screwed up and smoothed flat again: short creases every which way, more as it is handled.
+    const creases = Math.min(9, Math.floor(Math.max(0, handled - FOLDS[0] + 4) / 4));
+    for (let i = 0; i < creases; i++) {
+      const r = seeded(sheet * 1009 + 401 + i * 13);
+      const [cx, cy] = [edge + r() * (W - edge), r() * H];
+      const [a, len] = [r() * Math.PI, 90 + r() * 220];
+      const [dx, dy] = [(Math.cos(a) * len) / 2, (Math.sin(a) * len) / 2];
+      fold(ctx, [cx - dx, cy - dy], [cx + dx, cy + dy], r);
+    }
+  }
+  if (handled >= DOG_EAR) {
+    // Top right, bottom left, top left: never the first sheet's bottom right.
+    const corner = (sheet - 1 + Math.floor(pick() * 3)) % 3;
+    const r = seeded(sheet * 1009 + 91);
+    if (corner === 0) dogEar(ctx, W, 0, -1, 1, r);
+    else if (corner === 1) dogEar(ctx, edge, H, 1, -1, r);
+    else dogEar(ctx, edge, 0, 1, 1, r);
+  }
 }
 
 /** What the pen leaves where it stopped: often nothing, a small gob of ballpoint ink, a splotch, or a smear. */
