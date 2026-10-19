@@ -52,6 +52,11 @@ export class TapeDeck {
     return this.pending === null && this.steps.length > 0;
   }
 
+  /** Winding: searching, past the files before the one wanted, rather than reading the last step's. */
+  get winding(): boolean {
+    return this.running && this.steps.length > 1;
+  }
+
   /** Advance the tape; a step's `done` may throw a BASIC error (the interpreter reports it). */
   step(dt: number): void {
     if (this.pending) return this.begin();

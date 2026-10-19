@@ -1,6 +1,6 @@
 import { expect, test } from '../../test/check';
 import { RecorderSound } from './recorderSound';
-import type { Sound } from '../../engine/audio';
+import type { Sound } from '../../engine';
 
 // Node has no Web Audio: a stand-in context that only keeps the graph (what connects to what, each param's last value).
 class Param {

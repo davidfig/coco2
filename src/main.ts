@@ -6,7 +6,7 @@ import { Computer } from './game/computer/computer';
 import { TextScreen } from './game/coco/screen';
 import { Magazine } from './game/magazine/book';
 import { Notebook } from './game/notes';
-import { Recorder } from './game/recorder';
+import { Recorder, RecorderSound } from './game/recorder';
 import { attachBookInput } from './game/magazine/bookInput';
 import { overPage } from './game/magazine/bookLayout';
 import { SeenTracker } from './game/magazine/seen';
@@ -72,6 +72,7 @@ const story = new Issue1Story(screen, tv, (f) => magazine.state.flags.has(f), (f
 /** The cassette recorder beside the set: BASIC's tape commands wait for a cassette to be put in it. */
 const recorder = new Recorder(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), instant);
 computer.recorder = recorder;
+recorder.sound = new RecorderSound(sound);
 const story2 = new Issue2Story(screen, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), basic.interp);
 /** A new player is drawn to the notes, and then to the magazine, until each has been opened once. */
 const guide = new Guide((f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f));

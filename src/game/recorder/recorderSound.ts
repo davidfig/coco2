@@ -1,4 +1,4 @@
-import { type Sound, noiseBuffer } from '../../engine/audio';
+import { type Sound, noiseBuffer } from '../../engine';
 
 /** The motor's gain and pitch: still, playing, and winding past files on a CLOAD search. */
 const MOTOR = { still: 0, play: 0.018, wind: 0.035 };

@@ -1,6 +1,7 @@
 import type { Interpreter } from '../basic/interpreter';
 import { TAPE_KEY } from '../basic/tape';
 import { MAY_TAPE_KEY, RAINBOW_TAPE, mayTape } from '../tapes';
+import type { RecorderSound } from './recorderSound';
 import { LID, LIFT, REC, type Pose, seatPose, spotPose } from './layout';
 
 /** The two cassettes: Rainbow On Tape for March, and for May (once May has come). */
@@ -16,6 +17,8 @@ const MOVE_TIME = 0.95;
 const EJECT_TIME = 0.3;
 /** How fast the hubs turn while the motor runs (radians a second): a cassette's hub, about 1.5 turns a second at the start. */
 const REEL_SPEED = 9;
+/** Seconds from the door shutting on a cassette to PLAY latching down. */
+const LATCH_AFTER = 0.2;
 /** Seconds a tape command waits with no cassette before the view is drawn back to the recorder (`takeBeckon`). */
 const BECKON_AFTER = 1.2;
 
@@ -67,6 +70,10 @@ export class Recorder {
   private loaded: CassetteId | null = null;
   private waited = 0;
   private beckon = false;
+  /** Seconds until PLAY latches down after the door shuts on a cassette (-1: not waiting to). */
+  private latchIn = -1;
+  /** The recorder's sounds (main.ts; none in tests or with `?nosound`). */
+  sound: RecorderSound | null = null;
   /** Seconds a move takes: none with `?instant`. */
   private readonly speed: number;
 
@@ -99,16 +106,20 @@ export class Recorder {
     if (this.busy()) return;
     if (what === 'recorder') {
       if (!this.deck) return;
-      this.eject = 0;
+      this.open();
       this.moves.push({ id: this.deck, to: this.spots[this.deck], t: 0 });
       return;
     }
     if (what === this.deck || !this.available(what)) return;
-    if (this.deck) {
-      this.eject = 0;
-      this.moves.push({ id: this.deck, to: this.freeSpot(what), t: 0 });
-    }
+    this.open();
+    if (this.deck) this.moves.push({ id: this.deck, to: this.freeSpot(what), t: 0 });
     this.moves.push({ id: what, to: 'deck', t: 0 });
+  }
+
+  /** STOP/EJECT pressed: PLAY lets go and the door springs up. */
+  private open(): void {
+    this.eject = 0;
+    this.sound?.eject();
   }
 
   /** The spot left for the cassette coming out when `coming` goes in: the one it lay on, or the other. */
@@ -139,7 +150,13 @@ export class Recorder {
     if (this.deck && !this.available(this.deck) && !this.moves.length) this.deck = null;
     const move = this.moves[0];
     // The door opens for a cassette to go in or come out, and shuts once there's nothing more to carry.
+    const wasOpen = this.lid > 0;
     this.lid = clamp01(this.lid + ((move ? dt : -dt) * this.speed) / LID_TIME);
+    if (wasOpen && this.lid === 0) {
+      this.sound?.shut();
+      if (this.deck) this.latchIn = LATCH_AFTER;
+    }
+    if (this.latchIn >= 0 && (this.latchIn -= dt) < 0) this.sound?.latch();
     this.eject = clamp01(this.eject + (dt * this.speed) / EJECT_TIME);
     if (move && this.lid === 1) {
       if (move.t === 0 && move.to !== 'deck') this.deck = null;
@@ -148,11 +165,15 @@ export class Recorder {
       if (move.t === 1) {
         this.moves.shift();
         if (move.to !== 'deck') this.spots[move.id] = move.to;
-        else if (move.id === 'march') this.set('tape-inserted');
+        else {
+          this.sound?.drop();
+          if (move.id === 'march') this.set('tape-inserted');
+        }
         this.save();
       }
     }
     this.bind();
+    this.sound?.motor(this.interp.deck.running, this.interp.deck.winding);
     if (this.interp.deck.running) {
       this.reel += dt * REEL_SPEED;
       this.wind();

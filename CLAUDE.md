@@ -15,7 +15,7 @@ Run `typecheck`, `check:size` and `test` before finishing any change. Design not
 - No 3D scene and no copied geometry engine: `src/engine/` is a slim one (loop, WebGL2 context, `gpu` helpers,
   typed-key queue, `audio`: one AudioContext made on the first click or key) with the same `earlyUpdaters` / `updaters` / `lateUpdaters` shape. The fixed step is 60 Hz (the
   VDG's field rate). The game layer still imports it only through the barrel.
-- Sound is all synthesized (`tv/tvSound.ts`, no recordings), and only the TV's so far. `?nosound` turns it off; test
+- Sound is all synthesized, no recordings: the TV's (`tv/tvSound.ts`) and the cassette recorder's (`recorder/recorderSound.ts`: keys, door, cassette, motor). `?nosound` turns it off; test
   tabs always use it. To check the sound graph silently, `build` a `TvSound` into an `OfflineAudioContext`.
 - No online play and no dependency on `../server-geometry` (only its `claude/games.md` rules, above). If it goes
   online, add `server-geometry-client`, an entry in `../server-geometry/src/games.ts`, and copy astronaut-geometry's
@@ -117,7 +117,8 @@ src/game/
   recorder/           the cassette recorder left of the set (a Realistic CCR-81) and the cassettes in front of it, marched in the
                       computer's pass: layout (sizes, places, poses; single source), recorderGlsl (SDF, materials, the smoked
                       window, shadows), print (its top's legends, the pencilled labels), recorder (which cassette is where, the
-                      door and the carry, PLAY latched, `Tape.present`; `coco2.recorder`), hit (clicks)
+                      door and the carry, PLAY latched, `Tape.present`; `coco2.recorder`), hit (clicks),
+                      recorderSound (the keys, the door, the cassette dropping in, the motor and tape hiss)
   magazine/           the RAINBOW: book (state, slide-in, GPU pass), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn; lying on the table, folded back on a rounded spine) + bookEdges (the block of paper's sides), bookLayout (TV/book split), bookInput
                       (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover) + maySky (its spring morning over still water) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, HANGMAN, the tape) + mayLetters (letters, classifieds), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner (parody ads), adsInsideBack + adsBackCover (the back
                       pages, laid out like real 1986 mail-order and national ads) + adsMail (their type: tight headlines, raised-cent
@@ -202,7 +203,7 @@ src/game/
   reference. To add a page: add its id there, a draw function in `issue.ts`'s table, and (if it should be listed) a
   contents entry.
 - It is the player's guide: `COMMANDS` in `data.ts` is the single source for the "how to play" page. The story calls
-  `magazine.setFlag(name)` to record progress (`bookSave.ts`: flags and the page the book is open to, by id, plus whether it is out, persist in localStorage; the CoCo itself starts cold on reload); the player's notebook (`notes/`) shows it.
+  `magazine.setFlag(name)` to record progress (`bookSave.ts`: flags and the page the book is open to, by id, persist in localStorage; a reload always starts at the set with the book and notes closed, and the CoCo cold); the player's notebook (`notes/`) shows it.
   There are no hints in the book (the scratch-off page became the HEAD CASE ad). Typing still goes to the CoCo while it is open; TAB opens/closes.
 - **Illustrations** (covers, painted ads, art inside the pages) look like a skilled 1980s illustrator's airbrush and gouache: true lines, hand-painted light and shade, brushwork, print grain; never vector-perfect and never wobbly. Paint pass before type, type stays crisp. Read `docs/illustration.md` before drawing any.
 
