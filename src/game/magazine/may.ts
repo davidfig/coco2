@@ -1,11 +1,12 @@
-/** The May issue's cover: a painted cassette floating in the night sky, and the month's cover lines. */
-import { BAND, Ctx, PAGE_H, PAGE_W, SANS, SCRIPT, rng, text } from './paper';
+/** The May issue's cover: a painted cassette floating over still water on a spring morning, and the month's cover lines. */
+import { BAND, Ctx, SANS, SCRIPT, rng, text } from './paper';
 import { pageNo } from './pages';
 import { STRIP } from './coverArt';
 import { paintify } from './coverPaint';
-import { drawMasthead, drawSky, sparkle } from './cover';
+import { drawMasthead, sparkle } from './cover';
+import { drawMaySky, reflection } from './maySky';
 
-/** Where the cassette floats, its size and tilt. The light comes from the big sparkle up-left. */
+/** Where the cassette floats, its size and tilt. The light comes from the sun up-left (`SUN_X` in maySky.ts). */
 const CX = 540;
 const CY = 790;
 const W = 640;
@@ -94,15 +95,9 @@ function label(ctx: Ctx, x: number, y: number, w: number, h: number): void {
   text(ctx, 'May 1986', x + 30, y + 110, `italic 40px ${SCRIPT}`, '#2c3a8c');
 }
 
-/** The cassette, floating in the night sky: lit from up-left, a cool rim along its lower right from the nebula. */
+/** The cassette, floating over the water: lit from the sun up-left, a cool rim along its lower right from the sky. */
 function cassette(ctx: Ctx): void {
-  // A warm airbrushed glow behind it, so it stands out of the sky.
-  const glow = ctx.createRadialGradient(CX, CY, W * 0.2, CX, CY, W * 0.85);
-  glow.addColorStop(0, 'rgba(255,200,150,0.3)');
-  glow.addColorStop(1, 'rgba(255,200,150,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, PAGE_W, PAGE_H);
-
+  reflection(ctx, CX, W);
   ctx.save();
   ctx.translate(CX, CY);
   ctx.rotate(TILT);
@@ -124,7 +119,7 @@ function cassette(ctx: Ctx): void {
   ctx.moveTo(x + 24, y + 3);
   ctx.lineTo(x + W - 30, y + 3);
   ctx.stroke();
-  ctx.strokeStyle = 'rgba(150,140,255,0.5)';
+  ctx.strokeStyle = 'rgba(190,220,255,0.55)';
   ctx.beginPath();
   ctx.moveTo(x + W - 3, y + 40);
   ctx.lineTo(x + W - 3, y + H - 24);
@@ -183,11 +178,11 @@ function line(ctx: Ctx, s: string, x: number, y: number, color: string, size: nu
 
 /** The May cover: the masthead over a painted cassette, and what is inside. */
 export function drawMayCover(ctx: Ctx): void {
-  drawSky(ctx, 12);
+  drawMaySky(ctx);
   cassette(ctx);
-  sparkle(ctx, 210, 520, 56, 4);
-  sparkle(ctx, 880, 1040, 34, 5);
-  sparkle(ctx, 760, 470, 26, 6);
+  // The sun catching the shell's corner and the water.
+  sparkle(ctx, CX - 300, CY - 160, 34, 4);
+  sparkle(ctx, 200, 1058, 22, 5);
   paintify(ctx);
   drawMasthead(ctx, 'May 1986');
   text(ctx, 'Secret Messages', STRIP + 50, 392, `italic bold 64px ${SCRIPT}`, '#f4e24a');
