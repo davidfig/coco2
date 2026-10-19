@@ -36,13 +36,13 @@ export function drawContents(ctx: Ctx): void {
   };
   let y = section('Features', 150);
   y = entry('How To Play: The Screen', 'Dale Wick', 'screen', 'Reading the green and typing back', y);
-  y = entry('How To Play: The Words', 'Dale Wick', 'words', 'The verbs the adventure understands', y);
-  y = entry('Map Your Way', 'Priya Rao', 'map', 'Graph paper, a pencil and a sense of north', y);
   y = entry('Say Your Name', 'Tom Brannigan', 'typeIn', null, y);
   y = entry('Your First Program', 'Dale Wick', 'program', null, y);
+  y = entry('Rainbow On Tape', 'Dale Wick', 'tape', null, y);
+  y = entry('How To Play: The Words', 'Dale Wick', 'words', 'The verbs the adventure understands', y);
+  y = entry('Map Your Way', 'Priya Rao', 'map', 'Graph paper, a pencil and a sense of north', y);
   y = entry('Stopping a Program', 'Dale Wick', 'stopping', null, y);
   y = entry('Guess My Number', 'Dale Wick', 'guess', null, y);
-  y = entry('Rainbow On Tape', 'Dale Wick', 'tape', null, y);
   y = entry('Marketplace', 'Our Advertisers', 'marketplace', 'Games, gadgets and a few bold claims', y);
   y = section('Departments', y + 24);
   y = entry('Letters To Rainbow', 'Our Readers', 'letters', null, y);
@@ -98,7 +98,7 @@ export function drawEditorial(ctx: Ctx): void {
       { text: 'This month is our Adventure Issue. An adventure is a story that you walk through by typing. The computer tells you where you are, you tell it what to do, and it tells you what happened. There is no joystick and nothing to shoot. There is only reading, thinking and a pencil.' },
       { text: 'We have laid out this issue as a field guide. Keep it beside the set. Read how the screen works, learn the handful of words the adventure understands, and draw a map as you go.' },
       { text: 'If you get stuck, go back to your map and read each room again, slowly. Everything you need is in the game, or in these pages. Try for ten minutes. Then try for ten more.' },
-      { text: 'Here is what is in the issue. On pages ' + pageNo('screen') + ' and ' + pageNo('words') + ' Dale Wick explains the screen and the words, which is everything you need before your first command. Priya Rao shows how to map a place so that you never walk in a circle without noticing. On page ' + pageNo('typeIn') + ' Tom Brannigan has a short program for you to type, with the RAINBOW CHECK to prove you typed it right, and on pages ' + pageNo('program') + ' and ' + pageNo('stopping') + ' Dale explains how programs work and what to do when one stops or goes wrong.' },
+      { text: 'Here is what is in the issue, in the order you will want it. On page ' + pageNo('screen') + ' Dale Wick explains the screen, which is everything you need before your first command. On page ' + pageNo('typeIn') + ' Tom Brannigan has a short program for you to type, with the RAINBOW CHECK to prove you typed it right, and on page ' + pageNo('program') + ' Dale explains how it works and what to do when one goes wrong. Page ' + pageNo('tape') + ' loads the adventure from this month’s cassette, page ' + pageNo('words') + ' has the words it understands, and Priya Rao shows how to map a place so that you never walk in a circle without noticing. On page ' + pageNo('stopping') + ' Dale shows how to stop a program and read it.' },
       { text: 'Turn to page ' + pageNo('letters') + ' for the mail. We are told this is the part of the magazine people read first, and that some of you skip our columns to get to it. We do not mind. We read it first, too.' },
       { text: 'And please, read the advertisements. Our advertisers are the reason this magazine costs as little as it does, and some of them are very, very sure of themselves. A few have made claims that we have not tested, and do not intend to.' },
       { text: 'A word about errors. When the CoCo prints ?SN ERROR it is not cross with you. It simply did not understand. Check your spelling, check your spaces and try again. Nobody ever broke a computer by typing the wrong word.' },
