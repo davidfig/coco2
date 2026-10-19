@@ -1,5 +1,5 @@
 import { FULLSCREEN_VERT, Program, linkProgram } from '../../engine';
-import { NOTE_STRIP, type Rect } from '../magazine/bookLayout';
+import { NOTE_STRIP, type Rect, lerp, smooth } from '../magazine/bookLayout';
 import type { IssueId } from '../magazine/pages';
 import type { Shade } from '../tv/tv';
 import { NOTE_FRAG } from './noteShader';
@@ -14,13 +14,12 @@ import { drawPile } from './pileDraw';
 
 const RATIO = SHEET_W / SHEET_H;
 /** At rest, this much of the peeking page (share of its height: its heading) shows above the window's bottom. */ const PEEK_SHOW = 0.11;
+/** Pointed at or bouncing, it rises at least this much (share of its height), even where that takes it over the picture's edge. */ const LIFT_MIN = 0.04;
 /** A new note makes the peeking page bounce this many times, each this long (seconds): up and back down. */
 const BOUNCES = 2;
 const BOUNCE_TIME = 0.55;
 /** The real sheet (`SHEET_DPI`) against the picture of a 13 in set (about 10.4 in across), so the page keeps that share of the TV's width. */
 const PAGE_IN_TV = SHEET_W / SHEET_DPI / 10.4;
-const smooth = (t: number): number => t * t * (3 - 2 * t);
-const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 /** Flags that change what the notebook page says. */
 const WATCHED = [...new Set(NOTES.flatMap((n) => [n.when, n.solved, n.orSolved, n.skipIf, ...(n.reads ?? [])].flat().filter((f): f is string => !!f)))];
 
@@ -112,8 +111,12 @@ export class Notebook {
     uploadSheets(this.gl, this.texs, d);
     for (const p of d.pages) this.links[p.sheet] = p.links;
     if (d.fresh || this.sheet >= this.sheets) this.settle(this.sheets - 1);
-    // One announcement per change: flags that arrive while it is still bouncing do not start it again.
-    if (d.nudge && !this.open && this.nudge <= 0) this.nudge = BOUNCES * BOUNCE_TIME;
+    if (d.nudge) this.bounce();
+  }
+
+  /** Bounce the peeking page to draw the eye (a new note, or the guide calling to it); never again while it still bounces. */
+  bounce(): void {
+    if (!this.open && this.nudge <= 0) this.nudge = BOUNCES * BOUNCE_TIME;
   }
 
   /** Put `sheet` on top with nothing moving. */
@@ -135,14 +138,12 @@ export class Notebook {
     const unit = Math.min(tw, th * (4 / 3));
     const pw = unit * PAGE_IN_TV;
     const ph = pw / RATIO;
-    // Most of the page stays tucked below the corner, over the set under the picture (see NOTE_ROOM): only its top edge shows
-    // (just its heading, however much room there is), more when pointed at, never over the screen until held up.
+    // Most of it stays tucked below the corner, over the set under the picture (NOTE_ROOM): its top edge shows, more when pointed at or bouncing.
     const pic = this.picture();
     const below = pic[1] - pic[3] - Math.max(4, unit * 0.006);
-    // With the book out in a tall window it would hang over the pages: there it tucks down to a strip along the window's bottom.
-    // Not yet arrived, it waits a little below the window's bottom.
+    // Not yet arrived, it waits a little below the window's bottom; with the book out in a tall window it tucks down to a strip there.
     const rest = Math.min(below, ph * PEEK_SHOW) * this.arrive - ph * 0.04 * (1 - this.arrive);
-    const top = lerp(lerp(rest, below, this.lift), H * NOTE_STRIP * (1 + this.lift), this.tuck());
+    const top = lerp(lerp(rest, Math.max(below, rest + ph * LIFT_MIN), this.lift), H * NOTE_STRIP * (1 + this.lift), this.tuck());
     const rot = -0.06;
     const px = tx + pw * 0.5 - unit * 0.04;
     // The top edge's highest point in view: its left corner, or where it leaves the window's left side.

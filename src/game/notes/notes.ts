@@ -28,6 +28,8 @@ export interface Note {
 }
 
 export const NOTES: readonly Note[] = [
+  { id: 'found', when: null, text: "Found Grandpa's CoCo 2 in the basement. Same as the one at the museum. Is it even legal?", mood: 0.04 },
+  { id: 'parcel', when: null, text: 'A box on the step: the March 1986 RAINBOW and a tape. No name on it', mood: 0.04 },
   { id: 'start', when: null, text: `PRINT "HELLO" first. p.${pageNo('screen')}`, mood: 0.04, ask: true, solved: 'printed' },
   { id: 'prog', when: 'printed', text: `Type in the program, p.${pageNo('typeIn')}. Help: p.${pageNo('program')}`, mood: 0.05, ask: true, solved: 'first-program' },
   { id: 'tape', when: 'first-program', text: `Adventure is on the tape. CLOAD it, RUN. p.${pageNo('tape')}`, mood: 0.08, ask: true, solved: 'adventure-loaded' },
@@ -68,8 +70,8 @@ export const NOTES: readonly Note[] = [
   // OK cannot hold a pencil: he changes the machine (see src/game/story), and the player writes down what they notice.
   { id: 'saw-pleads', when: 'saw-pleads', text: 'Deleted it. The screen: IS ANYONE READING THIS, PLEASE. The line is back', mood: 0.55 },
   { id: 'saw-thanks', when: 'saw-thanks', text: 'Left it. The screen: THANK YOU. So does the line', mood: 0.4 },
-  { id: 'night', when: 'issue1-done', text: 'Enough for tonight. Switch it off', mood: 0.3, ask: true, solved: 'issue1-closed' },
-  { id: 'nextday', when: 'issue2-waiting', text: 'Next day. May RAINBOW came, and a new tape', mood: 0.2 },
+  { id: 'night', when: 'issue1-done', text: "Well, that was weird. Can't believe how late it is. Shut it all down, see what I missed in the morning", mood: 0.3, ask: true, solved: 'issue1-closed' },
+  { id: 'nextday', when: 'issue2-waiting', text: 'Next day, another box on the step: the May RAINBOW and a new tape', mood: 0.2 },
   // Issue 2: the message in HANGMAN, the ORACLE that came with it, and an answer.
   { id: 'maytape', when: 'issue2-waiting', text: `What's on the new tape? May p.${pageNo('mayTape')}`, mood: 0.15, ask: true, solved: 'may-loaded' },
   { id: 'secret', when: 'may-loaded', text: `Message hidden in HANGMAN's DATA. Decoder: May p.${pageNo('maySecret')}`, mood: 0.18, ask: true, solved: 'data-decoded' },

@@ -32,6 +32,8 @@ export class Magazine {
   openT = 0;
   readT = 0;
   hoverT = 0;
+  /** Slid out a little as if pointed at, to draw the eye (the guide, main.ts). */
+  beckoned = false;
   /** How far the put-away book has come in at the window's edge (0..1): off it while the room's lights come on (main.ts). */
   arrive = 1;
   /** The spread showing (0 = cover alone); a spread is the leaf-turn unit, but only one of its pages is in view. */
@@ -247,7 +249,7 @@ export class Magazine {
     const step = (v: number, goal: number, secs: number) => clamp(v + Math.sign(goal - v) * Math.min(Math.abs(goal - v), dt / secs), 0, 1);
     this.openT = step(this.openT, this.open ? 1 : 0, 0.9);
     this.readT = step(this.readT, this.reading ? 1 : 0, 0.7);
-    this.hoverT = step(this.hoverT, this.hover && !this.open ? 1 : 0, 0.2);
+    this.hoverT = step(this.hoverT, (this.hover || this.beckoned) && !this.open ? 1 : 0, 0.2);
     this.advanceFlip(dt);
     if (this.viewKey() !== this.savedView) this.save();
     // Every page is readied before it is needed, so turning rarely waits: one asked for a frame once the fonts are in, none

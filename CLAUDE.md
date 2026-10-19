@@ -100,6 +100,7 @@ src/game/
   room/               lights: the page opens in a dark room; the lamp flickers on (a multiply pass drawn last), then the set
                       comes on and the magazine and notes slide in (`arrive`, main.ts)
   story/              what the story does besides the puzzles, one class per issue (issue1, issue2: timers, tampering, the tape swap)
+                      + guide (draws a new player to the notes, then the magazine, until each is opened: `opened-notes`, `opened-magazine`)
   touch/              phones and tablets: touchKeys (the machine's keyboard as a strip along the bottom, or at the right on
                       a phone on its side, pressed through `CocoKeys` so the cap on the table goes down too; the canvas
                       takes what's left) + touchStyle,

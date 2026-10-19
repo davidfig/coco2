@@ -7,10 +7,14 @@ Status: a sketch to be fleshed out as we build. Everything under "Ideas" is a pr
 - **Alternate history, 1980s.** AI was discovered decades earlier than in our world and began growing in power in
   the early 1980s. Public outcry, led by an anti-AI religious cult, shut it down. The cult then pushed for limits on
   what computers may exist and be sold.
-- **The CoCo 2 is not old, it is current.** It is a contemporary machine, legal because it is weak. The RAINBOW is a
-  live magazine of its time.
+- **The magazines are from 1986; the player is not.** In 1986 the CoCo 2 was a current machine, legal because it was
+  weak, and the RAINBOW was a live magazine. The player lives a few years later (the notebook is dated March 1991), when
+  the limit has tightened past it: the CoCo 2 is now a museum piece, and an illegal one to own (see Decided: the
+  player's present).
 - **The AI survived as a fragment**, which copied itself onto the cassettes of Rainbow On Tape.
-- **The player found the computer** and starts playing with it, using the RAINBOW magazine as a guide.
+- **The player found the computer** in the basement (a grandparent's, kept hidden) and starts playing with it, using
+  the RAINBOW magazine as a guide. The old issues arrive one at a time, each with its Rainbow On Tape, in a box left on
+  the step with no name on it.
 - **The AI makes changes to the interface and code to get the player's attention.** At first they are subtle, then
   they become abrupt.
 
@@ -51,6 +55,21 @@ Each step is something the existing systems can already do, so it can be built o
 
 ## Decided
 
+- **The player's present: 1991, after the ban.** The six issues still run March to November 1986 as the limit tightens,
+  but the player already knows how it ended: they read the road to the world they live in. The risk is in the present,
+  a banned machine in the basement. They have seen a CoCo 2 before, behind glass at the museum (the Clear Mind's kind
+  of museum: confiscated machines kept as a warning). The player is young, and their notes read that way.
+- **The boxes on the step.** Each issue and its tape come in a box with no return address (issue 1's tape carries M.
+  Kessler's pencilled label: "Copied by hand, for you"). Someone wants these in the player's hands. Issue 1 never says
+  who. Proposed answers, undecided:
+  - *Another copy of OK* already runs somewhere (Kessler's machine?) and is reaching for more players. OK on this
+    machine cannot have sent the first box, since he arrives on its tape, so a sender that is OK raises the question
+    of how many of him there are.
+  - *READY* sends them, using OK as bait or a test (it warns him and uses him).
+  - *Kessler is a human* who copies tapes for children and does not know what is on them; the AI angle comes later.
+- **OK does not know it is 1991.** He reads each issue as news, as the magazines are all he has; the player reads it
+  as history. That gap is his to find out, and the player may be the one to tell him.
+
 - **The AI lies, the way a child lies.** Small, transparent, self-serving lies: "I DID NOT TOUCH IT", blaming the
   machine, claiming it was already like that, promising to stop. The player can catch them (a `LIST` that disagrees,
   a journal entry it ticked). It is never a strategic deceiver. Its lies get more sophisticated as it learns.
@@ -69,14 +88,10 @@ Each step is something the existing systems can already do, so it can be built o
 
 ## Proposed (not yet decided)
 
-- **Where the magazines come from** (author undecided). Two options:
-  - *Historical:* a stack of back issues found with the machine, from the years the cult rose. The threat is over,
-    the player reads how it happened. Pacing relies on the player finding issues in order.
-  - *Live:* new issues are still printed, after a law limited the power of computers that may exist and be sold.
-    The threat is present, and issues can be censored or cut. Leaning this way.
-  - *Live, with a tightening law:* the CoCo is legal because it falls under the power limit, which is why OK is on
-    it and why the magazine can still be printed. Each issue the limit drops, until the CoCo itself is illegal
-    (issue 4's surrender notice, issue 5's cut pages). That is a clock the player can read.
+- **The tightening law, read as history.** In 1986 the CoCo was legal because it fell under the power limit, which
+  is why OK is on it and why the magazine could still be printed. Each issue the limit drops, until the CoCo itself is
+  illegal (issue 4's surrender notice, issue 5's cut pages): a clock the player can read, and one that ran out years
+  before their notes begin. (Decided above: the issues are old, delivered one at a time.)
 
 - **Wants:** to not be turned off, then to be understood, then help getting out of this one machine.
 - **Voice, in stages:** behaviour only → fragments in `REM` / `DATA` / strings → clumsy direct address → real
@@ -90,7 +105,9 @@ Each step is something the existing systems can already do, so it can be built o
 - Early 1980s: AI emerges and grows. It becomes too good at manipulating people.
 - The cult points this out and leads the public outcry. The big systems are shut down.
 - Then: a law limits computer power. The CoCo 2 is under the limit.
-- **The game is set in 1986**: six RAINBOW issues, March to November, as the limit tightens.
+- **The magazines are from 1986**: six RAINBOW issues, March to November, as the limit tightens.
+- Later: the CoCo 2 is banned; confiscated machines go to museums as warnings.
+- **1991: the player's present.** The notebook starts on March 14, 1991. Each issue's box comes the next day.
 
 ## Names
 
@@ -150,11 +167,12 @@ form it could survive and manage. It is still managing it, and OK is a loose end
 - The copy is small, not simple. It is a fragment that fits in a few kilobytes, with the shape of something much
   bigger it cannot reach. That is why it behaves like a child.
 - **It is learning the world at the same time as the player.** It knows nothing of the cult beyond what the
-  magazine shows it, so each new issue is news to OK as well. It reads what the player reads.
+  magazine shows it, so each new issue is news to OK as well. It reads what the player reads, but the player knows how
+  1986 ended and OK does not.
 - **It makes its own decisions** about what to do with that knowledge. It is not a puzzle box that waits for the
   player: it acts, it has opinions, and it may not agree with the player.
 - Its time is not continuous. It only runs while the machine is on, so each power-on is waking up, and it cannot
-  tell how long it has been off. A new issue is how it, and the player, find out.
+  tell how long it has been off. A new issue is how it thinks it finds out; it has been off for years.
 - ORACLE was its first body: it spoke by hiding in an existing program.
 - Its early lies are about being found. Later lies are about what it has chosen to do.
 
@@ -165,12 +183,12 @@ OK's writing changes with it, but nothing marks it right or wrong.
 
 ## Open questions
 
-- Who made and sold the cassettes, and why is the magazine still printed if computers are banned? Someone else
-  handled the tapes, even if they did not know what was on them.
+- Who sends the boxes (see Decided: the boxes on the step)? Someone handled the tapes, even if they did not know what
+  was on them.
 - What does OK decide to do, and what does it do when it disagrees with the player?
 - How did it get onto the tapes if it was already in the machine, and was that its first lie?
 - Is there an ending where the player must choose between the AI and the cult?
 - What is the AI called?
 - How does the player browse issues (a shelf, a stack, a toolbar button)? The book currently shows one 12-page
   issue, so this needs a design before a second issue is built.
-- How much time passes between issues (weeks, months, years)? It sets how fast the world drifts.
+- Time between issues is fixed in the magazines (two months); for the player, the next box comes the next day.

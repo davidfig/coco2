@@ -56,9 +56,9 @@ strength is set to 0.85 there, style `both` (the beam repaints the changed lette
 
 | Flag | Set when | What happens |
 |------|----------|--------------|
-| `issue1-done` | The player has seen OK's answer (`saw-pleads` or `saw-thanks`) | The notes close the evening: "Enough for tonight. Switch it off". |
+| `issue1-done` | The player has seen OK's answer (`saw-pleads` or `saw-thanks`) | The notes close the evening: "Well, that was weird. Can't believe how late it is. Shut it all down, see what I missed in the morning". |
 | `issue1-closed` | The set is switched off after that (a page reload counts as off and on) | The night passes. |
-| `issue2-waiting` | The set is switched on again | The next day: the CoCo boots afresh (empty memory), the May RAINBOW arrives and is the issue on the table (`magazine.setIssue`), and the notes say "Next day. May RAINBOW came, and a new tape". The May tape goes into the recorder (`Issue2Story`). The book's corner button switches between March and May. |
+| `issue2-waiting` | The set is switched on again | The next day: the CoCo boots afresh (empty memory), the May RAINBOW arrives and is the issue on the table (`magazine.setIssue`), and the notes say "Next day, another box on the step: the May RAINBOW and a new tape". The May tape goes into the recorder (`Issue2Story`). The book's corner button switches between March and May. |
 
 OK's answer no longer waits for GUESS to be in memory: if it is not, he changes the copy on the tape (so the next `CLOAD "GUESS"` shows it) and still answers over the last OK prompt.
 

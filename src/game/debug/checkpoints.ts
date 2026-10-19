@@ -7,6 +7,8 @@ import { DECODER, HANGMAN_REM_LINE, MESSAGE_LINE } from '../puzzles/listingsMay'
  */
 export const STORY_FLAGS: readonly [flag: string, label: string][] = [
   ['booted', 'switched on'],
+  ['opened-notes', 'held up the notes'],
+  ['opened-magazine', 'opened the magazine'],
   ['printed', 'PRINT at the prompt'],
   ['first-program', 'ran the name program'],
   ['adventure-loaded', 'ran ADVENT'],
@@ -76,7 +78,9 @@ export interface Checkpoint {
 }
 
 const START = ['booted'];
-const HELLO = [...START, 'printed', 'first-program'];
+/** Past the fresh start the player has found the notes and the magazine, so the guide no longer calls to them. */
+const GUIDED = [...START, 'opened-notes', 'opened-magazine'];
+const HELLO = [...GUIDED, 'printed', 'first-program'];
 const BROKEN = [...HELLO, 'adventure-loaded', 'adventure-sn'];
 const FIXED = [...BROKEN, 'adventure-runs'];
 const LAMP = [...FIXED, 'looked', 'tamper-lamp', 'has-lamp'];
@@ -101,7 +105,8 @@ const ORACLE = 'CLOAD "ORACLE"\n';
 
 export const CHECKPOINTS: readonly Checkpoint[] = [
   { label: 'Fresh start', flags: START },
-  { label: 'Said hello', flags: [...START, 'printed'] },
+  { label: 'Found the notes and magazine', flags: GUIDED },
+  { label: 'Said hello', flags: [...GUIDED, 'printed'] },
   { label: 'Ran the name program', flags: HELLO, named: true },
   { label: 'ADVENT loaded, ?SN', flags: BROKEN, named: true, typed: 'CLOAD "ADVENT"\n' },
   { label: 'ADVENT fixed, before LOOK', flags: FIXED, named: true, typed: ADVENT_FIXED },

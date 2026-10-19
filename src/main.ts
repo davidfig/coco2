@@ -11,7 +11,7 @@ import { SeenTracker } from './game/magazine/seen';
 import { RoomLights } from './game/room/lights';
 import { smooth } from './game/magazine/bookLayout';
 import { ISSUE_1_RULES, ISSUE_2_RULES, PuzzleWatcher } from './game/puzzles';
-import { Issue1Story, Issue2Story } from './game/story';
+import { Guide, Issue1Story, Issue2Story } from './game/story';
 import { Shake, TouchKeys, installable, noZoom, wantsTouchKeys } from './game/touch';
 import { Tv } from './game/tv/tv';
 import { TAMPER_STYLES, TamperStyle } from './game/tv/tvShader';
@@ -68,6 +68,8 @@ const story = new Issue1Story(screen, tv, (f) => magazine.state.flags.has(f), (f
   basic.boot();
 });
 const story2 = new Issue2Story(screen, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), basic.interp);
+/** A new player is drawn to the notes, and then to the magazine, until each has been opened once. */
+const guide = new Guide((f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f));
 const puzzles = new PuzzleWatcher(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), [...ISSUE_1_RULES, ...story.rules, ...ISSUE_2_RULES, ...story2.rules]);
 /** `?tamper=ghost|scan|both` overrides how a tampered cell shows (for comparing; the story sets it per issue). */
 const tamperStyle = params.get('tamper') as TamperStyle;
@@ -131,6 +133,8 @@ engine.lateUpdaters.push((dt) => {
     notebook.arrive = arrival(ARRIVE.notes);
     if (magazine.arrive === 1 && notebook.arrive === 1) litFor = Infinity;
   }
+  if (guide.step(dt, litFor === Infinity, notebook.open, magazine.open) === 'notes') notebook.bounce();
+  magazine.beckoned = guide.magazineOut;
   magazine.update(dt, engine.gl.drawingBufferWidth, engine.gl.drawingBufferHeight);
   seen.update(magazine, dt);
   notebook.update(dt);

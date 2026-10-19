@@ -21,8 +21,8 @@ const EDGE = 26;
 /** The punch holes down the left, at this x: three-hole punched, 4¼ in apart, about the middle. */
 const HOLE_X = 46;
 const HOLES = [-1, 0, 1].map((i) => Math.round(SHEET_H / 2 + i * 4.25 * SHEET_DPI));
-/** The day the notes are dated: the story is set in 1986 and this is the March issue (see cover.ts). */
-const DATE = 'Mar 14, 1986';
+/** The day the notes are dated: years after the magazines (1986, see cover.ts), with the CoCo banned; March, as the first issue is. */
+const DATE = 'Mar 14, 1991';
 /** Rows of writing that fit under the heading. */
 const CAPACITY = Math.floor((SHEET_H - 30 - TOP) / LINE_H);
 

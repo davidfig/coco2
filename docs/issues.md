@@ -1,6 +1,6 @@
 # RAINBOW issue outline
 
-A first pass for discussion. Everything here is a proposal. The game is set in 1986; the issues are March, May, July,
+A first pass for discussion. Everything here is a proposal. The magazines are from 1986 (the player reads them in 1991, delivered one box at a time: story.md); the issues are March, May, July,
 September, November, and one unmarked. Time passes in the magazine, never on a clock.
 
 Characters: **OK** (the fragment on the cassettes), **READY** (the rival AI running the Clear Mind), **the Elder**
