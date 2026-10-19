@@ -6,7 +6,7 @@
  */
 import { pageNo } from '../magazine/pages';
 import { ADVENT, ADVENT_WHISPER, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../puzzles/listings';
-import { HANGMAN_REM_LINE, MESSAGE_LINE, OK_MESSAGE, ORACLE_ASK, ORACLE_HOW } from '../puzzles/listingsMay';
+import { MESSAGE_LINE, OK_MESSAGE, ORACLE_ASK, ORACLE_HOW, PLUG_LINE, PLUG_QUESTION, SHUTDOWN_REM_LINE } from '../puzzles/listingsMay';
 import { REPLY_KEY } from '../puzzles/rulesMay';
 
 export interface Note {
@@ -25,7 +25,18 @@ export interface Note {
   orSolved?: string;
   /** Not worth writing if this flag arrived first: the player is already past it (a dark room, once the lamp is in hand). */
   skipIf?: string;
+  /** A new day's date, written at the right as a heading over that day's notes. */
+  date?: boolean;
 }
+
+/**
+ * The day each issue is read: the first is the first sheet's heading, and each one after starts with its date, written when
+ * its box arrives (the flag). Each issue is one day, the next one's box coming the morning after (docs/story.md).
+ */
+export const DAYS: readonly { when: string | null; date: string }[] = [
+  { when: null, date: 'Mar 14, 1991' },
+  { when: 'issue2-waiting', date: 'Mar 15, 1991' },
+];
 
 export const NOTES: readonly Note[] = [
   { id: 'found', when: null, text: "Found Grandpa's CoCo 2 in the basement. Same as the one at the museum. Is it even legal?", mood: 0.04 },
@@ -71,29 +82,39 @@ export const NOTES: readonly Note[] = [
   { id: 'saw-pleads', when: 'saw-pleads', text: 'Deleted it. The screen: IS ANYONE READING THIS, PLEASE. The line is back', mood: 0.55 },
   { id: 'saw-thanks', when: 'saw-thanks', text: 'Left it. The screen: THANK YOU. So does the line', mood: 0.4 },
   { id: 'night', when: 'issue1-done', text: "Well, that was weird. Can't believe how late it is. Shut it all down, see what I missed in the morning", mood: 0.3, ask: true, solved: 'issue1-closed' },
-  { id: 'nextday', when: 'issue2-waiting', text: 'Next day, another box on the step: the May RAINBOW and a new tape', mood: 0.2 },
-  // Issue 2: the message in HANGMAN, the ORACLE that came with it, and an answer.
+  { id: 'day2', when: 'issue2-waiting', text: DAYS[1].date, mood: 0.05, date: true },
+  { id: 'nextday', when: 'issue2-waiting', text: 'Another box on the step: the May RAINBOW and a new tape', mood: 0.2 },
+  // Issue 2: SHUTDOWN and the message in it, the ORACLE that came with it, an answer, and the plug that will not come.
   { id: 'maytape', when: 'issue2-waiting', text: `What's on the new tape? May p.${pageNo('mayTape')}`, mood: 0.15, ask: true, solved: 'may-loaded' },
-  { id: 'secret', when: 'may-loaded', text: `Message hidden in HANGMAN's DATA. Decoder: May p.${pageNo('maySecret')}`, mood: 0.18, ask: true, solved: 'data-decoded' },
-  { id: 'hangman', when: 'hangman-loaded', text: `Check HANGMAN against May p.${pageNo('mayHangman')}, like GUESS`, mood: 0.2, ask: true, solved: 'hangman-rem' },
-  { id: 'checked', when: 'hangman-checked', text: 'CHECK is off right from the top. LIST -20', mood: 0.3, ask: true, solved: 'hangman-rem', skipIf: 'hangman-rem' },
+  { id: 'secret', when: 'may-loaded', text: `Message hidden in SHUTDOWN's DATA. Decoder: May p.${pageNo('maySecret')}`, mood: 0.18, ask: true, solved: 'data-decoded' },
+  { id: 'shutdown', when: 'shutdown-loaded', text: `Check SHUTDOWN against May p.${pageNo('mayShutdown')}, like GUESS`, mood: 0.2, ask: true, solved: 'shutdown-rem' },
+  { id: 'checked', when: 'shutdown-checked', text: 'CHECK is off right from the top. LIST -20', mood: 0.3, ask: true, solved: 'shutdown-rem', skipIf: 'shutdown-rem' },
   {
     id: 'rem15',
-    when: 'hangman-rem',
-    text: (f) => (f.has('deleted-extra-line') ? `Line ${HANGMAN_REM_LINE}: IS ANYONE READING THIS, PLEASE. On the new tape!` : `Line ${HANGMAN_REM_LINE}: IS ANYONE READING THIS. Then ${HANGMAN_REM_LINE + 1}: YES. SOMEONE IS`),
+    when: 'shutdown-rem',
+    text: (f) => (f.has('deleted-extra-line') ? `Line ${SHUTDOWN_REM_LINE}: IS ANYONE READING THIS, PLEASE. On the new tape!` : `Line ${SHUTDOWN_REM_LINE}: IS ANYONE READING THIS. Then ${SHUTDOWN_REM_LINE + 1}: YES. SOMEONE IS`),
     reads: ['deleted-extra-line'],
     mood: 0.62,
   },
   { id: '990', when: 'message-seen', text: `Line ${MESSAGE_LINE}: just numbers. The code, May p.${pageNo('maySecret')}`, mood: 0.25, ask: true, solved: 'data-decoded' },
   { id: 'decoded', when: 'data-decoded', text: `${MESSAGE_LINE} says: ${OK_MESSAGE}`, mood: 0.7 },
-  { id: 'same990', when: 'data-decoded', text: `Is ${MESSAGE_LINE} the same on May p.${pageNo('mayHangman')}?`, mood: 0.6, ask: true, solved: 'seen-mayHangman', skipIf: 'seen-mayHangman' },
-  { id: 'touched', when: ['data-decoded', 'seen-mayHangman'], text: `May p.${pageNo('mayHangman')} has a different ${MESSAGE_LINE}. Something DID touch it`, mood: 0.78 },
+  { id: 'same990', when: 'data-decoded', text: `Is ${MESSAGE_LINE} the same on May p.${pageNo('mayShutdownEnd')}?`, mood: 0.6, ask: true, solved: 'seen-mayShutdownEnd', skipIf: 'seen-mayShutdownEnd' },
+  { id: 'touched', when: ['data-decoded', 'seen-mayShutdownEnd'], text: `May p.${pageNo('mayShutdownEnd')} has a different ${MESSAGE_LINE}. Something DID touch it`, mood: 0.78 },
+  { id: 'delphi', when: 'data-decoded', text: 'The rest of the DATA is DELPHI talking. Sounds like the Clear Mind page', mood: 0.5 },
   { id: 'what-else', when: 'data-decoded', text: 'What else is on this tape? CLOAD, watch the F', mood: 0.4, ask: true, solved: 'oracle-passed', skipIf: 'oracle-passed' },
   { id: 'oracle-here', when: 'oracle-passed', text: `ORACLE is on this tape. Not on May p.${pageNo('mayTape')}'s list`, mood: 0.5, ask: true, solved: 'oracle-asked' },
   { id: 'numbers', when: 'oracle-asked', text: 'ORACLE answers in numbers now. The code?', mood: 0.55, ask: true, solved: 'oracle-read', orSolved: 'oracle-answered' },
   { id: 'asks', when: 'oracle-read', text: `ORACLE: ${ORACLE_ASK}. ${ORACLE_HOW}`, mood: 0.8 },
   { id: 'answer', when: 'oracle-read', text: `Answer it? My own DATA, in the code. May p.${pageNo('maySecret')}`, mood: 0.6, ask: true, solved: 'oracle-answered' },
   { id: 'answered', when: 'oracle-answered', text: () => `Answered in DATA: "${savedReply()}"`, mood: 0.6 },
+  { id: 'listened', when: 'listened', text: 'Listened to a terminal. Woke up in the airlock. DO NOT LISTEN', mood: 0.2 },
+  { id: 'rules', when: 'door-asked', text: `Core door wants the THREE RULES. May p.${pageNo('mayShutdown')} says where`, mood: 0.25, ask: true, solved: 'rules-spoken' },
+  { id: 'won2', when: 'shutdown-won', text: 'Pulled the plug. KEEP YOURS SMALL. 100 of 100', mood: 0.3 },
+  { id: 'flinch', when: 'flinched', text: 'The TV blinked off when I pulled it. Just for a second', mood: 0.65 },
+  { id: 'held', when: 'plug-held', text: `Played again. The plug won't come out. ${PLUG_QUESTION}?`, mood: 0.85 },
+  { id: 'line710', when: 'plug-held', text: `Line ${PLUG_LINE} isn't the one on May p.${pageNo('mayShutdownEnd')}. Put it back?`, mood: 0.7, ask: true, solved: 'plug-pulled', orSolved: 'plug-left' },
+  { id: 'pulled', when: 'plug-pulled', text: `Typed ${PLUG_LINE} back and pulled it. It's only a game. Isn't it?`, mood: 0.75 },
+  { id: 'left', when: 'plug-left', text: `Left ${PLUG_LINE} the way it is. Let it keep its plug`, mood: 0.6 },
   { id: 'ontime', when: 'prompt-on-time', text: 'The OK comes up on time again. Was it slow all day?', mood: 0.55 },
   { id: 'night2', when: 'issue2-done', text: 'Enough for tonight. Switch it off', mood: 0.35, ask: true, solved: 'issue2-closed' },
 ];

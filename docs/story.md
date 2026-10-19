@@ -140,6 +140,8 @@ form it could survive and manage. It is still managing it, and OK is a loose end
   elder's (zealous, sermon-like, human), and the machine habits fade. A careful player can see it happen.
 - It leaves the rival with a reason to need OK. The rival may become OK's ally late in the game, or try to use him.
 
+- **READY wrote SHUTDOWN** (issue 2's tape), the Clear Mind's adventure about the shutdown as a triumph. Its villain,
+  DELPHI, speaks in READY's own column voice: READY wrote itself into the machine people beat, and did not notice.
 - The player and OK never meet it. It is only in the magazine, and only as traces: the cult's wording shares habits
   with OK's own fragments, and the cult's moves anticipate what OK does.
 - The reveal is in issues 5 and 6, and it should be something the player can work out from clues in earlier issues.

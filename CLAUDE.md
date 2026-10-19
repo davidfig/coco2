@@ -38,7 +38,7 @@ Run `typecheck`, `check:size` and `test` before finishing any change. Design not
 - `?issue=N` starts at the beginning of issue N with the issues before it played through (`?issue=2`: May on the table
   and in the recorder, issue 1's notes all written, a name kept). It writes the story save from `ISSUE_STARTS`
   (`debug/checkpoints.ts`, one checkpoint per issue), forgets CSAVEs and the ORACLE reply, keeps the TV knobs and
-  notebook wear, and drops itself from the URL so a reload carries on (`src/startIssue.ts`). A new issue adds its start there.
+  notebook wear, and drops itself from the URL so a reload carries on (`src/startIssue.ts`). A new issue adds its start there, and its day to `DAYS` (`notes/notes.ts`: each issue is one day, its date written in the notes as its box arrives).
 - **Debug menu** (`game/debug/`): F2 in dev builds, `?debug` opens it at start (in any build). Checkpoints jump to a
   place in the story (they set exactly that flag list, in order, keep a name, and type `NEW`, `CLS` and the right CLOAD
   plus fixes at the CoCo), single flags tick on and off, and there are controls for the name, notebook wear, the
@@ -66,7 +66,7 @@ Run `typecheck`, `check:size` and `test` before finishing any change. Design not
   come to rest); a test that turns a knob or switches off leaves it that way. `localStorage.removeItem('coco2.tv')`
   gives channel 3, on.
 - The set's story hooks, to try from the console: `coco.tv.tuning.drift(0.6)` (off tune), `.upsetHold(1.2)` (the
-  picture rolls), `.loosen(0.6)` (it cuts out); `coco.stationTest(9)` puts a far station on 9 (`tv.broadcast`).
+  picture rolls), `.loosen(0.6)` (it cuts out); `coco.tv.flinch()` (the picture starts to collapse and opens again, SHUTDOWN's first win); `coco.stationTest(9)` puts a far station on 9 (`tv.broadcast`).
 - Synthetic pointer events on the canvas need `canvas.setPointerCapture = () => {}` first (it throws for a pointer the
   browser never saw), or a knob drag silently does nothing.
 - Pulled back to the whole desk (a click on the set), the view widens to take in the table where the magazine and the
@@ -103,7 +103,7 @@ src/game/
                       margins beside each note: its own picture or an idle one, uneasier as the mood climbs; heading, ringed holes)
   puzzles/            the puzzle watcher: listings (programs the magazine asks the player to type, single source), rules
                       (one function per puzzle, ticks a flag), watcher (feeds it the interpreter's `BasicEvent`s; see docs/puzzles.md);
-                      listingsMay + rulesMay are issue 2's (the code, HANGMAN, OK's ORACLE)
+                      listingsMay + rulesMay are issue 2's (the code, SHUTDOWN, OK's ORACLE)
   room/               lights: the page opens in a dark room; the lamp flickers on (a multiply pass drawn last), then the set
                       comes on and the magazine and notes slide in (`arrive`, main.ts)
   story/              what the story does besides the puzzles, one class per issue (issue1, issue2: timers, tampering, the tape swap)
@@ -120,7 +120,7 @@ src/game/
                       door and the carry, PLAY latched, `Tape.present`; `coco2.recorder`), hit (clicks),
                       recorderSound (the keys, the door, the cassette dropping in, the motor and tape hiss)
   magazine/           the RAINBOW: book (state, slide-in, GPU pass), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn; lying on the table, folded back on a rounded spine) + bookEdges (the block of paper's sides), bookLayout (TV/book split), bookInput
-                      (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover) + maySky (its spring morning over still water) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, HANGMAN, the tape) + mayLetters (letters, classifieds), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner (parody ads), adsInsideBack + adsBackCover (the back
+                      (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover) + maySky (its spring morning over still water) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, the tape) + mayShutdown (SHUTDOWN's three pages) + mayLetters (letters, classifieds), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner (parody ads), adsInsideBack + adsBackCover (the back
                       pages, laid out like real 1986 mail-order and national ads) + adsMail (their type: tight headlines, raised-cent
                       prices, slugs, coupons) + adsProducts (painted studio shots)
   tv/                 tv (uploads the VDG frame, uniforms, power-on, `broadcast`), tvShader (uniforms, main: room → cabinet → tube),
@@ -185,7 +185,7 @@ src/game/
   back to the desk to show it. The May cassette lies beside March's once May has come; the cassette in the recorder
   decides which tape BASIC reads. `HeadlessCoco` has no recorder: its tape is always present.
 - The cassette holds this issue of Rainbow On Tape (`game/tapes/`: March's ABOUT, GUESS, RAINBOW, ORACLE, ADVENT; from issue 2,
-  the May tape: ABOUT, HANGMAN, ORACLE) followed by the player's CSAVEs (localStorage, one key per cassette); a CSAVE under a
+  the May tape: ABOUT, SHUTDOWN, ORACLE) followed by the player's CSAVEs (localStorage, one key per cassette); a CSAVE under a
   built-in name records over it for that browser. `Tape.insert` swaps cassettes (the recorder does, as one goes in).
 - It has a position, like a real tape: `CLOAD` alone loads the next file, `CLOAD "NAME"` winds forward (wrapping) and
   shows `F NAME` for each file it passes, `SKIPF` winds past one. Not found after a whole pass is ?IO ERROR.
@@ -195,7 +195,7 @@ src/game/
 
 ## The magazine
 
-- Issues (`magazine/pages.ts`: `ISSUES` lists each issue's pages in order, the cover being page 1; March has 18, May 14; `pageNo(id)` finds a page in whichever issue holds it, and the notes link "May p.N" into May). The book holds one issue at a time (`Magazine.issue`, `setIssue`; a corner button switches once May has come), each drawn with Canvas 2D into a texture array, one page per layer, lazily. The shader does the
+- Issues (`magazine/pages.ts`: `ISSUES` lists each issue's pages in order, the cover being page 1; March has 18, May 16; `pageNo(id)` finds a page in whichever issue holds it, and the notes link "May p.N" into May). The book holds one issue at a time (`Magazine.issue`, `setIssue`; a corner button switches once May has come), each drawn with Canvas 2D into a texture array, one page per layer, lazily. The shader does the
   turning leaf in perspective. Window split: TV left / book right (top / bottom when tall); the ⤢ button (reading mode) shrinks the TV to a strip.
 - The TV pulls back as the book opens: `Tv.draw(..., rect, frame)` takes the rectangle it fits in and how much of the set shows.
 - **Never write a page number by hand.** Name a page by id and ask `pageNo(id)` (`magazine/pages.ts`): contents, editorial,

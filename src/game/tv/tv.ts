@@ -35,6 +35,9 @@ const FRINGE = 0.35;
  * on (for the warm-up) and where the pointer is (the reflections drift with it, as if you moved your head). Its parts:
  * the knobs, the tuner they set (`tuning`), the hand's other doings (`touch`), what's on the glass (`grime`), its sound.
  */
+/** Seconds a flinch takes, down to the line and open again. */
+const FLINCH = 0.18;
+
 export class Tv {
   private readonly program: Program;
   private readonly texture: WebGLTexture;
@@ -53,6 +56,8 @@ export class Tv {
   powerTime = -1;
   /** Seconds since switched off (the picture collapsing to a dot); negative if it hasn't been. */
   private offTime = -1;
+  /** Seconds since the picture flinched (`flinch`); negative when it hasn't. */
+  private flinchT = -1;
   /** Seconds until a delayed `switchOn` comes on (it counts as on already); negative when none is waiting. */
   private onIn = -1;
   private onWarm = true;
@@ -145,6 +150,16 @@ export class Tv {
   }
 
   /**
+   * The picture starts to collapse as if the set had been switched off, falls to a hot line, and opens again: the story's
+   * (OK flinching), never the knobs'. The set stays on throughout.
+   */
+  flinch(): void {
+    if (this.powerTime < 0) return;
+    this.flinchT = 0;
+    this.sound.play('crackle', 0.15);
+  }
+
+  /**
    * Put a far-off station's picture on a dead channel (the story's, never the CoCo's 3): it comes through weak, grey
    * and ghosted, at best `strength` (0..1), when the selector's on `channel`. `null` takes it off the air.
    */
@@ -231,6 +246,9 @@ export class Tv {
     gl.uniform1f(u.uTime, time);
     gl.uniform1f(u.uPower, this.powerTime);
     gl.uniform1f(u.uOff, this.offTime);
+    // The flinch runs the switch-off's first moment forward to the hot line and back again.
+    if (this.flinchT >= 0 && (this.flinchT += dt) > FLINCH) this.flinchT = -1;
+    gl.uniform1f(u.uFlinch, this.flinchT < 0 ? -1 : FLINCH / 2 - Math.abs(this.flinchT - FLINCH / 2));
     gl.uniform2f(u.uLook, this.look.x, this.look.y);
     const W = gl.drawingBufferWidth;
     const H = gl.drawingBufferHeight;

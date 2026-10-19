@@ -78,7 +78,7 @@ export class Magazine {
   /** Seconds since the book was made (`PRELOAD_AFTER`). */
   private age = 0;
   private fontsReady = false;
-  private savedView = ''; // `viewKey()` (page, open, reading) as last saved; `update` saves when it changes
+  private savedView = ''; // `viewKey()` (issue, page) as last saved; `update` saves when it changes
 
   constructor(private readonly gl: WebGL2RenderingContext) {
     this.load();
@@ -372,7 +372,7 @@ export class Magazine {
   }
 
   private viewKey(): string {
-    return `${this.issue} ${this.pageGoal} ${this.open} ${this.reading}`;
+    return `${this.issue} ${this.pageGoal}`;
   }
 
   save(): void {
@@ -380,10 +380,10 @@ export class Magazine {
     const { flags } = this.state;
     const page = this.pageId(this.pageGoal) ?? ISSUES[this.issue][0];
     this.pagesAt[this.issue] = page;
-    writeSave({ flags: [...flags], issue: this.issue, pages: { ...this.pagesAt }, page, open: this.open, reading: this.reading });
+    writeSave({ flags: [...flags], issue: this.issue, pages: { ...this.pagesAt }, page });
   }
 
-  /** Restore the journal, and the book where the reader left it: already out and on that page, no slide or page-turn. */
+  /** Restore the journal, and the page the reader left the book at. It starts closed, peeking from the table. */
   private load(): void {
     const s = readSave();
     for (const f of s.flags ?? []) this.state.flags.add(f);
@@ -392,8 +392,6 @@ export class Magazine {
     const issue = s.issue ?? (this.state.flags.has('issue2-waiting') ? 'may' : 'march');
     if (this.issues().includes(issue)) this.issue = issue;
     this.place(s.page ? (ISSUES[this.issue] as readonly AnyPageId[]).indexOf(s.page) : 0);
-    [this.open, this.reading] = [s.open === true, s.open === true && s.reading === true];
-    [this.openT, this.readT] = [+this.open, +this.reading];
     this.savedView = this.viewKey();
   }
 }

@@ -2,7 +2,7 @@ import type { Magazine } from './book';
 import type { AnyPageId } from './pages';
 
 /** Pages the story waits for the player to have looked at: each sets the flag `seen-<id>`. */
-const WATCHED: readonly AnyPageId[] = ['guess', 'mayHangman'];
+const WATCHED: readonly AnyPageId[] = ['guess', 'mayShutdownEnd'];
 
 /** How long a page must stay open in front of the player before it counts as looked at (not just flipped past). */
 const DWELL = 1.2;

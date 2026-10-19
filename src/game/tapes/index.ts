@@ -1,5 +1,5 @@
 import type { TapeFile } from '../basic/tape';
-import { ORACLE_ON_TAPE, hangmanOnTape } from '../puzzles/listingsMay';
+import { ORACLE_ON_TAPE, shutdownOnTape } from '../puzzles/listingsMay';
 import about from './about.bas?raw';
 import aboutMay from './aboutMay.bas?raw';
 import advent from './advent.bas?raw';
@@ -24,11 +24,11 @@ export const RAINBOW_TAPE: readonly TapeFile[] = [
 export const MAY_TAPE_KEY = 'coco2.tape.may';
 
 /**
- * The May cassette: ABOUT and HANGMAN, as the magazine lists them, and ORACLE, which it does not (OK came with it). HANGMAN
+ * The May cassette: ABOUT and SHUTDOWN, as the magazine lists them, and ORACLE, which it does not (OK came with it). SHUTDOWN
  * carries OK's REM, which depends on whether the player deleted GUESS's extra line in March.
  */
 export const mayTape = (deleted: boolean): readonly TapeFile[] => [
   { name: 'ABOUT', text: aboutMay },
-  { name: 'HANGMAN', text: hangmanOnTape(deleted) },
+  { name: 'SHUTDOWN', text: shutdownOnTape(deleted) },
   { name: 'ORACLE', text: ORACLE_ON_TAPE },
 ];

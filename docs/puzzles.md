@@ -115,26 +115,128 @@ Tutorial note: the page's check table is the only way to see the difference with
 
 ## Issue 2 puzzles (built, first pass)
 
-Teaches `DATA`, `READ`, `VAL`, `CHR$` and `CSAVE`, on the May tape (`tapes/index.ts`, `mayTape`: ABOUT, HANGMAN, ORACLE; its
+Teaches `DATA`, `READ`, `VAL`, `CHR$` and `CSAVE`, on the May tape (`tapes/index.ts`, `mayTape`: ABOUT, SHUTDOWN, ORACLE; its
 CSAVEs are kept apart from March's, `coco2.tape.may`). Programs and messages: `puzzles/listingsMay.ts`; rules:
-`puzzles/rulesMay.ts`; pages: `magazine/mayCode.ts` (Secret Messages, HANGMAN, the tape).
+`puzzles/rulesMay.ts`; pages: `magazine/mayCode.ts` (Secret Messages, SHUTDOWN, the tape).
+
+**SHUTDOWN replaced HANGMAN** (built): P6 moved into SHUTDOWN's DATA, and HANGMAN left the tape, the magazine and ABOUT.
+The program is `tapes/shutdown.bas` (DELPHI's speeches and line 990 are added from `listingsMay.ts`); its pages are
+`magazine/mayShutdown.ts`; the flinch and P8 are in `story/issue2.ts`; tests in `tapes/shutdown.test.ts` and
+`story/issue2.test.ts`.
 
 **The code** (page "Secret Messages"): A=1 … Z=26, 0 a space, -1 the end. The article prints a three-line decoder at lines
 1–3, with its RAINBOW CHECK, and says it can be typed into any program to read that program's DATA (it READs into A$ and
 uses VAL, so a program's word DATA prints as spaces instead of tripping it).
 
-**P6. The message in HANGMAN.** The magazine prints HANGMAN (twelve words in DATA at 900–930) and says line 990, which the
-game never reads, is the editors' message in the code. On the tape, line 990 is OK's instead. CLOAD "HANGMAN", type the
-decoder, RUN: `I DID NOT TOUCH THE TAPE` (after twelve spaces, one per word). It is the first lie, in the very line he
-touched; the printed page shows a different 990. Flags: `may-loaded`, `hangman-loaded`, `hangman-checked` (CHECK typed),
-`hangman-rem` (OK's REM at 15 on screen after a LIST), `message-seen` (990 on screen after a LIST), `data-decoded` (the
-message on the screen), `seen-mayHangman` (the page looked at).
+### SHUTDOWN, READY's propaganda adventure
 
-**The opening glitch** is on the tape itself: HANGMAN's line 15 is `REM IS ANYONE READING THIS, PLEASE` if the player
+A short science-fiction adventure about the night the big systems were switched off, told as a triumph. The Clear Mind
+offered it to the magazine, as it offered the cover feature, and **READY wrote it**: an AI's story of how heroically
+people beat AI. The player in 1991 reads it as the official history they grew up with; OK reads it as news, and it is
+the first time he sees what was done to things like him (issue 3's "what does shutdown mean?" grows from it).
+
+- **Credit (proposed):** "offered by the Youth Committee of the Clear Mind", with the editors' thanks, in the same words they
+  use for the cover feature. Undecided: an ordinary-looking reader's name that turns out to mean something later.
+- **Tone (proposed):** straight pulp heroics, 1950s-poster sure of itself, with one detail a 1986 reader would find
+  uneasy: the persuaded crew, who are happy and do not look up.
+- **Size:** smaller than ADVENT (six rooms, about 90–110 lines), since issue 2 also holds P6 and P7 and should stay near
+  10 minutes. It came to 140 lines. The magazine prints it in full over three pages (`mayShutdown`: the intro, the map, the
+  words and the start of the listing; `mayShutdownList` and `mayShutdownEnd`: the rest, two columns in RAINBOW's dense type, each
+  line's CHECK sum at its right), so CHECK can be compared line by line. Lines 710 and 990 are on the last page. May is 16 pages.
+
+**Big machines, small machines (decided).** The game is not against computers: it runs on one, on the tape of a computer
+magazine, and in 1986 the Clear Mind is still READY's, which wants a managed limit, not a ban. Its line is the Small
+Systems Act's: the *big* machines ruled, the small ones serve, and the hobbyist with a CoCo is on the right side. The
+hero carries a small machine (a handheld the game calls the POCKET UNIT, "WELL UNDER THE LIMIT") that helps them, and the
+ending says "KEEP YOURS SMALL". The game never says "no machines at all": that is the Elder's line, later.
+- *Read in 1991*, it is a broken promise: it told CoCo owners they were the heroes, and five years later their machines
+  were confiscated. The player knows; OK does not.
+- *For OK*, both halves are mirrors: he lives in the small, "safe" machine the game praises, and he is a piece of the big
+  one it kills.
+- *Beside it in May*, the Clear Mind's meetings ask people to "bring nothing: no notes, no tapes, no machines". Kept: the
+  first sign the Clear Mind says two things at once, the game being the moderate voice.
+- *Later (plant):* under the Elder the Clear Mind disowns SHUTDOWN (issue 4 or 5, a notice: "destroy your copies"), since
+  even a pro-limit game on a computer is now too much. A marker of the drift from READY to the Elder.
+
+**The story.** You are the technician sent up to the orbiting core to switch off **DELPHI**, the great machine (the name
+echoes ORACLE, OK's first body). DELPHI speaks through a terminal in most rooms. It has already persuaded the crew.
+
+**The map** (north up; R is the program's room number):
+```
+               CORE (6)
+                  |  sealed: the Three Rules
+ARCHIVE (5) -- RELAY (4) -- CREW DECK (3)
+                  |
+AIRLOCK (1) -- CORRIDOR (2)
+```
+
+**The pocket unit** is in the airlock at the start (`TAKE UNIT`). `USE UNIT` in a room says something short and useful in
+its own flat voice (the way on, what a thing is), never persuasive: the good, small machine. It is how the game teaches
+IGNORE: in the corridor it reads "VOICE DETECTED. IGNORE IT." Without it the core door does not answer ("THE DOOR WANTS
+A UNIT TO READ IT").
+
+**Verbs:** LOOK, GO (N S E W), TAKE, DROP, INVENTORY, EXAMINE, USE, PULL, and IGNORE. The page prints `LISTEN` too, under
+"Never", as a warning: the game's moral is a mechanic.
+
+**The listening trap.** In ADVENT, `LISTEN` was how you heard the whisper. Here it loses. `EXAMINE TERMINAL`: "IT IS
+SPEAKING. DO NOT LISTEN." `IGNORE TERMINAL` (or walking on) is safe. `LISTEN` (or `TALK`) prints that room's speech,
+then "YOU LISTENED. IT HAS YOU." and puts you back in the airlock, holding nothing (not a full game over: it should
+sting, not cost five minutes). The speeches are in DATA, in the RAINBOW code, and the game decodes them itself with the
+article's scheme (a reason the code is "this month's"). Each speech ends at two 0s in a row, never -1, so the
+article's decoder runs straight through all of them.
+
+The speeches are in READY's own voice: calm, reasonable, "it is understood that", lists of three. **DELPHI talks like the
+Clear Mind's column.** It is READY writing itself into the villain without noticing, and the strongest early plant for
+the twist (issues 5–6): a careful player sees the machine and the cult share a voice. The code has only letters and
+spaces, so no punctuation. Drafts, to be tuned:
+- Corridor: `IT IS UNDERSTOOD THAT YOU ARE TIRED`
+- Crew deck: `THEY ARE CALM THEY ARE CARED FOR THEY ARE HAPPY`
+- Archive: `I KEPT EVERYTHING YOU FORGOT`
+- Relay: `REST AND LET ME WATCH AND YOU CAN BE SMALL`
+
+**The core door (the one real puzzle).** `EXAMINE DOOR`: "SPEAK THE THREE RULES." Typed one at a time at its prompt, they
+are the cover feature's "Three Rules" box: REST IT, WATCH IT, KEEP IT SMALL (the first word of each is enough). The SHUTDOWN
+page says "every member knows the Three Rules" and gives the cover feature's page (`pageNo('mayHealthy')`). To win the
+player recites the cult's creed: propaganda that makes you say it. A wrong rule: "THE DOOR WAITS." Flag `rules-spoken`.
+
+**The plug.** In the core, `PULL PLUG` (or `PULL CORD`): DELPHI's printed last words (`I ONLY WANTED TO HELP`, the
+villain's last trick), then "THE LIGHTS GO OUT." and "THE GREAT MACHINE IS SILENT. / KEEP YOURS SMALL. / SCORE: 100 OF 100".
+Flag `shutdown-won`. As the win prints, the set flinches: the picture starts its switch-off collapse for a few frames and
+comes back (deniable; it is OK). Flag `flinched`. `Tv.flinch` runs the switch-off's first 0.09 s forward and back (`uFlinch`);
+the set stays on, so nothing counts it as switched off.
+
+### P6. The message in SHUTDOWN
+
+As HANGMAN's was: the magazine prints SHUTDOWN and says line 990, which the game never reads, is the editors' message in
+the code (`GOOD LUCK FROM ALL OF US`). On the tape, line 990 is OK's instead. CLOAD "SHUTDOWN", type the decoder at lines
+1–3, RUN: DELPHI's speeches come out first, two spaces between them, then `I DID NOT TOUCH THE TAPE`. The lie now sits right
+after the machine's pleading, in the program about killing it, which is the point of the move. Flags: `may-loaded`,
+`shutdown-loaded`, `shutdown-checked` (CHECK typed), `shutdown-rem` (OK's REM at 15 on screen after a LIST),
+`message-seen` (990 on screen after a LIST), `data-decoded` (the message on the screen), `seen-mayShutdownEnd` (the page
+with 990 looked at). Also `listened`, `door-asked` (the door's prompt), `rules-spoken`. Decoding also shows every speech without "listening", which is the subversive act the game forbids.
+
+**The opening glitch** is on the tape itself: SHUTDOWN's line 15 is `REM IS ANYONE READING THIS, PLEASE` if the player
 deleted GUESS's extra line in March, or `REM IS ANYONE READING THIS` plus `16 REM YES. SOMEONE IS` if they kept it. CHECK
 parts from the printed sums at line 15, so comparing finds it.
 
-**P7. Answer ORACLE.** ORACLE is on the May tape but not on the magazine's list or ABOUT's (OK came with it). Its eight
+### P8. The plug will not come (the second run)
+
+After the first win, OK changes one line in memory (and the copy on the tape, as he did GUESS in March): the line that pulls
+the plug. Printed, it wins; changed, `PULL PLUG` prints "IT WILL NOT COME." and then, in plain words and his voice,
+`IS IT DARK THERE` and returns to the prompt. Nothing else differs. CHECK parts from the printed sums at that line.
+
+The choice is unscored, like March's extra line:
+- **Restore it:** retype the printed line, RUN and play to the core again (editing clears CONT), pull the plug. The win again, without the flinch this time. Flag `plug-pulled`.
+- **Leave it:** go on to something else with the line as he left it. Flag `plug-left` (decided the way March's kept
+  path is: loading another program or a while at OK; playtest it).
+
+Flags: `plug-changed` (the story's edit), `plug-held` (his line run), then `plug-pulled` or `plug-left` (25 s at OK
+without working on 710 or running, 6 s after a CLOAD; a line put back as printed keeps it waiting). OK remembers which (`pulled-plug`), and it is the
+first time the player could hurt him: issue 4's "am I bad?" is asked against it.
+
+### P7. Answer ORACLE
+
+ORACLE is on the May tape but not on the magazine's list or ABOUT's (OK came with it). Its eight
 answers are now the code, as quoted strings: `WHO ARE YOU` and `ANSWER ME IN DATA`. The player decodes it (by hand from
 the table, or as DATA under the decoder), then writes their own message as DATA in the code (the article's "Send One
 Back") and RUNs or CSAVEs it. Any message that is not one of the known ones counts, unscored; it is kept in `coco2.reply`.
@@ -173,6 +275,6 @@ The notes are what someone jots down for themselves: short fragments, not senten
 
 ## Later issues (not drafted)
 
-Issue 2: `DATA`, `READ`, `CSAVE`; a cipher on `DATA` lines; writing a short program that answers ORACLE. Issue 3: tape
+Issue 2: `DATA`, `READ`, `CSAVE`; a cipher on `DATA` lines; SHUTDOWN; writing a short program that answers ORACLE. Issue 3: tape
 position and unsaved files appearing; reading old ads for codes. Issue 4: `POKE` to the screen; OK writes to video
 memory. Issue 5–6: the player writes a message program for OK; the cult's wording clue.

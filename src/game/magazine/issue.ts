@@ -13,7 +13,8 @@ import { drawLetters } from './letters';
 import { ISSUES, ISSUE_DATE, type AnyPageId, type IssueId } from './pages';
 import { drawMayCover } from './may';
 import { drawClearMind, drawHealthy, drawMayContents, drawMayEditorial } from './mayArticles';
-import { drawHangman, drawMayTape, drawSecret } from './mayCode';
+import { drawMayTape, drawSecret } from './mayCode';
+import { drawShutdown, drawShutdownEnd, drawShutdownList } from './mayShutdown';
 import { drawMayClassifieds, drawMayLetters } from './mayLetters';
 import { beginLinks } from './pageLinks';
 import { Ctx, PAGE_H, PAGE_W, furniture, inkPass, paperBase } from './paper';
@@ -58,7 +59,9 @@ const PAGES: Record<AnyPageId, PageDef> = {
   mayEditorial: { draw: drawMayEditorial },
   mayHealthy: { draw: drawHealthy },
   maySecret: { draw: drawSecret },
-  mayHangman: { draw: drawHangman },
+  mayShutdown: { draw: drawShutdown },
+  mayShutdownList: { draw: drawShutdownList },
+  mayShutdownEnd: { draw: drawShutdownEnd },
   mayTape: { draw: drawMayTape },
   mayClearMind: { draw: drawClearMind },
   mayClassifieds: { draw: drawMayClassifieds },

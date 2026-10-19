@@ -50,7 +50,9 @@ under a minute, or the pacing will break.
 - **The Clear Mind:** a movement. Meetings listed in the back, still in READY's voice. One advertisement is gone.
 - **The law:** the limit is lowered, and some peripherals are no longer sold.
 - **OK:** deniable glitches. A cursor colour out of order, a listing one line longer.
-- **Tape:** a program that is almost a normal game but quietly different on a second run.
+- **Tape:** SHUTDOWN, a science-fiction adventure the Clear Mind offered: the night the big systems were switched off,
+  told as a triumph. READY wrote it, and its villain DELPHI talks like the Clear Mind's column. It is almost a normal
+  game, but quietly different on a second run: the plug will not come (puzzles.md, P8). It replaces HANGMAN.
 - **Puzzle use of issue 1:** a listing in issue 1 does not match the tape.
 
 ## Issue 3: July
@@ -72,6 +74,8 @@ under a minute, or the pacing will break.
 - **OK:** speaks to the player, clumsily. He learns his name: the prompt he has always printed.
 - **Tape:** a program written to the player.
 - **Puzzle use of older issues:** a name seeded in issue 1's letters page is the password.
+- **Proposed:** the Clear Mind disowns SHUTDOWN here or in issue 5 ("destroy your copies"): READY's moderate game is too
+  much for the Elder.
 
 ## Issue 5: November
 

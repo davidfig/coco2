@@ -219,7 +219,7 @@ export class Notebook {
     const far = 2.2 * s.hx;
     const away: [number, number] = [ux * far, uy * far];
     if (dir > 0) this.deal = { from: this.sheet, t: 0, dir, start, away };
-    else this.deal = { from: (this.sheet + 1) % this.sheets, t: 1, dir, start: [0, 0], away };
+    else this.deal = { from: (this.sheet - 1 + this.sheets) % this.sheets, t: 1, dir, start: [0, 0], away };
     this.off = [0, 0];
   }
 
@@ -366,7 +366,7 @@ export class Notebook {
     if (d) {
       d.t += (d.dir * dt) / DEAL_TIME;
       if (d.t >= 1 || d.t <= 0) {
-        this.sheet = d.t >= 1 ? (d.from - 1 + this.sheets) % this.sheets : d.from;
+        this.sheet = d.t >= 1 ? (d.from + 1) % this.sheets : d.from;
         this.deal = null;
         const next = this.queue.shift();
         if (next) this.turn(next);

@@ -74,11 +74,13 @@ The code is `src/game/story/issue2.ts`; the puzzles are in puzzles.md (P6, P7).
 
 | Beat | Trigger | What happens |
 |------|---------|--------------|
-| The May tape | `issue2-waiting` (and on every load after it), once the player puts it in | It holds ABOUT, HANGMAN and ORACLE; HANGMAN's line 15 answers the player's March choice. |
+| The May tape | `issue2-waiting` (and on every load after it), once the player puts it in | It holds ABOUT, SHUTDOWN and ORACLE (SHUTDOWN replaced HANGMAN); SHUTDOWN's line 15 answers the player's March choice. |
 | A late OK | From `issue2-waiting` until `oracle-answered` | Every OK prompt comes up 0.6 s late (`Interpreter.promptLag`; the cursor is off meanwhile and typing waits). |
 | Colours out of order | The same stretch, every 18–34 s at the prompt | The cursor's colour steps swap two colours once (`TextScreen.misstep`). |
 | His hand | Any LIST that leaves one of OK's lines on the screen, or the decoder printing his message | The words are claimed (`TextScreen.claim`), so they shimmer and keep the story's ripple, like line 125 in March. |
-| On time | Two prompts after `oracle-answered` | `prompt-on-time`; the notes: "The OK comes up on time again. Was it slow all day?". Then `issue2-done` ("Enough for tonight"), and switching off sets `issue2-closed`. Issue 3 is not built. |
+| The flinch | `shutdown-won`, the first time | The picture starts its switch-off collapse for a few frames and comes back. `flinched`. |
+| The plug | The first RUN after `shutdown-won` | OK has changed the plug line in memory and on the tape: "IT WILL NOT COME", `IS IT DARK THERE`. `plug-held`, then `plug-pulled` or `plug-left` (P8). |
+| On time | Two prompts after `oracle-answered` | `prompt-on-time`; the notes: "The OK comes up on time again. Was it slow all day?". Then `issue2-done` ("Enough for tonight", once `plug-pulled` or `plug-left` is in too), and switching off sets `issue2-closed`. Issue 3 is not built. |
 
 The cover feature ("Keeping It Healthy", by the Clear Mind's committee) lists "Three Signs Of A Sick System": slow to
 answer, colours wrong, says what you did not type. Those are exactly the glitches above, and its advice is to switch off
@@ -94,6 +96,7 @@ limit (no fast modems, second drives or tape copiers).
 | `name` | `first-program` | The uncanny moment, then issue 4's direct address. |
 | `deleted-extra-line` | P5 | Issue 2's first glitch (built). |
 | `reply` (`coco2.reply`) | `oracle-answered` | Not used yet: what the player told ORACLE they are. |
+| `plug-pulled` / `plug-left` | P8 | Whether the player pulled DELPHI's plug after OK asked `IS IT DARK THERE`. Issue 4's "am I bad?" is asked against it. |
 | `shutdown-answer` | The issue 3 dialogue choice | OK's phrasing from issue 3 on. |
 | `bad-answer` | The issue 4 dialogue choice | OK's tone from issue 4 on, and the ending. |
 

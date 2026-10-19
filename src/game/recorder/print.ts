@@ -22,7 +22,7 @@ const GRAPHITE: [number, number, number] = [72, 72, 80];
 /** What each cassette's maker wrote on it: the title over the window, and under it. */
 const LABELS: readonly { title: string; under: readonly string[] }[] = [
   { title: 'RAINBOW ON TAPE - MARCH 86', under: ['Copied by hand, for you. Mistakes are mine.', '- M. Kessler'] },
-  { title: 'RAINBOW ON TAPE - MAY 86', under: ['ABOUT   HANGMAN'] },
+  { title: 'RAINBOW ON TAPE - MAY 86', under: ['ABOUT   SHUTDOWN'] },
 ];
 
 export function drawRecorderPrint(): HTMLCanvasElement {

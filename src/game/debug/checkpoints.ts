@@ -1,5 +1,5 @@
 import { ADVENT, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../puzzles/listings';
-import { DECODER, HANGMAN_REM_LINE, MESSAGE_LINE } from '../puzzles/listingsMay';
+import { DECODER, MESSAGE_LINE, PLUG_HELD, SHUTDOWN_REM_LINE } from '../puzzles/listingsMay';
 
 /**
  * Playtesting only: every story flag in the order a player usually earns it, with a word on what earns it. The debug
@@ -49,16 +49,25 @@ export const STORY_FLAGS: readonly [flag: string, label: string][] = [
   ['issue1-closed', 'switched off after it'],
   ['issue2-waiting', 'next day: May and its tape'],
   ['may-loaded', 'loaded from the May tape'],
-  ['hangman-loaded', 'HANGMAN in memory'],
-  ['hangman-checked', 'CHECK on HANGMAN'],
-  ['hangman-rem', `LISTed line ${HANGMAN_REM_LINE} (OK's REM)`],
+  ['shutdown-loaded', 'SHUTDOWN in memory'],
+  ['shutdown-checked', 'CHECK on SHUTDOWN'],
+  ['shutdown-rem', `LISTed line ${SHUTDOWN_REM_LINE} (OK's REM)`],
   ['message-seen', `LISTed line ${MESSAGE_LINE}`],
   ['data-decoded', 'decoder printed OK\'s message'],
-  ['seen-mayHangman', 'looked at the HANGMAN page'],
+  ['seen-mayShutdownEnd', 'looked at SHUTDOWN\'s last page'],
   ['oracle-passed', 'tape went past ORACLE'],
   ['oracle-asked', 'ORACLE answered in code'],
   ['oracle-read', 'decoded WHO ARE YOU'],
   ['oracle-answered', 'answered in DATA'],
+  ['listened', 'listened to a terminal'],
+  ['door-asked', 'core door asked for the rules'],
+  ['rules-spoken', 'core door opened'],
+  ['shutdown-won', 'pulled the plug, won'],
+  ['flinched', 'story: the set flinched'],
+  ['plug-changed', 'story: OK changed line 710'],
+  ['plug-held', 'the plug would not come'],
+  ['plug-pulled', 'restored the line, pulled it'],
+  ['plug-left', 'left his line'],
   ['prompt-on-time', 'story: OK on time again'],
   ['issue2-done', 'story: the evening ends'],
   ['issue2-closed', 'switched off after it'],
@@ -99,12 +108,14 @@ const ADVENT_FIXED = `CLOAD "ADVENT"\n${FIX_30}`;
 const GUESS = 'CLOAD "GUESS"\n';
 const THANKS = [...FOUND, 'ok-thanks', 'saw-thanks'];
 const MAY = [...THANKS, 'issue1-done', 'issue1-closed', 'issue2-waiting'];
-const SEEN_990 = [...MAY, 'may-loaded', 'hangman-loaded', 'message-seen'];
-const DECODED = [...SEEN_990, 'hangman-checked', 'hangman-rem', 'data-decoded', 'seen-mayHangman'];
+const SEEN_990 = [...MAY, 'may-loaded', 'shutdown-loaded', 'message-seen'];
+const DECODED = [...SEEN_990, 'shutdown-checked', 'shutdown-rem', 'data-decoded', 'seen-mayShutdownEnd'];
 const ASKED = [...DECODED, 'oracle-passed', 'oracle-asked'];
 const ANSWERED = [...ASKED, 'oracle-read', 'oracle-answered'];
-const HANGMAN = 'CLOAD "HANGMAN"\n';
-const DECODING = `${HANGMAN}${DECODER.join('\n')}\n`;
+const WON_MAY = [...ANSWERED, 'door-asked', 'rules-spoken', 'shutdown-won', 'flinched'];
+const HELD = [...WON_MAY, 'plug-changed', 'plug-held'];
+const SHUTDOWN = 'CLOAD "SHUTDOWN"\n';
+const DECODING = `${SHUTDOWN}${DECODER.join('\n')}\n`;
 const ORACLE = 'CLOAD "ORACLE"\n';
 
 const FRESH: Checkpoint = { label: 'Fresh start', flags: START };
@@ -127,11 +138,14 @@ export const CHECKPOINTS: readonly Checkpoint[] = [
   { label: 'Saw PLEASE', flags: [...DELETED, 'ok-pleads', 'saw-pleads'], named: true, typed: `${GUESS}${GUESS_EXTRA_LINE} REM ${GUESS_EXTRA_TEXT}, PLEASE\n` },
   { label: 'Saw THANK YOU', flags: THANKS, named: true, typed: `${GUESS}${GUESS_EXTRA_LINE} REM ${GUESS_EXTRA_TEXT}. THANK YOU\n` },
   MAY_CAME,
-  { label: `HANGMAN, saw line ${MESSAGE_LINE}`, flags: SEEN_990, named: true, typed: HANGMAN },
+  { label: `SHUTDOWN, saw line ${MESSAGE_LINE}`, flags: SEEN_990, named: true, typed: SHUTDOWN },
   { label: 'Decoder typed in (RUN next)', flags: SEEN_990, named: true, typed: DECODING },
   { label: 'Decoded: ORACLE next', flags: DECODED, named: true, typed: ORACLE },
   { label: 'ORACLE asked (answer next)', flags: ASKED, named: true, typed: 'NEW\n10 DATA 1,0,6,18,9,5,14,4,-1\n' },
   { label: 'Answered ORACLE', flags: ANSWERED, named: true },
+  { label: 'Answered, SHUTDOWN loaded', flags: ANSWERED, named: true, typed: SHUTDOWN },
+  { label: 'Won SHUTDOWN (OK changes 710)', flags: WON_MAY, named: true, typed: SHUTDOWN },
+  { label: 'Plug held (restore or leave)', flags: HELD, named: true, typed: `${SHUTDOWN}${PLUG_HELD}\n` },
 ];
 
 /** `?issue=N` (`src/startIssue.ts`): the start of issue N, every issue before it played through. Index 0 is issue 1. */

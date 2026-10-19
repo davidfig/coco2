@@ -23,6 +23,7 @@ uniform vec2 uRes;
 uniform float uTime;
 uniform float uPower;     // seconds since the set was switched on (negative: off)
 uniform float uOff;       // seconds since it was switched off (negative: it hasn't been)
+uniform float uFlinch;    // on, but the picture part-way into the switch-off's collapse (Tv.flinch; negative: not)
 uniform float uRock;      // which way the power rocker is tipped (-1 OFF .. 1 ON)
 uniform vec2 uLook;       // where the viewer's pointer is, -1..1: nudges the reflections
 uniform vec3 uBorder;     // the VDG border colour
@@ -96,7 +97,7 @@ void main() {
     float tubeD = sdBox(tp, TUBE, TUBE_R);
     if (tubeD < 0.0) {
       vec2 q = tp / TUBE;
-      vec3 phos = power > 0.0 ? picture(q, on, -1.0) : uOff >= 0.0 && uOff < 1.5 ? picture(q, 10.0, uOff) : vec3(0.0);
+      vec3 phos = power > 0.0 ? picture(q, on, uFlinch) : uOff >= 0.0 && uOff < 1.5 ? picture(q, 10.0, uOff) : vec3(0.0);
       // Switched off, the phosphor glows on faintly with the last picture for a few seconds (the green longest).
       vec2 auv = vec2(q.x, -q.y) / ACTIVE * 0.5 + 0.5;
       if (power == 0.0 && uOff >= 0.0 && auv == clamp(auv, 0.0, 1.0))

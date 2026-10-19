@@ -1,11 +1,10 @@
 /**
- * The May issue's programming pages: "Secret Messages" (DATA, READ, the RAINBOW code and its decoder), the HANGMAN type-in,
- * and the month's tape. The decoder and HANGMAN are printed from `puzzles/listingsMay.ts`, so the watcher and the page
- * never disagree.
+ * The May issue's programming pages: "Secret Messages" (DATA, READ, the RAINBOW code and its decoder) and the month's tape.
+ * The decoder is printed from `puzzles/listingsMay.ts`, so the watcher and the page never disagree. SHUTDOWN, the game it
+ * is hidden in, has its own pages (`mayShutdown.ts`).
  */
 import { checkSum } from '../basic/checksum';
-import { DECODER, EXAMPLE, EXAMPLE_MESSAGE, HANGMAN_PRINTED, MESSAGE_LINE } from '../puzzles/listingsMay';
-import { type TypeIn, drawTypeIn } from './extras';
+import { DECODER, EXAMPLE, EXAMPLE_MESSAGE, MESSAGE_LINE } from '../puzzles/listingsMay';
 import { screenBox, tapePage } from './learn';
 import { pageNo } from './pages';
 import { Ctx, INK, MARGIN, MONO, PAGE_H, PAGE_W, SANS, SERIF, colWidth, flow, headline, rowsFor, sidebar, text } from './paper';
@@ -49,7 +48,7 @@ function miniListing(ctx: Ctx, x: number, y: number, w: number, lines: readonly 
   return y + h + 40;
 }
 
-/** DATA and READ, the code, the decoder, and the message hidden in HANGMAN. */
+/** DATA and READ, the code, the decoder, and the message hidden in SHUTDOWN. */
 export function drawSecret(ctx: Ctx): void {
   const y = headline(ctx, 'Secret Messages', ['DATA, READ and the oldest code there is . . .', 'And a message from us, on this month’s tape . . .'], 'Dale Wick');
   flow(
@@ -83,7 +82,7 @@ export function drawSecret(ctx: Ctx): void {
   sidebar(ctx, 'A Message For You', sx, ty, sw, 230);
   flow(
     ctx,
-    rowsFor(ctx, [{ text: `Line ${MESSAGE_LINE} of this month’s HANGMAN, the last of its DATA, is a message from all of us in this code. The game never reads that far; its words are the first twelve. CLOAD "HANGMAN", type in the decoder, and RUN.`, before: 0, align: 'left' }], sw - 40),
+    rowsFor(ctx, [{ text: `Line ${MESSAGE_LINE} of this month’s SHUTDOWN (page ${pageNo('mayShutdown')}), the last of its DATA, is a message from all of us in this code. The game never reads that far. CLOAD "SHUTDOWN", type in the decoder, and RUN.`, before: 0, align: 'left' }], sw - 40),
     sx + 20,
     ty + 66,
     sw - 40,
@@ -107,28 +106,13 @@ export function drawSecret(ctx: Ctx): void {
   );
 }
 
-const HANGMAN_PAGE: TypeIn = {
-  banner: 'On The Tape',
-  title: 'Hangman',
-  subtitle: 'Twelve Words, Six Chances, With RAINBOW CHECK',
-  by: 'By Tom Brannigan',
-  intro: [
-    { text: 'The CoCo picks a word and shows a dash for each letter. Guess a letter at a time. Six wrong letters and you are hanged; get the word first and you are free. The words are the DATA at line 900, and you can change them for your own.', before: 0 },
-    { text: `Line ${MESSAGE_LINE} is not a word. It is our message to you, in the code on page ${pageNo('maySecret')}. HANGMAN is on this month’s tape, ready to CLOAD. Tapes wear, so LIST yours and type CHECK, and compare both with this page.` },
-  ],
-  lines: HANGMAN_PRINTED,
-};
-
-/** HANGMAN as it left the studio. */
-export const drawHangman = (ctx: Ctx): void => drawTypeIn(ctx, HANGMAN_PAGE);
-
 /** The May tape: what the magazine says is on it. */
 export const drawMayTape = (ctx: Ctx): void =>
   tapePage(
     ctx,
     [
       ['ABOUT', 'What is on the tape, and how to load it.'],
-      ['HANGMAN', `Guess the word. Our message is in its DATA (page ${pageNo('maySecret')}).`],
+      ['SHUTDOWN', `Pull the plug (page ${pageNo('mayShutdown')}). Our message is in its DATA (page ${pageNo('maySecret')}).`],
     ],
-    'Two programs this month, and we are sorry it is not more. The decoder on page ' + pageNo('maySecret') + ' is not on the tape: it is three lines, and typing it into HANGMAN is the whole point.',
+    'Two programs this month, and we are sorry it is not more. The decoder on page ' + pageNo('maySecret') + ' is not on the tape: it is three lines, and typing it into SHUTDOWN is the whole point.',
   );

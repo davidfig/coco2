@@ -4,7 +4,7 @@ const SAVE_KEY = 'coco2.rainbow';
 
 /**
  * What a reload brings back of the magazine: the notebook's flags and the page the reader was on
- * (by id, so a reordered issue still opens on the same page) with whether the book was out. The CoCo itself starts
+ * (by id, so a reordered issue still opens on the same page). The book always starts closed, and the CoCo starts
  * cold, as the real one did.
  */
 export interface Save {
@@ -14,8 +14,6 @@ export interface Save {
   pages: Partial<Record<IssueId, AnyPageId>>;
   /** The page of `issue` (kept as well as `pages`, so a save from before May still opens where it was). */
   page: AnyPageId;
-  open: boolean;
-  reading: boolean;
 }
 
 export function readSave(): Partial<Save> {

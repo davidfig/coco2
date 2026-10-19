@@ -46,11 +46,12 @@ export function pulled(s: Sheet, by: readonly [number, number], spin = 0): Sheet
 
 /**
  * Every sheet that shows, from the bottom of the pile up, for a pile of `n` sheets with `sheet` on top at `s`, pulled
- * `off` aside, or partway through a `deal`. Up to three show: the rest lie hidden under the third.
+ * `off` aside, or partway through a `deal`. Up to three show: the rest lie hidden under the third. Under each sheet lies
+ * the one after it (the newest has the first under it), so sending sheets under reads them in order.
  */
 export function layers(s: Sheet, n: number, sheet: number, off: readonly [number, number], d: Deal | null): Layer[] {
   const deeper = Math.min(n, 3);
-  const under = (a: number, j: number): number => (((a - j) % n) + n) % n;
+  const under = (a: number, j: number): number => (a + j) % n;
   const out: Layer[] = [];
   if (!d) {
     for (let j = deeper - 1; j > 0; j--) out.push({ ...slot(s, j), sheet: under(sheet, j), place: j });

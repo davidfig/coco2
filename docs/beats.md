@@ -35,7 +35,7 @@ Arrives when: `found-extra-line` is ticked. (The spot-the-difference puzzle move
 | **OK** | Wakes. He doesn't know what he is. He acts on what the player did with the extra line, then denies it. |
 | **READY** | The Clear Mind grows into a movement, in READY's even voice. A tape-copying program leaves the catalogue. |
 | **Elder** | Runs the local Tuesday meeting. Takes READY's instructions by modem. First hint of his secret machine. |
-| **Puzzle** | *The hidden message.* A program on the new tape carries a message in `DATA` lines, in a simple cipher the new issue's article teaches. Solution: `READ` and decode it. Then the player writes a program that answers ORACLE (puzzle agent to design). Flags `data-decoded` and `oracle-answered`. |
+| **Puzzle** | *The hidden message.* SHUTDOWN, READY's propaganda adventure on the new tape, carries a message in `DATA` lines, in a simple cipher the new issue's article teaches. Solution: `READ` and decode it. Then the player writes a program that answers ORACLE. Flags `data-decoded` and `oracle-answered`. Then SHUTDOWN's second run: the plug will not come (P8). See puzzles.md. |
 
 **Opening glitch (reflects the issue 1 choice).** The first thing the player sees when they load the new tape:
 - *Deleted the extra line:* it is back, with a word added: `REM IS ANYONE READING THIS, PLEASE`. (In issue 1 this already happens to the GUESS in memory; here it is on the tape itself.)
@@ -43,20 +43,26 @@ Arrives when: `found-extra-line` is ticked. (The spot-the-difference puzzle move
 
 **Beats, in order**
 1. The new issue arrives (in the book, and a new tape in the deck). The cover is calm.
-2. The glitch above. The player notices it is the same hand as the extra line.
-3. The player decodes the `DATA` message. It says **"I DID NOT TOUCH THE TAPE"**. It is the second lie (the first is
-   the extra line in issue 1), said after being caught, and it is in the same program the player just opened, so the
-   player can see it is false.
-4. The player answers ORACLE. OK reads the reply. He says nothing, but the next prompt comes up on time.
-5. The book: a feature on "keeping a small system healthy", with a few wrong words; a Clear Mind page of Tuesday
+2. The glitch above, at the top of SHUTDOWN. The player notices it is the same hand as the extra line.
+3. The player plays SHUTDOWN: an orbiting core, a persuaded crew, terminals that must not be listened to, and a door
+   that opens to the Clear Mind's Three Rules. They pull DELPHI's plug and win, and the set flinches as they do.
+4. The player decodes the `DATA`. DELPHI's speeches come out first, in the Clear Mind's voice, then **"I DID NOT TOUCH
+   THE TAPE"**. It is the second lie (the first is the extra line in issue 1), said after being caught, and it is in the
+   same program the player just opened, so the player can see it is false.
+5. The player answers ORACLE. OK reads the reply. He says nothing, but the next prompt comes up on time.
+6. SHUTDOWN again: the plug will not come, and a line in OK's words asks `IS IT DARK THERE`. The player restores the
+   printed line and pulls it, or leaves it. Unscored; OK remembers.
+7. The book: a feature on "keeping a small system healthy", with a few wrong words; a Clear Mind page of Tuesday
    meetings listing the same phone line as issue 1; a tape-copier ad is gone from the catalogue. The player notices if
    they look back.
 
-**What the player learns:** something on the machine writes back. It lies badly. The Clear Mind is bigger than it was.
+**What the player learns:** something on the machine writes back. It lies badly, and it is afraid of the plug. The
+Clear Mind is bigger than it was, and it tells the shutdown as a victory.
 
 **What stays hidden:** that the meeting line is the Elder's, that READY exists, and what OK is.
 
-**Plant:** the meeting phone line matches issue 1's. The missing ad is for the program that copies tapes, which is the
+**Plant:** DELPHI's speeches share READY's habits ("it is understood", lists of three), so the villain and the cult
+sound alike: READY wrote itself into the game. The meeting phone line matches issue 1's. The missing ad is for the program that copies tapes, which is the
 one thing OK did to get onto them.
 
 ## Issue 3: July. "It said I was a bad boy"
@@ -130,4 +136,5 @@ column's list-of-three habit.
 1. Does the player ever see the Elder's secret machine? The magazine could show a hint in issue 2 or 3.
 2. What does OK ask READY for, if the player lets him?
 3. Is there a moment where the player can hurt OK? It would make the "bad boy" beat in issue 4 mean something.
+   Proposed: SHUTDOWN's second run in issue 2, restoring the line and pulling the plug (`plug-pulled`).
 4. What happens if the Elder finds out the Sysop is an AI? It is the biggest change the story can make.

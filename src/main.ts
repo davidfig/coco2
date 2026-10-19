@@ -73,7 +73,7 @@ const story = new Issue1Story(screen, tv, (f) => magazine.state.flags.has(f), (f
 const recorder = new Recorder(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), instant);
 computer.recorder = recorder;
 recorder.sound = new RecorderSound(sound);
-const story2 = new Issue2Story(screen, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), basic.interp);
+const story2 = new Issue2Story(screen, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), basic.interp, () => tv.flinch());
 /** A new player is drawn to the notes, and then to the magazine, until each has been opened once. */
 const guide = new Guide((f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f));
 const puzzles = new PuzzleWatcher(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), [...ISSUE_1_RULES, ...story.rules, ...ISSUE_2_RULES, ...story2.rules]);

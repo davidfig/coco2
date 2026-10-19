@@ -41,7 +41,7 @@ export function drawMayContents(ctx: Ctx): void {
   let y = section('Features', 150);
   y = entry('Keeping It Healthy', 'The Clear Mind', 'mayHealthy', 'Care and feeding of a small system', y);
   y = entry('Secret Messages', 'Dale Wick', 'maySecret', 'DATA, READ, and a code to crack', y);
-  y = entry('Hangman', 'Tom Brannigan', 'mayHangman', 'Twelve words and six chances', y);
+  y = entry('Shutdown', 'The Clear Mind', 'mayShutdown', 'The night the great machine went quiet', y);
   y = entry('Rainbow On Tape', 'Dale Wick', 'mayTape', null, y);
   y = entry('A Quiet Hour', 'The Clear Mind', 'mayClearMind', 'Tuesday meetings near you', y);
   y = entry('Marketplace', 'Our Advertisers', 'mayMarketplace', null, y);
@@ -63,8 +63,8 @@ export function drawMayEditorial(ctx: Ctx): void {
       { text: 'On April 1 the Small Systems Act was amended. The limit on the machines that may be sold has come down, and three things may no longer be sold at all: modems faster than 300 baud, second disk drives, and programs that copy tapes. Machines you already own are not affected.' },
       { text: 'Your CoCo is still inside the limit, with room to spare. Nothing you have read in these pages, or typed in from them, is against any rule. We checked, and then we checked again.' },
       { text: 'Some of our advertisers have had to change what they offer, and you may find the catalogue pages a little thinner. We have not tried to fill the gaps.' },
-      { text: 'Now, the issue. Dale Wick has written about DATA and READ, the two words that let a program carry its own facts, and he has hidden a message from all of us in this month’s tape for you to find (page ' + pageNo('maySecret') + '). Tom Brannigan’s HANGMAN is the program it is hidden in (page ' + pageNo('mayHangman') + ').' },
-      { text: 'Rainbow On Tape is short this month: ABOUT and HANGMAN, and nothing else. A two-program tape is better than a late one.' },
+      { text: 'Now, the issue. Dale Wick has written about DATA and READ, the two words that let a program carry its own facts, and he has hidden a message from all of us in this month’s tape for you to find (page ' + pageNo('maySecret') + '). It is hidden in SHUTDOWN, an adventure the Clear Mind’s youth committee has offered us (page ' + pageNo('mayShutdown') + '). It is a game about the night of the shutdown, told as a story with a happy ending, and we print it as it came to us.' },
+      { text: 'Rainbow On Tape is short this month: ABOUT and SHUTDOWN, and nothing else. A two-program tape is better than a late one.' },
       { text: 'Our cover feature was offered to us by the small systems committee of the Clear Mind. It is sensible advice, and plainly written, and we are glad to print it. The Clear Mind has also taken a page to list its Tuesday meetings, which have grown a great deal since we last mentioned them.' },
     ],
     y,

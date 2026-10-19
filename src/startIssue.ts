@@ -17,7 +17,7 @@ const asked = new URLSearchParams(location.search).get('issue');
 const start = asked === null ? undefined : ISSUE_STARTS[Number(asked) - 1];
 if (start) {
   const issue = start.flags.includes('issue2-waiting') ? 'may' : 'march';
-  writeSave({ flags: [...start.flags], issue, pages: {}, page: ISSUES[issue][0], open: false, reading: false });
+  writeSave({ flags: [...start.flags], issue, pages: {}, page: ISSUES[issue][0] });
   try {
     for (const key of [TAPE_KEY, MAY_TAPE_KEY, REPLY_KEY]) localStorage.removeItem(key);
     if (!start.named) localStorage.removeItem(NAME_KEY);

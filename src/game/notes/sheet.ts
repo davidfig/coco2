@@ -1,6 +1,6 @@
 import { dash, hashSeed, measure, wrap, write } from '../handwriting';
 import { type Written, doodle } from './doodles';
-import { type Note, isSolved, noteText, visibleNotes } from './notes';
+import { DAYS, type Note, isSolved, noteText, visibleNotes } from './notes';
 import { type InkMark, ageOver, ageUnder } from './wear';
 import type { IssueId } from '../magazine/pages';
 
@@ -22,7 +22,9 @@ const EDGE = 26;
 const HOLE_X = 46;
 const HOLES = [-1, 0, 1].map((i) => Math.round(SHEET_H / 2 + i * 4.25 * SHEET_DPI));
 /** The day the notes are dated: years after the magazines (1986, see cover.ts), with the CoCo banned; March, as the first issue is. */
-const DATE = 'Mar 14, 1991';
+const DATE = DAYS[0].date;
+/** The size of the heading's date, a day's date line and the page number. */
+const DATE_SIZE = 26;
 /** Rows of writing that fit under the heading. */
 const CAPACITY = Math.floor((SHEET_H - 30 - TOP) / LINE_H);
 
@@ -181,13 +183,17 @@ export interface PageLink {
 
 type Entry = { note: Note; solved: boolean; lines: string[] };
 
-/** The notes laid out on sheets, oldest first. A note that will not fit on a sheet starts the next one; nothing is dropped. */
+/**
+ * The notes laid out on sheets, oldest first. A note that will not fit on a sheet starts the next one; nothing is dropped.
+ * A day's date goes with the note under it, never alone at the foot of a sheet.
+ */
 export function paginate(flags: ReadonlySet<string>): Entry[][] {
   const sheets: Entry[][] = [[]];
   let used = 0;
-  for (const note of visibleNotes(flags)) {
-    const e = { note, solved: isSolved(note, flags), lines: wrap(noteText(note, flags), SIZE, SHEET_W - LEFT - 40) };
-    if (used + e.lines.length > CAPACITY && sheets[sheets.length - 1].length) {
+  const entries = visibleNotes(flags).map((note) => ({ note, solved: isSolved(note, flags), lines: wrap(noteText(note, flags), SIZE, SHEET_W - LEFT - 40) }));
+  for (const [i, e] of entries.entries()) {
+    const keep = e.note.date ? (entries[i + 1]?.lines.length ?? 0) : 0;
+    if (used + e.lines.length + keep > CAPACITY && sheets[sheets.length - 1].length) {
       sheets.push([]);
       used = 0;
     }
@@ -212,21 +218,33 @@ export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<stri
   const k = Math.min(sheet ?? sheets.length - 1, sheets.length - 1);
   paper(ctx, k);
   ageUnder(ctx, SHEET_W, SHEET_H, EDGE, handled, k);
-  // Only the first sheet is headed, with the title and the date; the later ones just carry on.
+  // Only the first sheet is headed, with the title and the date; the later ones carry their page number there instead.
   let titleEnd = LEFT - 36;
-  let dateStart = SHEET_W - 30;
+  let dateStart: number;
   if (k === 0) {
     titleEnd = LEFT + write(ctx, 'My Notes', LEFT, 58, { size: 44, seed: 5, mood: 0.03 });
-    dateStart = SHEET_W - 40 - measure(DATE, 26);
-    write(ctx, DATE, dateStart, 50, { size: 26, seed: 9, mood: 0.05 });
+    dateStart = SHEET_W - 40 - measure(DATE, DATE_SIZE);
+    write(ctx, DATE, dateStart, 50, { size: DATE_SIZE, seed: 9, mood: 0.05 });
+  } else {
+    const no = `p. ${k + 1}`;
+    dateStart = SHEET_W - 40 - measure(no, DATE_SIZE);
+    write(ctx, no, dateStart, 50, { size: DATE_SIZE, seed: 40 + k, mood: 0.05 });
   }
-  if (sheets.length > 1) write(ctx, String(k + 1), SHEET_W / 2 - 8, SHEET_H - 34, { size: 26, seed: 40 + k, mood: 0.05 });
   let row = 1;
   const INK: [number, number, number] = [28, 58, 170];
   const inks: InkMark[] = [];
   const links: PageLink[] = [];
   const written: Written[] = [];
   for (const { note, solved, lines } of sheets[k]) {
+    if (note.date) {
+      // A new day: its date at the right, over that day's notes.
+      const y = TOP + row * LINE_H;
+      const w = measure(lines[0], DATE_SIZE);
+      const pen = { size: DATE_SIZE, seed: hashSeed(note.id), mood: note.mood, ink: INK };
+      write(ctx, lines[0], SHEET_W - 40 - w, y - 6, pen);
+      row++;
+      continue;
+    }
     const top = TOP + row * LINE_H - 6;
     const base = hashSeed(note.id);
     const ink = INK;

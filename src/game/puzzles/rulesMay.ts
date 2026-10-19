@@ -1,6 +1,6 @@
 import type { Interpreter } from '../basic/interpreter';
 import type { Program } from '../basic/program';
-import { HANGMAN_REM_LINE, KNOWN_MESSAGES, MESSAGE_LINE, OK_MESSAGE, ORACLE_ASK, ORACLE_HOW, dataNumbers, decode, isHangman, isOracle } from './listingsMay';
+import { KNOWN_MESSAGES, MESSAGE_LINE, OK_MESSAGE, ORACLE_ASK, ORACLE_HOW, PLUG_HELD, PLUG_LINE, SHUTDOWN_REM_LINE, dataNumbers, decode, isOracle, isShutdown } from './listingsMay';
 import { screenText } from './rules';
 import { MAY_TAPE_KEY } from '../tapes';
 import type { Rule } from './watcher';
@@ -48,21 +48,34 @@ const mayLoaded: Rule = (() => {
   };
 })();
 
-/** HANGMAN is in memory (loaded, back at OK). */
-const hangmanLoaded: Rule = (e, ctx) => {
-  if (e.type === 'idle' && ctx.has('issue2-waiting') && isHangman(ctx.interp.program)) ctx.set('hangman-loaded');
+/** SHUTDOWN is in memory (loaded, back at OK). */
+const shutdownLoaded: Rule = (e, ctx) => {
+  if (e.type === 'idle' && ctx.has('issue2-waiting') && isShutdown(ctx.interp.program)) ctx.set('shutdown-loaded');
 };
 
-/** CHECK with HANGMAN in memory: the sums part from the magazine's at OK's REM. */
-const hangmanChecked: Rule = (e, ctx) => {
-  if (e.type === 'direct' && /^\s*CHECK\s*$/i.test(e.text) && ctx.has('issue2-waiting') && isHangman(ctx.interp.program)) ctx.set('hangman-checked');
+/** CHECK with SHUTDOWN in memory: the sums part from the magazine's at OK's REM. */
+const shutdownChecked: Rule = (e, ctx) => {
+  if (e.type === 'direct' && /^\s*CHECK\s*$/i.test(e.text) && ctx.has('issue2-waiting') && isShutdown(ctx.interp.program)) ctx.set('shutdown-checked');
 };
 
-/** OK's REM under HANGMAN's title was on the screen after a LIST. */
-const hangmanRem = seenInListing(isHangman, HANGMAN_REM_LINE, (m) => firstRow(m, HANGMAN_REM_LINE), 'hangman-rem');
+/** OK's REM under SHUTDOWN's title was on the screen after a LIST. */
+const shutdownRem = seenInListing(isShutdown, SHUTDOWN_REM_LINE, (m) => firstRow(m, SHUTDOWN_REM_LINE), 'shutdown-rem');
 
 /** Line 990 (the message, as OK left it) was on the screen after a LIST. */
-const messageSeen = seenInListing(isHangman, MESSAGE_LINE, (m) => firstRow(m, MESSAGE_LINE), 'message-seen');
+const messageSeen = seenInListing(isShutdown, MESSAGE_LINE, (m) => firstRow(m, MESSAGE_LINE), 'message-seen');
+
+/**
+ * Lines of SHUTDOWN that mean something when they run: a terminal listened to (570), the core door asking for the Three
+ * Rules (825) and opening (850), the plug pulled and the game won (780), and the plug held by OK's line 710.
+ */
+const shutdownPlayed: Rule = (e, ctx) => {
+  if (e.type !== 'line' || !ctx.has('issue2-waiting') || !isShutdown(ctx.interp.program)) return;
+  if (e.num === 570) ctx.set('listened');
+  else if (e.num === 825) ctx.set('door-asked');
+  else if (e.num === 850) ctx.set('rules-spoken');
+  else if (e.num === 780) ctx.set(ctx.has('plug-held') ? 'plug-pulled' : 'shutdown-won');
+  else if (e.num === PLUG_LINE && ctx.has('shutdown-won') && ctx.interp.program.list().includes(PLUG_HELD)) ctx.set('plug-held');
+};
 
 /** The decoder printed OK's message: the player has read it. */
 const dataDecoded: Rule = (e, ctx) => {
@@ -87,8 +100,11 @@ const oracleRead: Rule = (e, ctx) => {
 
 /** A message in the code that the player wrote: what the program's DATA decodes to, if it is not one of the known ones. */
 export function playerMessage(p: Program): string | null {
-  const words = decode(dataNumbers(p)).trim().replace(/ +/g, ' ');
-  if (words.replace(/ /g, '').length < 2 || KNOWN_MESSAGES.includes(words)) return null;
+  // What is left once every message the player did not write is taken out (SHUTDOWN's DATA holds several at once).
+  let words = decode(dataNumbers(p)).replace(/ +/g, ' ');
+  for (const m of KNOWN_MESSAGES) words = words.split(m).join(' ');
+  words = words.trim().replace(/ +/g, ' ');
+  if (words.replace(/ /g, '').length < 2) return null;
   return words;
 }
 
@@ -108,4 +124,4 @@ const oracleAnswered: Rule = (e, ctx) => {
   ctx.set('oracle-answered');
 };
 
-export const ISSUE_2_RULES: readonly Rule[] = [mayLoaded, hangmanLoaded, hangmanChecked, hangmanRem, messageSeen, dataDecoded, oraclePassed, oracleAsked, oracleRead, oracleAnswered];
+export const ISSUE_2_RULES: readonly Rule[] = [mayLoaded, shutdownLoaded, shutdownChecked, shutdownRem, messageSeen, shutdownPlayed, dataDecoded, oraclePassed, oracleAsked, oracleRead, oracleAnswered];
