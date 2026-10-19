@@ -35,6 +35,10 @@ Run `typecheck`, `check:size` and `test` before finishing any change. Design not
 
 - `?clear` starts over: it removes every `coco2.*` localStorage key (CSAVEs, TV knobs, magazine flags, notebook wear)
   and then drops itself from the URL (`src/clear.ts`, imported first in `main.ts`).
+- `?issue=N` starts at the beginning of issue N with the issues before it played through (`?issue=2`: May on the table
+  and in the recorder, issue 1's notes all written, a name kept). It writes the story save from `ISSUE_STARTS`
+  (`debug/checkpoints.ts`, one checkpoint per issue), forgets CSAVEs and the ORACLE reply, keeps the TV knobs and
+  notebook wear, and drops itself from the URL so a reload carries on (`src/startIssue.ts`). A new issue adds its start there.
 - **Debug menu** (`game/debug/`): F2 in dev builds, `?debug` opens it at start (in any build). Checkpoints jump to a
   place in the story (they set exactly that flag list, in order, keep a name, and type `NEW`, `CLS` and the right CLOAD
   plus fixes at the CoCo), single flags tick on and off, and there are controls for the name, notebook wear, the
@@ -55,6 +59,9 @@ Run `typecheck`, `check:size` and `test` before finishing any change. Design not
 - `?tamper=ghost|scan|both` (ghost is the default) picks how story-made screen changes show; `coco.tamperTest()` swaps a few letters to
   see it (`coco.tv.tamperStyle` / `tamperStrength` switch it live).
 - CSAVE writes to this browser's localStorage (`coco2.tape`), so a test CSAVE leaves a file behind.
+- The recorder starts empty (`coco2.recorder` keeps what is in it): `coco.recorder.click('march')` puts the cassette in
+  (`'recorder'` takes it out), `coco.recorder.put('may')` at once; the checkpoints put the right one in. Its door and the
+  carry run on `recorder.step`, so a hidden pane needs `advance` frames to finish them.
 - The set starts as it was left (`coco2.tv`: channel, volume, fine tuning, vertical hold, power, saved once the knobs
   come to rest); a test that turns a knob or switches off leaves it that way. `localStorage.removeItem('coco2.tv')`
   gives channel 3, on.
@@ -107,6 +114,10 @@ src/game/
                       shake (a phone shaken smacks the set; iOS asks leave at the first smack by hand), install (the
                       home-screen app: `public/manifest.webmanifest`, `public/sw.js` for offline, production builds only)
   tapes/              Rainbow On Tape, the cassette in the recorder: index (tape order) and one .bas file per program
+  recorder/           the cassette recorder left of the set (a Realistic CCR-81) and the cassettes in front of it, marched in the
+                      computer's pass: layout (sizes, places, poses; single source), recorderGlsl (SDF, materials, the smoked
+                      window, shadows), print (its top's legends, the pencilled labels), recorder (which cassette is where, the
+                      door and the carry, PLAY latched, `Tape.present`; `coco2.recorder`), hit (clicks)
   magazine/           the RAINBOW: book (state, slide-in, GPU pass), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn; lying on the table, folded back on a rounded spine) + bookEdges (the block of paper's sides), bookLayout (TV/book split), bookInput
                       (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, HANGMAN, the tape) + mayLetters (letters, classifieds), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner (parody ads), adsInsideBack + adsBackCover (the back
                       pages, laid out like real 1986 mail-order and national ads) + adsMail (their type: tight headlines, raised-cent
@@ -167,9 +178,14 @@ src/game/
 
 ## The tape
 
+- **The recorder** (`game/recorder/`) starts empty: a click on a cassette on the table puts it in (the door swings up,
+  it is lowered into the well, PLAY latches), a click on the recorder takes it out. CLOAD, SKIPF and CSAVE wait (`S`,
+  `TapeDeck.waiting`) until a cassette is seated with the door shut (`Tape.present`), and after a moment pull the view
+  back to the desk to show it. The May cassette lies beside March's once May has come; the cassette in the recorder
+  decides which tape BASIC reads. `HeadlessCoco` has no recorder: its tape is always present.
 - The cassette holds this issue of Rainbow On Tape (`game/tapes/`: March's ABOUT, GUESS, RAINBOW, ORACLE, ADVENT; from issue 2,
   the May tape: ABOUT, HANGMAN, ORACLE) followed by the player's CSAVEs (localStorage, one key per cassette); a CSAVE under a
-  built-in name records over it for that browser. `Tape.insert` swaps cassettes (`story/issue2.ts` does it).
+  built-in name records over it for that browser. `Tape.insert` swaps cassettes (the recorder does, as one goes in).
 - It has a position, like a real tape: `CLOAD` alone loads the next file, `CLOAD "NAME"` winds forward (wrapping) and
   shows `F NAME` for each file it passes, `SKIPF` winds past one. Not found after a whole pass is ?IO ERROR.
 - A new program: a `.bas` file in `game/tapes/` (numbered lines, upper case, mind the crunching: no keywords inside

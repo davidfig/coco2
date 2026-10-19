@@ -53,28 +53,28 @@ export const COMMANDS: Record<string, Handler> = {
     const name = c.atStatementEnd() ? '' : evalStr(m, c);
     const text = m.program.save();
     m.emit({ type: 'csave', name });
-    m.playTape([{ seconds: tapeSeconds(text), done: () => {
+    m.playTape(() => [{ seconds: tapeSeconds(text), done: () => {
       if (!m.tape.save(name, text)) fail('IO');
       m.state = 'running';
-    } }]);
+    } }], true);
   },
 
   // CLOAD ["NAME"]: wind to the file (or the next one) and load it; a running program ends there.
   CLOAD: (m, c) => {
     const name = c.atStatementEnd() ? '' : evalStr(m, c);
     m.emit({ type: 'cload', name });
-    m.playTape(search(m, name, (file) => {
+    m.playTape(() => search(m, name, (file) => {
       m.program.load(file.text);
       m.edited();
       m.finish();
-    }));
+    }), false, 'S');
   },
 
   // SKIPF ["NAME"]: wind past the file without loading it (handy for seeing what's on the tape).
   SKIPF: (m, c) => {
     const name = c.atStatementEnd() ? '' : evalStr(m, c);
-    m.playTape(search(m, name, () => {
+    m.playTape(() => search(m, name, () => {
       m.state = 'running';
-    }));
+    }), false, 'S');
   },
 };

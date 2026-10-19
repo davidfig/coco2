@@ -4,6 +4,8 @@ import { PLASTIC_GLSL } from './plastic';
 import { WEAR_GLSL } from './wear';
 import { TABLE_GLSL } from './table';
 import { CORDS_BACK, CORDS_SIDE, cordsGlsl } from './cords';
+import { RECORDER_GLSL } from '../recorder';
+import { recorderBox } from '../recorder/layout';
 import { BADGE, CAP, CASE, EYE, KB_X0, KB_Z0, PITCH, PLACE, PLATE, PRINT_BADGE_V0, PRINT_KB_V, PRINT_KEYS, PRINT_W, PLATE_T, TABLE, keysGlsl, ventsGlsl } from './layout';
 
 const f = (n: number): string => n.toFixed(4);
@@ -12,6 +14,7 @@ const f = (n: number): string => n.toFixed(4);
  * The CoCo 2 on the table, raymarched: the case (the keyboard deck in front, a sloped face up to the rear hump), the
  * black plate the keys come up through and 53 sculpted caps, the vent slots cut through the hump, the badge plate
  * stuck on it, the cartridge slot in the right side, the seam round the case, the feet; and its shadow on the table.
+ * Beside it, the cassette recorder and the cassettes (`recorderGlsl.ts`).
  * A camera at `EYE` whose rays cross the TV's front plane (z = 0) at the panel point under each pixel, so the model
  * sits in the same picture as the flat-drawn set. Lit by the room's light from the upper left and the screen's glow.
  */
@@ -127,11 +130,12 @@ float keyRun(vec3 q, float x0, float n, float z) {
 ${keysGlsl()}
 ${ventsGlsl()}
 ${cordsGlsl()}
+${RECORDER_GLSL}
 
 /** The shell's outer box, for the seam. */
 float shell(vec3 p) { return sdBox(p - vec3(0.0, 0.5 * (HUMP + FOOT), 0.0), vec3(HW, 0.5 * (HUMP - FOOT), HD), 0.045); }
 
-/** Distance and material: 0 case, 1 cap, 3 feet, 4 the badge, 5 the power cord, 6 the RF lead. */
+/** Distance and material: 0 case, 1 cap, 3 feet, 4 the badge, 5 the power cord, 6 the RF lead, 7–10 the cassette cable; 20 and up the recorder. */
 vec2 map(vec3 p) {
   float body = shell(p);
   vec3 q = deck(p);
@@ -162,7 +166,7 @@ vec2 map(vec3 p) {
     vec2 c = cords(p, r.x);
     if (c.y > 0.0) r = c;
   }
-  return r;
+  return recorder(p, r);
 }
 
 vec3 normalAt(vec3 p) {
@@ -217,6 +221,8 @@ vec3 shade(vec3 p, vec3 rd, float id, float fp) {
   } else if (id == 3.0) {
     alb = vec3(0.02);
     bump = 0.0;
+  } else if (id >= 20.0) {
+    recMaterial(p, n, id, fp, st, alb, gloss, bump);
   } else if (id >= 5.0) {
     alb = id == 5.0 ? vec3(0.045) : vec3(0.07, 0.07, 0.075); // black rubber; the RF lead a little greyer
     gloss = 0.5;
@@ -248,20 +254,27 @@ vec3 shade(vec3 p, vec3 rd, float id, float fp) {
   float facing = smoothstep(-0.2, 0.3, p.z + AT.z); // only in front of the set's face: behind it, the cabinet's in the way
   col += alb * uGlow * 0.12 * max(dot(sn, normalize(scr)), 0.0) / (1.0 + 0.25 * dot(scr, scr)) * ao * facing;
   vec3 h = normalize(LIGHT - rd);
-  col += gloss * vec3(0.6, 0.57, 0.52) * pow(max(dot(sn, h), 0.0), id >= 5.0 ? 12.0 : 40.0) * sh; // the cords' sheen is broad
+  col += gloss * vec3(0.6, 0.57, 0.52) * pow(max(dot(sn, h), 0.0), id >= 5.0 && id < 20.0 ? 12.0 : 40.0) * sh; // the cords' sheen is broad
+  col += recEmit;
   return col;
 }
 
 ${TABLE_GLSL}
+/** Where a ray is inside a box: from (x) and to (y) along it; empty if x >= y. */
+vec2 boxSpan(vec3 ro, vec3 rd, vec3 lo, vec3 hi) {
+  vec3 t0 = (lo - ro) / rd, t1 = (hi - ro) / rd;
+  vec3 tn = min(t0, t1), tf = max(t0, t1);
+  return vec2(max(max(tn.x, tn.y), tn.z), min(min(tf.x, tf.y), tf.z));
+}
 void main() {
   vec2 p = (gl_FragCoord.xy - uPic.xy) / uPic.z + TUBE_C;
   vec3 ro = EYE - AT;
   vec3 rd = normalize(vec3(p, 0.0) - EYE);
-  // The box it lies in.
-  vec3 bmin = vec3(-${f(CORDS_SIDE)}, 0.0, ${f(CORDS_BACK)}) - 0.02, bmax = vec3(${f(CORDS_SIDE)}, HUMP, HD) + 0.02;
-  vec3 t0 = (bmin - ro) / rd, t1 = (bmax - ro) / rd;
-  vec3 tn = min(t0, t1), tf = max(t0, t1);
-  float near = max(max(tn.x, tn.y), tn.z), far = min(min(tf.x, tf.y), tf.z);
+  // The boxes it lies in: the machine and its cords, and the recorder (the door open, a cassette carried in).
+  vec2 b = boxSpan(ro, rd, vec3(-${f(CORDS_SIDE)}, 0.0, ${f(CORDS_BACK)}) - 0.02, vec3(${f(CORDS_SIDE)}, HUMP, HD) + 0.02);
+  vec2 rb = boxSpan(ro, rd, vec3(${recorderBox()[0].map(f).join(', ')}), vec3(${recorderBox()[1].map(f).join(', ')}));
+  if (rb.x < rb.y) b = b.x < b.y ? vec2(min(b.x, rb.x), max(b.y, rb.y)) : rb;
+  float near = b.x, far = b.y;
   // Over the set, whatever lies behind its face is hidden (behindSet): the march stops there.
   vec2 cq = abs(p) - CAB + CAB_R;
   if (length(max(cq, 0.0)) + min(max(cq.x, cq.y), 0.0) - CAB_R < 0.0) far = min(far, (-AT.z - ro.z) / rd.z);
@@ -287,7 +300,7 @@ void main() {
   if (hitT > 0.0 && behindSet(ro + rd * hitT, p)) hitT = -1.0, edge = 1e3;
   if (hitT > 0.0) {
     vec3 hp = ro + rd * hitT;
-    outColor = vec4(shade(hp, rd, map(hp).y, pix * hitT), 1.0);
+    outColor = vec4(recGlass(ro, rd, hitT, shade(hp, rd, map(hp).y, pix * hitT)), 1.0);
     return;
   }
   // The silhouette's edge, within a pixel: shade the nearest point and cover part of the pixel.

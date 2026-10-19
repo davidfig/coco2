@@ -64,7 +64,7 @@ export class Interpreter implements Machine {
   promptLag = 0;
 
   constructor(readonly screen: TextScreen, readonly tape: Tape) {
-    this.deck = new TapeDeck(screen);
+    this.deck = new TapeDeck(screen, () => tape.present);
   }
 
   /** A line typed at the OK prompt: a numbered line is stored, anything else runs now. */
@@ -280,10 +280,10 @@ export class Interpreter implements Machine {
     }
   }
 
-  /** Run the cassette through these steps; the last one's `done` decides what happens next. */
-  playTape(steps: TapeStep[]): void {
+  /** Run the cassette through the steps `build` gives once it can move (see `TapeDeck.play`). */
+  playTape(build: () => TapeStep[], record = false, waiting?: string): void {
     this.state = 'tape';
-    this.deck.play(steps);
+    this.deck.play(build, record, waiting);
   }
 
   /** SOUND's duration: hold the program this long. */

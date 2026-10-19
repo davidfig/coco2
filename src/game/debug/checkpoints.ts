@@ -11,6 +11,7 @@ export const STORY_FLAGS: readonly [flag: string, label: string][] = [
   ['opened-magazine', 'opened the magazine'],
   ['printed', 'PRINT at the prompt'],
   ['first-program', 'ran the name program'],
+  ['tape-inserted', 'first CLOAD or CSAVE'],
   ['adventure-loaded', 'ran ADVENT'],
   ['adventure-sn', 'saw ?SN ERROR IN 30'],
   ['adventure-runs', 'fixed line 30'],
@@ -70,6 +71,9 @@ const FIX_30 = `${ADVENT.typo} PRINT "THE TAPE CRACKLES."\n`;
  * A place in the story to jump to: exactly these flags (in this order), whether the first program's name is kept,
  * and what is typed at the CoCo afterwards to put the right program in memory (left for the player to RUN).
  */
+/** The name a checkpoint keeps when none has been typed in yet. */
+export const DEFAULT_NAME = 'TESTER';
+
 export interface Checkpoint {
   label: string;
   flags: readonly string[];
@@ -81,7 +85,7 @@ const START = ['booted'];
 /** Past the fresh start the player has found the notes and the magazine, so the guide no longer calls to them. */
 const GUIDED = [...START, 'opened-notes', 'opened-magazine'];
 const HELLO = [...GUIDED, 'printed', 'first-program'];
-const BROKEN = [...HELLO, 'adventure-loaded', 'adventure-sn'];
+const BROKEN = [...HELLO, 'tape-inserted', 'adventure-loaded', 'adventure-sn'];
 const FIXED = [...BROKEN, 'adventure-runs'];
 const LAMP = [...FIXED, 'looked', 'tamper-lamp', 'has-lamp'];
 const AT_DOOR = [...LAMP, 'mapped', 'door-examined', 'lock-examined', 'plate-read'];
@@ -94,7 +98,7 @@ const DELETED = [...FOUND, 'deleted-extra-line'];
 const ADVENT_FIXED = `CLOAD "ADVENT"\n${FIX_30}`;
 const GUESS = 'CLOAD "GUESS"\n';
 const THANKS = [...FOUND, 'ok-thanks', 'saw-thanks'];
-const MAY = [...THANKS, 'tape-inserted', 'issue1-done', 'issue1-closed', 'issue2-waiting'];
+const MAY = [...THANKS, 'issue1-done', 'issue1-closed', 'issue2-waiting'];
 const SEEN_990 = [...MAY, 'may-loaded', 'hangman-loaded', 'message-seen'];
 const DECODED = [...SEEN_990, 'hangman-checked', 'hangman-rem', 'data-decoded', 'seen-mayHangman'];
 const ASKED = [...DECODED, 'oracle-passed', 'oracle-asked'];
@@ -103,8 +107,11 @@ const HANGMAN = 'CLOAD "HANGMAN"\n';
 const DECODING = `${HANGMAN}${DECODER.join('\n')}\n`;
 const ORACLE = 'CLOAD "ORACLE"\n';
 
+const FRESH: Checkpoint = { label: 'Fresh start', flags: START };
+const MAY_CAME: Checkpoint = { label: 'May came (issue 2)', flags: MAY, named: true };
+
 export const CHECKPOINTS: readonly Checkpoint[] = [
-  { label: 'Fresh start', flags: START },
+  FRESH,
   { label: 'Found the notes and magazine', flags: GUIDED },
   { label: 'Said hello', flags: [...GUIDED, 'printed'] },
   { label: 'Ran the name program', flags: HELLO, named: true },
@@ -119,10 +126,13 @@ export const CHECKPOINTS: readonly Checkpoint[] = [
   { label: 'Deleted it (PLEASE next)', flags: DELETED, named: true, typed: `${GUESS}${GUESS_EXTRA_LINE}\n` },
   { label: 'Saw PLEASE', flags: [...DELETED, 'ok-pleads', 'saw-pleads'], named: true, typed: `${GUESS}${GUESS_EXTRA_LINE} REM ${GUESS_EXTRA_TEXT}, PLEASE\n` },
   { label: 'Saw THANK YOU', flags: THANKS, named: true, typed: `${GUESS}${GUESS_EXTRA_LINE} REM ${GUESS_EXTRA_TEXT}. THANK YOU\n` },
-  { label: 'May came (issue 2)', flags: MAY, named: true },
+  MAY_CAME,
   { label: `HANGMAN, saw line ${MESSAGE_LINE}`, flags: SEEN_990, named: true, typed: HANGMAN },
   { label: 'Decoder typed in (RUN next)', flags: SEEN_990, named: true, typed: DECODING },
   { label: 'Decoded: ORACLE next', flags: DECODED, named: true, typed: ORACLE },
   { label: 'ORACLE asked (answer next)', flags: ASKED, named: true, typed: 'NEW\n10 DATA 1,0,6,18,9,5,14,4,-1\n' },
   { label: 'Answered ORACLE', flags: ANSWERED, named: true },
 ];
+
+/** `?issue=N` (`src/startIssue.ts`): the start of issue N, every issue before it played through. Index 0 is issue 1. */
+export const ISSUE_STARTS: readonly Checkpoint[] = [FRESH, MAY_CAME];

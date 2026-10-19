@@ -1,10 +1,8 @@
 import type { Interpreter } from '../basic/interpreter';
-import { TAPE_KEY } from '../basic/tape';
 import type { TextScreen } from '../coco/screen';
 import { OK_LINES, OK_MESSAGE } from '../puzzles/listingsMay';
 import { screenText } from '../puzzles/rules';
 import type { Rule } from '../puzzles/watcher';
-import { MAY_TAPE_KEY, RAINBOW_TAPE, mayTape } from '../tapes';
 import { COLS, ROWS } from '../vdg/vdg';
 import { rowText } from './screenText';
 
@@ -16,27 +14,17 @@ const MISSTEP_EVERY: readonly [number, number] = [18, 34];
 const ON_TIME_AFTER = 2;
 
 /**
- * What the story does in issue 2 (see `docs/flags.md`, Issue 2): the May tape goes into the recorder, and until the player
- * answers ORACLE the machine is a little off in deniable ways (a late OK, a cursor colour out of order). OK's lines shimmer
- * whenever a listing puts them on the screen, and so does his message when the decoder prints it. The puzzles' own flags are
- * in `puzzles/rulesMay.ts`.
+ * What the story does in issue 2 (see `docs/flags.md`, Issue 2), besides the May cassette coming (it lies by the
+ * recorder for the player to put in: `recorder/`): until the player answers ORACLE the machine is a little off in
+ * deniable ways (a late OK, a cursor colour out of order). OK's lines shimmer whenever a listing puts them on the screen,
+ * and so does his message when the decoder prints it. The puzzles' own flags are in `puzzles/rulesMay.ts`.
  */
 export class Issue2Story {
-  private cassette: 'march' | 'may' | null = null;
   private misstepIn = MISSTEP_EVERY[0];
   private prompts = 0;
   private onTimeIn = -1;
 
   constructor(private readonly screen: TextScreen, private readonly has: (flag: string) => boolean, private readonly set: (flag: string) => void, private readonly interp: Interpreter) {}
-
-  /** The cassette in the recorder follows the issue on the table: the May tape once May has come (a checkpoint may go back). */
-  private insertTape(): void {
-    const want = this.has('issue2-waiting') ? 'may' : 'march';
-    if (want === this.cassette) return;
-    this.cassette = want;
-    if (want === 'may') this.interp.tape.insert(mayTape(this.has('deleted-extra-line')), MAY_TAPE_KEY);
-    else this.interp.tape.insert(RAINBOW_TAPE, TAPE_KEY);
-  }
 
   /** OK's lines in a listing, and his message as the decoder prints it, are his: claimed, so they shimmer and keep rippling. */
   private readonly hisLines: Rule = (e) => {
@@ -69,7 +57,6 @@ export class Issue2Story {
   }
 
   step(dt: number): void {
-    this.insertTape();
     const uneasy = this.has('issue2-waiting') && !this.has('oracle-answered');
     this.interp.promptLag = uneasy ? PROMPT_LAG : 0;
     if (uneasy && this.interp.state === 'idle' && (this.misstepIn -= dt) <= 0) {

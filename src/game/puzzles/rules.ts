@@ -42,9 +42,12 @@ export const isAdvent = (p: Program): boolean => p.lines[0]?.text.startsWith('RE
 /** One of ADVENT's numeric variables, 0 if it has none yet. */
 const advVar = (m: Interpreter, name: string): number => Number(m.vars.get({ name })) || 0;
 
-/** The tape went into the cassette recorder: the first CLOAD or CSAVE. The player can now see the cassette's label. */
+/**
+ * The tape is in the cassette recorder: the first CLOAD or CSAVE with it in (the page's recorder also sets it as the
+ * March cassette goes in). The player has seen the cassette's label.
+ */
 const tapeInserted: Rule = (e, ctx) => {
-  if (e.type === 'cload' || e.type === 'csave') ctx.set('tape-inserted');
+  if ((e.type === 'cload' || e.type === 'csave') && ctx.interp.tape.present) ctx.set('tape-inserted');
 };
 
 /** The notebook's "load the adventure": ADVENT was loaded and run (even if it stopped with an error at once). */

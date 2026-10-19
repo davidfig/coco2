@@ -1,3 +1,5 @@
+import { JACKS, REC, recToModel } from '../recorder/layout';
+
 const f = (n: number): string => n.toFixed(4);
 
 type Pt = readonly [number, number, number];
@@ -22,6 +24,18 @@ const RCA = { r: 0.032, len: 0.16 } as const;
 /** The jack and the cord's exit on the back panel (model frame; z is the panel). From the Operation Manual's Figure 9, seen from the front. */
 const TO_TV: Pt = [0.23, 0.22, -0.985];
 const CORD_EXIT: Pt = [-1.26, 0.07, -0.975];
+/** The cassette cable (about 4.5 mm), its 5-pin DIN plug in the CASSETTE jack on the back panel (left of centre), and its three leads' 3.5 mm plugs. */
+const CABLE = 0.017;
+const LEAD = 0.011;
+const CASSETTE: Pt = [-0.72, 0.21, -0.985];
+const DIN = { r: 0.05, len: 0.13 } as const;
+const PLUG = { r: 0.026, len: 0.12 } as const;
+/** Where the cable splits into its leads, on the table in front of the recorder's right side. */
+const SPLIT = recToModel(REC.hw + 0.38, CABLE, 0.32);
+
+/** A point out from the recorder's right side (its frame's x) at a jack's height and place. */
+const offSide = (j: (typeof JACKS)[number], out: number, y: number = j.y): Pt => recToModel(REC.hw + out, y, j.z);
+
 /** The table's back edge (model z: layout.ts's `EDGE.back` less `PLACE.z`, which can't be imported here: layout imports this). */
 const TABLE_BACK = -5.365;
 
@@ -39,11 +53,12 @@ export const CORDS: readonly Cord[] = [
     r: ZIP,
     lobe: ZIP * 0.85,
     pts: [CORD_EXIT, [-1.27, 0.045, -1.04], [-1.32, ZIP, -1.16],
-      // Straight back first, out of sight behind the hump, then out past the back-left corner, so it shows coming from behind the case.
-      [-1.36, ZIP, -1.6], [-1.42, ZIP, -2.0], [-1.7, ZIP, -2.32], [-2.15, ZIP, -2.48], [-2.4, ZIP, -2.85],
-      [-2.3, ZIP, -3.2], [-2.4, ZIP, -3.9], [-2.34, ZIP, -4.6], [-2.42, ZIP, -5.15],
+      // Straight back first, out of sight behind the hump, then out past the back-left corner, so it shows coming from
+      // behind the case; back along the set's left side, between it and the recorder.
+      [-1.36, ZIP, -1.6], [-1.42, ZIP, -2.0], [-1.6, ZIP, -2.32], [-1.76, ZIP, -2.72], [-1.8, ZIP, -3.25],
+      [-1.84, ZIP, -3.9], [-1.79, ZIP, -4.6], [-1.86, ZIP, -5.15],
       // Over the back edge and down the gap behind it (the table hides it from there).
-      [-2.44, ZIP * 0.8, TABLE_BACK + 0.01], [-2.45, -0.12, TABLE_BACK - 0.05], [-2.45, -0.5, TABLE_BACK - 0.06],
+      [-1.88, ZIP * 0.8, TABLE_BACK + 0.01], [-1.89, -0.12, TABLE_BACK - 0.05], [-1.89, -0.5, TABLE_BACK - 0.06],
     ],
     fittings: [{ a: [CORD_EXIT[0], CORD_EXIT[1], CORD_EXIT[2] + 0.02], b: [-1.265, 0.06, -1.03], ra: 0.03, rb: 0.022 }],
   },
@@ -61,6 +76,27 @@ export const CORDS: readonly Cord[] = [
       { a: [TO_TV[0], TO_TV[1], TO_TV[2] - RCA.len], b: [TO_TV[0], TO_TV[1], TO_TV[2] - RCA.len - 0.06], ra: RCA.r * 0.72, rb: COAX * 1.1 },
     ],
   },
+  {
+    r: CABLE,
+    // Out of the DIN plug and down behind the case, crossing over the power cord, out past the back-left corner and
+    // across the table to the recorder.
+    pts: [[CASSETTE[0], CASSETTE[1], CASSETTE[2] - DIN.len - 0.05], [-0.74, 0.15, -1.25], [-0.8, CABLE, -1.36], [-1.05, CABLE, -1.44],
+      [-1.32, 0.04, -1.56], [-1.5, CABLE, -1.72], [-1.66, CABLE, -1.98], [SPLIT[0] + 0.12, CABLE, SPLIT[2] + 0.2], SPLIT],
+    fittings: [
+      { a: [CASSETTE[0], CASSETTE[1], CASSETTE[2] + 0.02], b: [CASSETTE[0], CASSETTE[1], CASSETTE[2] - DIN.len], ra: DIN.r, rb: DIN.r * 0.9 },
+      { a: [CASSETTE[0], CASSETTE[1], CASSETTE[2] - DIN.len], b: [CASSETTE[0], CASSETTE[1], CASSETTE[2] - DIN.len - 0.06], ra: DIN.r * 0.7, rb: CABLE * 1.1 },
+      { a: [SPLIT[0] + 0.03, CABLE * 1.3, SPLIT[2] + 0.05], b: [SPLIT[0] - 0.03, CABLE * 1.3, SPLIT[2] - 0.05], ra: CABLE * 1.6, rb: CABLE * 1.6 },
+    ],
+  },
+  // The leads: from the split up into the jacks, each plug's barrel and boot standing out of the side.
+  ...JACKS.map((j, i): Cord => ({
+    r: LEAD,
+    pts: [SPLIT, recToModel(REC.hw + 0.34, LEAD, j.z + 0.1 - 0.03 * i), offSide(j, 0.27, j.y * 0.55), offSide(j, PLUG.len + 0.07), offSide(j, PLUG.len + 0.05)],
+    fittings: [
+      { a: offSide(j, -0.01), b: offSide(j, PLUG.len * 0.55), ra: j.r * 0.8, rb: j.r * 0.8 },
+      { a: offSide(j, PLUG.len * 0.4), b: offSide(j, PLUG.len + 0.05), ra: PLUG.r, rb: LEAD * 1.2 },
+    ],
+  })),
 ];
 
 /** Catmull-Rom through a cord's points, `n` segments a span. */

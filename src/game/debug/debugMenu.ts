@@ -3,10 +3,11 @@ import { MAY_TAPE_KEY } from '../tapes';
 import type { ColorBasic } from '../coco/basic';
 import type { Magazine } from '../magazine/book';
 import type { Notebook } from '../notes';
+import { RECORDER_KEY, type Recorder } from '../recorder';
 import { saveHandled } from '../notes/wear';
 import { NAME_KEY } from '../story';
 import type { Tv } from '../tv/tv';
-import { Checkpoint, CHECKPOINTS, STORY_FLAGS } from './checkpoints';
+import { Checkpoint, CHECKPOINTS, DEFAULT_NAME, STORY_FLAGS } from './checkpoints';
 import { DEBUG_CSS } from './debugStyle';
 
 /** What the debug menu reaches into. */
@@ -16,12 +17,11 @@ export interface DebugHooks {
   basic: ColorBasic;
   keyboard: { type(text: string): void };
   tv: Tv;
+  recorder: Recorder;
   tamperTest: () => void;
   stationTest: (channel: number) => void;
 }
 
-/** The name a checkpoint keeps when none has been typed in yet. */
-const DEFAULT_NAME = 'TESTER';
 /** How often the open menu re-reads the flags (the game sets them as it goes). */
 const REFRESH_MS = 400;
 
@@ -95,6 +95,7 @@ export class DebugMenu {
           button('Far station on 9', () => h.stationTest(9)),
           button('Tamper a few letters', () => h.tamperTest()),
           button('Reset knobs (reload)', () => this.forget('coco2.tv')),
+          button('Empty recorder (reload)', () => this.forget(RECORDER_KEY)),
         ),
       ),
       section(
@@ -166,8 +167,10 @@ export class DebugMenu {
 
   private jump(c: Checkpoint): void {
     this.setFlags(c.flags);
-    // The issue on the table goes with the checkpoint (the tape in the recorder follows the flags by itself).
-    this.h.magazine.setIssue(c.flags.includes('issue2-waiting') ? 'may' : 'march');
+    // The issue on the table goes with the checkpoint, and its cassette goes in the recorder (the CLOAD below needs it).
+    const issue = c.flags.includes('issue2-waiting') ? 'may' : 'march';
+    this.h.magazine.setIssue(issue);
+    this.h.recorder.put(issue);
     if (c.named) {
       if (!readName()) writeName(this.nameInput.value.trim().toUpperCase() || DEFAULT_NAME);
     } else writeName('');

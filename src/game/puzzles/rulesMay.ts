@@ -2,6 +2,7 @@ import type { Interpreter } from '../basic/interpreter';
 import type { Program } from '../basic/program';
 import { HANGMAN_REM_LINE, KNOWN_MESSAGES, MESSAGE_LINE, OK_MESSAGE, ORACLE_ASK, ORACLE_HOW, dataNumbers, decode, isHangman, isOracle } from './listingsMay';
 import { screenText } from './rules';
+import { MAY_TAPE_KEY } from '../tapes';
 import type { Rule } from './watcher';
 
 /** Where the player's answer to ORACLE is kept (OK reads it; later issues may use it). */
@@ -35,10 +36,17 @@ function seenInListing(is: (p: Program) => boolean, line: number, text: (m: Inte
 /** The first line of a program line as LIST prints it (a long line runs on to the rows below). */
 const firstRow = (m: Interpreter, num: number): string => m.program.list().find((l) => l.startsWith(`${num} `))?.slice(0, 32) ?? '\u0000';
 
-/** Anything loaded from the May tape. */
-const mayLoaded: Rule = (e, ctx) => {
-  if (e.type === 'cload' && ctx.has('issue2-waiting')) ctx.set('may-loaded');
-};
+/** Anything loaded from the May tape: a CLOAD come back to OK with the May cassette in the recorder (it may go in while the CLOAD waits). */
+const mayLoaded: Rule = (() => {
+  let loading = false;
+  return (e, ctx) => {
+    if (e.type === 'cload') loading = true;
+    else if (e.type === 'idle' && loading) {
+      loading = false;
+      if (ctx.has('issue2-waiting') && ctx.interp.tape.cassette === MAY_TAPE_KEY) ctx.set('may-loaded');
+    }
+  };
+})();
 
 /** HANGMAN is in memory (loaded, back at OK). */
 const hangmanLoaded: Rule = (e, ctx) => {

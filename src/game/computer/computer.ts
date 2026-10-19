@@ -8,6 +8,7 @@ import { CocoKeys, capsBounds, keyAt } from './keys';
 import { CORDS_BACK } from './cords';
 import { DeskTable, type View } from './deskTable';
 import { CASE, DeskSpot, EDGE, PLACE, PRINT_H, PRINT_W, deskBounds, drawPrint, keyboardBounds, lowestPoint, onCase, project } from './layout';
+import { type CassetteId, RECORDER_BOUNDS, type Recorder, drawRecorderPrint, recorderAt } from '../recorder';
 
 interface Rect {
   x: number;
@@ -35,6 +36,7 @@ const smooth = (t: number): number => t * t * (3 - 2 * t);
 const DRAWN_TOP = Math.max(
   ...[CORDS_BACK - 0.02, CASE.hd + 0.02].map((z) => project(0, CASE.hump + 0.02, z)[1]),
   project(0, 0, EDGE.back - PLACE.z)[1],
+  RECORDER_BOUNDS[3],
 );
 
 /**
@@ -58,12 +60,15 @@ export class Computer {
   /** Pulled back to the whole desk (a click on the machine), and how far along the way there (0..1). */
   focused = false;
   private focusT = 0;
-  private hover: 'case' | 'key' | 'set' | null = null;
+  private hover: 'case' | 'key' | 'set' | 'recorder' | null = null;
   /** A press in the TV's part of the window that becomes a click (pulling back or going in) if it is let go without moving. */
   private press: { id: number; x: number; y: number } | null = null;
   /** Where a click on a key goes (main.ts: the keyboard's queue, as if typed). */
   onKey: (k: TypedKey) => void = () => {};
   readonly keys = new CocoKeys((k) => this.onKey(k));
+  /** The cassette recorder beside the set (main.ts), drawn in the same march; a click on it or a cassette is its own. */
+  recorder: Recorder | null = null;
+  private readonly recPrint: WebGLTexture;
   /** Whether something drawn over the machine (the magazine) is under the pointer, in 0..1 window coordinates (y up). */
   covered: (nx: number, ny: number) => boolean = () => false;
   /** Whether a click at a point (buffer pixels, y up) is something else's: a knob, the rocker, the smack, the notebook out. */
@@ -95,6 +100,13 @@ export class Computer {
     gl.generateMipmap(gl.TEXTURE_2D);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.recPrint = gl.createTexture()!;
+    gl.bindTexture(gl.TEXTURE_2D, this.recPrint);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, drawRecorderPrint());
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     this.listen();
@@ -183,10 +195,10 @@ export class Computer {
   }
 
   /**
-   * What a pointer event is over: a key (row and index), the rest of the machine, the rest of the TV's part of the
-   * window (`set`: the glass, the cabinet, the room), or nothing (outside it, or something else's there).
+   * What a pointer event is over: a key (row and index), the rest of the machine, the recorder or a cassette, the rest
+   * of the TV's part of the window (`set`: the glass, the cabinet, the room), or nothing (outside it, or something else's there).
    */
-  private under(e: PointerEvent): { row: number; i: number } | 'case' | 'set' | null {
+  private under(e: PointerEvent): { row: number; i: number } | { rec: CassetteId | 'recorder' } | 'case' | 'set' | null {
     const c = this.canvas;
     const r = c.getBoundingClientRect();
     const s = this.gl.drawingBufferWidth / c.clientWidth;
@@ -200,6 +212,8 @@ export class Computer {
     const k = p[3] / (TUBE[1] * ACTIVE[1]);
     const px = (x - p[0]) / k + TUBE_C[0];
     const py = (y - p[1]) / k + TUBE_C[1];
+    const rec = this.recorder && recorderAt(this.recorder, px, py);
+    if (rec) return { rec };
     if (!onCase(px, py)) return 'set';
     return keyAt(px, py) ?? 'case';
   }
@@ -224,6 +238,7 @@ export class Computer {
         e.stopImmediatePropagation();
         e.preventDefault();
         if (at === 'case') this.focused = !this.focused;
+        else if ('rec' in at) this.recorder?.click(at.rec);
         else this.keys.press(at.row, at.i);
       },
       { capture: true },
@@ -250,7 +265,7 @@ export class Computer {
         const p = this.press;
         if (p?.id === e.pointerId && Math.hypot(e.clientX - p.x, e.clientY - p.y) > CLICK_SLOP) this.press = null;
         const at = this.visible ? this.under(e) : null;
-        this.hover = at === null || at === 'case' || at === 'set' ? at : 'key';
+        this.hover = at === null || at === 'case' || at === 'set' ? at : 'rec' in at ? 'recorder' : 'key';
       },
       true,
     );
@@ -259,7 +274,7 @@ export class Computer {
   /** The pointer over the machine: a key can be pressed; elsewhere a click pulls back to the desk, or goes back in. */
   cursor(): void {
     if (this.press || (this.hover === 'set' && this.isOut())) return;
-    if (this.hover === 'key') this.canvas.style.cursor = 'pointer';
+    if (this.hover === 'key' || this.hover === 'recorder') this.canvas.style.cursor = 'pointer';
     else if (this.hover) this.canvas.style.cursor = this.focused ? 'zoom-in' : 'zoom-out';
   }
 
@@ -287,13 +302,18 @@ export class Computer {
     const changed = !this.lit.length || glow.some((g, i) => Math.abs(g - this.lit[i]) > GLOW_STEP);
     const lit = changed && (!moving || !this.lit.length) ? glow.map((g) => Math.round(g * 256) / 256) : this.lit;
     this.lit = lit;
-    // A key going down or up changes only the caps round it (and the shade they throw): just that is marched again.
+    // A key going down or up changes only the caps round it (and the shade they throw), and the recorder's door, keys
+    // and cassettes only the recorder: just that is marched again.
     const keys = this.keys.uniform();
+    const rec = this.recorder?.uniforms() ?? [];
+    const n = keys.length;
     const around = (was: readonly number[]): [number, number, number, number] | null => {
-      const b = capsBounds(was, keys);
-      if (!b) return null;
       const px = (x: number, i: number) => picture[i] + (x - TUBE_C[i]) * k;
-      return [px(b[0], 0) - 2, px(b[1], 1) - 2, px(b[2], 0) + 2, px(b[3], 1) + 2];
+      const caps = capsBounds(was.slice(0, n), keys);
+      const moved = rec.some((v, i) => v !== was[n + i]);
+      const bs = [...(caps ? [caps] : []), ...(moved ? [RECORDER_BOUNDS] : [])];
+      if (!bs.length) return null;
+      return [px(Math.min(...bs.map((b) => b[0])), 0) - 2, px(Math.min(...bs.map((b) => b[1])), 1) - 2, px(Math.max(...bs.map((b) => b[2])), 0) + 2, px(Math.max(...bs.map((b) => b[3])), 1) + 2];
     };
     gl.bindVertexArray(this.vao);
     this.cache.draw({ x: picture[0], y: picture[1], k }, [W, H, ...lit], s, moving, [0, 0, W, top], (pic) => {
@@ -305,8 +325,23 @@ export class Computer {
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, this.print);
       gl.uniform1i(u.uPrint, 0);
+      if (rec.length) {
+        gl.uniform1f(u.uLid, rec[0]);
+        gl.uniform4f(u.uRecKeys, rec[1], rec[2], rec[3], rec[4]);
+        gl.uniform4f(u.uCasA, rec[5], rec[6], rec[7], rec[8]);
+        gl.uniform4f(u.uCasB, rec[9], rec[10], rec[11], rec[12]);
+        gl.uniform2f(u.uCasTilt, rec[13], rec[14]);
+        gl.uniform2f(u.uReel, rec[15], rec[16]);
+      } else {
+        gl.uniform4f(u.uCasA, 0, -10, 0, 0);
+        gl.uniform4f(u.uCasB, 0, -10, 0, 0);
+      }
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, this.recPrint);
+      gl.uniform1i(u.uRecPrint, 1);
+      gl.activeTexture(gl.TEXTURE0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }, { key: keys, clip: around });
+    }, { key: [...keys, ...rec], clip: around });
     gl.disable(gl.SCISSOR_TEST);
   }
 }

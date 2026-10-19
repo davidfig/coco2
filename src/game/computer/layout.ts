@@ -2,6 +2,7 @@ import { CAB, TUBE, TUBE_C } from '../tv/cabinetShader';
 import { ACTIVE } from '../tv/pictureShader';
 import { SHEET_DPI, SHEET_H, SHEET_W } from '../notes/sheet';
 import { CORDS } from './cords';
+import { recorderExtent } from '../recorder/layout';
 
 /**
  * The Color Computer 2 itself, as it sits on the table in front of the set: its size and shape, where it is, its
@@ -164,7 +165,11 @@ export const CASE_OUTLINE: readonly (readonly [number, number])[] = hull(
 
 /** Whether a panel point is on the case (inside `CASE_OUTLINE`). */
 export function onCase(x: number, y: number): boolean {
-  const o = CASE_OUTLINE;
+  return inHull(CASE_OUTLINE, x, y);
+}
+
+/** Whether a point is inside a convex outline (counter-clockwise, as `hull` makes them). */
+export function inHull(o: readonly (readonly [number, number])[], x: number, y: number): boolean {
   for (let i = 0; i < o.length; i++) {
     const [ax, ay] = o[i];
     const [bx, by] = o[(i + 1) % o.length];
@@ -173,9 +178,9 @@ export function onCase(x: number, y: number): boolean {
   return true;
 }
 
-/** Everything on the desk, on screen (panel units: x0, y0, x1, y1): the set, the case, its cords, the table's edge and under it. */
+/** Everything on the desk, on screen (panel units: x0, y0, x1, y1): the set, the case, its cords, the recorder, the table's edge and under it. */
 export function deskBounds(): [number, number, number, number] {
-  const pts = [...CASE_OUTLINE, ...CORDS.flatMap((c) => c.pts.map((p) => project(p[0], 0, p[2])))];
+  const pts = [...CASE_OUTLINE, ...CORDS.flatMap((c) => c.pts.map((p) => project(p[0], 0, p[2]))), ...recorderExtent().map((p) => project(...p))];
   return [
     Math.min(-CAB[0], ...pts.map((p) => p[0])),
     Math.min(-CAB[1], ...pts.map((p) => p[1]), project(0, -EDGE.thick, CASE.hd + EDGE.gap)[1] - UNDER),
@@ -185,7 +190,7 @@ export function deskBounds(): [number, number, number, number] {
 }
 
 /** Monotone-chain convex hull, counter-clockwise. */
-function hull(points: [number, number][]): [number, number][] {
+export function hull(points: [number, number][]): [number, number][] {
   const p = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const cross = (o: number[], a: number[], b: number[]) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
   const half = (list: [number, number][]) => {

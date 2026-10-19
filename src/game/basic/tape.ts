@@ -29,9 +29,21 @@ export class Tape {
   private pos = 0;
   /** Every name the head has passed or loaded since this cassette went in (the story watches for one). */
   readonly seen = new Set<string>();
+  /** Whether it is in the recorder, ready to play (the page's recorder says; with no recorder, as in tests, it always is). */
+  present = true;
 
   /** `key` is where this cassette's own recordings are kept: each cassette has its own. */
   constructor(private builtIn: readonly TapeFile[], private key = TAPE_KEY) {}
+
+  /** Where this cassette's own recordings are kept: which cassette it is. */
+  get cassette(): string {
+    return this.key;
+  }
+
+  /** How many files the head has gone past since the start of the tape. */
+  get position(): number {
+    return this.pos;
+  }
 
   /** Take the cassette out and put another in, wound back to the start. */
   insert(builtIn: readonly TapeFile[], key: string): void {

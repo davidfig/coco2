@@ -1,10 +1,12 @@
 import './clear';
+import './startIssue';
 import { Engine, Sound } from './engine';
 import { ColorBasic } from './game/coco/basic';
 import { Computer } from './game/computer/computer';
 import { TextScreen } from './game/coco/screen';
 import { Magazine } from './game/magazine/book';
 import { Notebook } from './game/notes';
+import { Recorder } from './game/recorder';
 import { attachBookInput } from './game/magazine/bookInput';
 import { overPage } from './game/magazine/bookLayout';
 import { SeenTracker } from './game/magazine/seen';
@@ -67,6 +69,9 @@ const story = new Issue1Story(screen, tv, (f) => magazine.state.flags.has(f), (f
   basic.interp.edited();
   basic.boot();
 });
+/** The cassette recorder beside the set: BASIC's tape commands wait for a cassette to be put in it. */
+const recorder = new Recorder(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), instant);
+computer.recorder = recorder;
 const story2 = new Issue2Story(screen, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), basic.interp);
 /** A new player is drawn to the notes, and then to the magazine, until each has been opened once. */
 const guide = new Guide((f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f));
@@ -107,6 +112,9 @@ story.wake();
 let setOn = tv.powerTime >= 0;
 engine.updaters.push((dt) => {
   screen.step(dt);
+  recorder.step(dt);
+  // A tape command waiting with no cassette in: the view pulls back to the desk, where the recorder is.
+  if (recorder.takeBeckon() && computer.visible) computer.focused = true;
   story.step(dt);
   story2.step(dt);
   const on = tv.powerTime >= 0;
@@ -182,12 +190,12 @@ function stationTest(channel = 9): void {
   v.render(card.vram);
   tv.broadcast(channel, v, 0.6);
 }
-Object.assign(window, { coco: { engine, lights, computer, screen, basic, interp: basic.interp, tv, vdg, magazine, touchKeys, puzzles, story, story2, notebook, tamperTest, stationTest } });
+Object.assign(window, { coco: { engine, lights, computer, recorder, screen, basic, interp: basic.interp, tv, vdg, magazine, touchKeys, puzzles, story, story2, notebook, tamperTest, stationTest } });
 
 /** Playtesting: F2 opens the debug menu (checkpoints, flags, name, TV hooks) in dev builds; `?debug` opens it at start, in any build. */
 if (import.meta.env.DEV || params.has('debug')) {
   void import('./game/debug').then(({ DebugMenu }) => {
-    const menu = new DebugMenu({ magazine, notebook, basic, keyboard: engine.keyboard, tv, tamperTest, stationTest });
+    const menu = new DebugMenu({ magazine, notebook, basic, keyboard: engine.keyboard, tv, recorder, tamperTest, stationTest });
     if (params.has('debug')) menu.toggle(true);
   });
 }
