@@ -11,16 +11,16 @@ import { recorderExtent } from '../recorder/layout';
  * "Tandy Color Computer 2.jpg", "TRS-80 Color Computer 2.jpg").
  *
  * Units are the TV shader's (the tube is 2 tall): with a 13" tube that is about 13.5 cm a unit. The real case is
- * 37.1 × 26.6 × 8.8 cm. World axes: x right, y up, z toward the viewer; the TV's front is z = 0. Model axes: the
+ * 37.1 × 26.6 cm. World axes: x right, y up, z toward the viewer; the TV's front is z = 0. Model axes: the
  * same, from the centre of the case's footprint on the table.
  */
 
 /**
  * The case: half width and depth; the rear hump's height; the keyboard deck's height at its back and front edge (it
  * falls a little toward the typist); where the deck starts (z) and where the hump's flat top ends, the sloped face
- * between them.
+ * between them. The hump is 7 cm, under the museums' 8.3–8.8 (which looked too tall); the slope 0.4 of the deck's depth.
  */
-export const CASE = { hw: 1.375, hd: 0.985, hump: 0.6, deckBack: 0.38, deckFront: 0.28, deckZ: 0.0, humpZ: -0.2 } as const;
+export const CASE = { hw: 1.375, hd: 0.985, hump: 0.52, deckBack: 0.36, deckFront: 0.27, deckZ: 0.0, humpZ: -0.42 } as const;
 /** Where the case's footprint centre sits on the table: under the tube, out from the set enough to show its cords. */
 export const PLACE = { x: -0.45, z: 1.2 + CASE.hd } as const;
 /** The table top (the room shader's `tableY`). */
@@ -52,12 +52,12 @@ export const PLATE = { hw: 1.107 * 7 * PITCH, z0: 0.055, z1: 0.055 + 5.8 * PITCH
 
 /**
  * A cap: its top's height over the plate's surface and its skirt's (the stem shows between), and how far it goes down
- * when pressed. Off the PAL photo (Wikimedia Commons, "TRS-80 Color Computer 2 (pal).jpg"): the tops stand about 15 mm
- * over the plate, the skirts a millimetre or two.
+ * when pressed. Off the PAL photo (Wikimedia Commons, "TRS-80 Color Computer 2 (pal).jpg"): the plate sits down in the
+ * deck and the tops stand only about 7 mm over the deck, 11 mm over the plate; the skirts a millimetre or two.
  */
-export const CAP = { h: 0.108, lift: 0.012, travel: 0.024 } as const;
+export const CAP = { h: 0.08, lift: 0.012, travel: 0.024 } as const;
 /** How deep the plate sits in the deck (its pocket's half depth). */
-export const PLATE_T = 0.02;
+export const PLATE_T = 0.03;
 
 /** The vents: two banks of six slots across the hump, each bank split by ribs (x ranges). */
 export const VENT_SEGMENTS: readonly (readonly [number, number])[] = [
@@ -70,8 +70,8 @@ export const VENT_SEGMENTS: readonly (readonly [number, number])[] = [
 ];
 /** The first slot's centre z, how many rows, their pitch, a slot's width and a rib's. */
 export const VENT = { z0: -0.88, rows: 6, pitch: 0.056, w: 0.024, rib: 0.018 } as const;
-/** The badge, a black plate stuck on the hump just behind the slope: centre z and half size. */
-export const BADGE = { z: -0.34, hw: 0.41, hd: 0.05 } as const;
+/** The badge, a black plate stuck on the slope a third of the way down from the hump's top: centre z (seen from above) and half size (`hd` along the slope). */
+export const BADGE = { z: -0.28, hw: 0.41, hd: 0.05 } as const;
 
 /**
  * Where the magazine and the notebook lie on the table when the view pulls back to the whole desk, if the window has

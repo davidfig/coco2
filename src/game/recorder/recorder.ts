@@ -2,7 +2,7 @@ import type { Interpreter } from '../basic/interpreter';
 import { TAPE_KEY } from '../basic/tape';
 import { MAY_TAPE_KEY, RAINBOW_TAPE, mayTape } from '../tapes';
 import type { RecorderSound } from './recorderSound';
-import { LID, LIFT, REC, type Pose, seatPose, spotPose } from './layout';
+import { CAS, LID, type Pose, seatPose, spotPose } from './layout';
 
 /** The two cassettes: Rainbow On Tape for March, and for May (once May has come). */
 export type CassetteId = 'march' | 'may';
@@ -13,7 +13,7 @@ export const RECORDER_KEY = 'coco2.recorder';
 
 /** Seconds: the door swinging open or shut; a cassette carried in or out; STOP/EJECT going down and up. */
 const LID_TIME = 0.28;
-const MOVE_TIME = 0.95;
+const MOVE_TIME = 1.35;
 const EJECT_TIME = 0.3;
 /** How fast the hubs turn while the motor runs (radians a second): a cassette's hub, about 1.5 turns a second at the start. */
 const REEL_SPEED = 9;
@@ -24,6 +24,27 @@ const BECKON_AFTER = 1.2;
 
 const smooth = (t: number): number => t * t * (3 - 2 * t);
 const clamp01 = (t: number): number => Math.min(1, Math.max(0, t));
+
+/**
+ * A cassette goes in as into a real top-loader: tipped, its top (the edge across from the tape opening) down toward
+ * the back of the well and its tape edge up (`TIP`, radians), lowered so the top goes in first, then its tape edge
+ * pushed down onto the heads until it lies flat. It is held `HOVER` over the well (and `AHEAD` in front of its place)
+ * before it goes down.
+ */
+const TIP = 0.4;
+const HOVER = 0.26;
+const AHEAD = 0.05;
+/** Through a move (0 on the table, 1 seated): carried over the well by `OVER`, its edge down in the well by `DOWN`. */
+const OVER = 0.55;
+const DOWN = 0.8;
+
+/** Where the lower corner of a cassette's top edge is from its centre (model frame), at a turn and tilt. */
+function topEdge(yaw: number, tilt: number): [number, number, number] {
+  const [ct, st] = [Math.cos(tilt), Math.sin(tilt)];
+  const [y, z] = [-CAS.hh, -CAS.hd];
+  const [ty, tz] = [y * ct + z * st, -y * st + z * ct];
+  return [tz * Math.sin(yaw), ty, tz * Math.cos(yaw)];
+}
 
 /** A cassette carried from one place to another: into the recorder (`'deck'`) or onto a spot on the table. */
 interface Move {
@@ -210,20 +231,36 @@ export class Recorder {
     }
   }
 
-  /** Where a cassette is now: seated, on its spot, or on the way between (lifted over the door, then lowered into the well). */
+  /**
+   * Where a cassette is now: seated, on its spot, or on the way between: lifted and carried over the well, tipping as
+   * it goes, its top lowered in first, then its tape edge pushed down (going out is the same backwards).
+   */
   pose(id: CassetteId): Pose | null {
     if (!this.available(id)) return null;
     const move = this.moves.find((m) => m.id === id && m.t > 0);
     if (!move) return this.deck === id ? seatPose() : spotPose(this.spots[id]);
     const spot = spotPose(move.to === 'deck' ? this.spots[id] : move.to);
     const seat = seatPose();
-    // 0 lying on the table, 1 seated: going out is the way in backwards.
     const u = move.to === 'deck' ? move.t : 1 - move.t;
-    const across = smooth(clamp01(u / 0.75));
-    const top = REC.h + LIFT;
-    const y = u < 0.72 ? spot.y + (top - spot.y) * smooth(clamp01(u / 0.3)) : top + (seat.y - top) * smooth((u - 0.72) / 0.28);
+    // The top edge's place when seated: the cassette turns about it as its tape edge goes down.
+    const e = topEdge(seat.yaw, 0);
+    const edge = [seat.x + e[0], seat.y + e[1], seat.z + e[2]];
+    const at = (tilt: number, up: number, ahead: number): Pose => {
+      const o = topEdge(seat.yaw, tilt);
+      const [bx, bz] = [ahead * Math.sin(seat.yaw), ahead * Math.cos(seat.yaw)];
+      return { x: edge[0] + bx - o[0], y: edge[1] + up - o[1], z: edge[2] + bz - o[2], yaw: seat.yaw, tilt };
+    };
+    if (u >= DOWN) return at(TIP * (1 - smooth((u - DOWN) / (1 - DOWN))), 0, 0);
+    if (u >= OVER) {
+      const d = smooth((u - OVER) / (DOWN - OVER));
+      return at(TIP, HOVER * (1 - d), AHEAD * (1 - d));
+    }
+    // Lifted off the table first, then carried across, tipping on the way.
+    const over = at(TIP, HOVER, AHEAD);
+    const across = smooth(u / OVER);
     const mix = (a: number, b: number) => a + (b - a) * across;
-    return { x: mix(spot.x, seat.x), y, z: mix(spot.z, seat.z), yaw: mix(spot.yaw, seat.yaw), tilt: 0.22 * Math.sin(Math.PI * across) };
+    const y = spot.y + (over.y - spot.y) * smooth(clamp01(u / (0.55 * OVER)));
+    return { x: mix(spot.x, over.x), y, z: mix(spot.z, over.z), yaw: mix(spot.yaw, over.yaw), tilt: mix(0, TIP) };
   }
 
   /**

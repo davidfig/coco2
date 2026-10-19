@@ -36,14 +36,22 @@ const SPLIT = recToModel(REC.hw + 0.38, CABLE, 0.32);
 /** A point out from the recorder's right side (its frame's x) at a jack's height and place. */
 const offSide = (j: (typeof JACKS)[number], out: number, y: number = j.y): Pt => recToModel(REC.hw + out, y, j.z);
 
+/** The recorder's AC socket in its left side (z in its frame, height), and its figure-8 plug's radius and length. */
+const AC = { z: -0.3, y: 0.14, r: 0.04, len: 0.14 } as const;
+/** A point out from the recorder's left side at the socket's place (or another height and z). */
+const offLeft = (out: number, y: number = AC.y, z: number = AC.z): Pt => recToModel(-REC.hw - out, y, z);
+
 /** The table's back edge (model z: layout.ts's `EDGE.back` less `PLACE.z`, which can't be imported here: layout imports this). */
 const TABLE_BACK = -5.365;
+/** A cord at x over the table's back edge and down the gap behind it (the table hides it from there), to the outlet. */
+const overEdge = (x: number): Pt[] => [[x, ZIP * 0.8, TABLE_BACK + 0.01], [x - 0.01, -0.12, TABLE_BACK - 0.05], [x - 0.01, -0.5, TABLE_BACK - 0.06]];
 
 /**
  * The cords, in model coordinates (the TV's face is at z = -PLACE.z), as the Color Computer 2 Operation Manual (Tandy,
  * 1983) draws them. The AC line cord is wired in: a black flat zip cord out of a rubber grommet at the foot of the back
  * panel's far corner (the back left, seen from the front); it drops to the table, runs straight back and, slack, comes out from behind
- * the case's back-left corner and runs back past the set's left side and off the table's back edge, down to the wall outlet. The RF lead is thin black coax with a moulded
+ * the case's back-left corner and runs back between the set and the recorder and off the table's back edge, down to the wall
+ * outlet. The recorder's AC cord, the same zip cord, goes the same way from its left side. The RF lead is thin black coax with a moulded
  * RCA plug at each end: from the TO TV jack, just right of centre, it droops to the table, runs straight back and comes out
  * from behind the case's back-right corner, runs back along the set's right side, the whole depth of the cabinet, round to the Antenna Switchbox taped to the TV's back (whose
  * twin-lead goes on the VHF screws), out of sight. The table right behind the case is hidden from the viewer: only the runs out show.
@@ -54,11 +62,10 @@ export const CORDS: readonly Cord[] = [
     lobe: ZIP * 0.85,
     pts: [CORD_EXIT, [-1.27, 0.045, -1.04], [-1.32, ZIP, -1.16],
       // Straight back first, out of sight behind the hump, then out past the back-left corner, so it shows coming from
-      // behind the case; back along the set's left side, between it and the recorder.
-      [-1.36, ZIP, -1.6], [-1.42, ZIP, -2.0], [-1.6, ZIP, -2.32], [-1.76, ZIP, -2.72], [-1.8, ZIP, -3.25],
-      [-1.84, ZIP, -3.9], [-1.79, ZIP, -4.6], [-1.86, ZIP, -5.15],
-      // Over the back edge and down the gap behind it (the table hides it from there).
-      [-1.88, ZIP * 0.8, TABLE_BACK + 0.01], [-1.89, -0.12, TABLE_BACK - 0.05], [-1.89, -0.5, TABLE_BACK - 0.06],
+      // behind the case; back between the set and the recorder, drifting left as it goes so the set doesn't hide it.
+      [-1.36, ZIP, -1.6], [-1.42, ZIP, -1.98], [-1.7, ZIP, -2.35], [-1.92, ZIP, -2.72], [-2.06, ZIP, -3.12], [-2.18, ZIP, -3.6],
+      [-2.32, ZIP, -4.1], [-2.44, ZIP, -4.6], [-2.52, ZIP, -5.1],
+      ...overEdge(-2.55),
     ],
     fittings: [{ a: [CORD_EXIT[0], CORD_EXIT[1], CORD_EXIT[2] + 0.02], b: [-1.265, 0.06, -1.03], ra: 0.03, rb: 0.022 }],
   },
@@ -81,7 +88,7 @@ export const CORDS: readonly Cord[] = [
     // Out of the DIN plug and down behind the case, crossing over the power cord, out past the back-left corner and
     // across the table to the recorder.
     pts: [[CASSETTE[0], CASSETTE[1], CASSETTE[2] - DIN.len - 0.05], [-0.74, 0.15, -1.25], [-0.8, CABLE, -1.36], [-1.05, CABLE, -1.44],
-      [-1.32, 0.04, -1.56], [-1.5, CABLE, -1.72], [-1.66, CABLE, -1.98], [SPLIT[0] + 0.12, CABLE, SPLIT[2] + 0.2], SPLIT],
+      [-1.32, 0.04, -1.56], [-1.5, CABLE, -1.72], [-1.8, CABLE, -1.95], [-2.05, CABLE, -2.2], [SPLIT[0] + 0.12, CABLE, SPLIT[2] + 0.2], SPLIT],
     fittings: [
       { a: [CASSETTE[0], CASSETTE[1], CASSETTE[2] + 0.02], b: [CASSETTE[0], CASSETTE[1], CASSETTE[2] - DIN.len], ra: DIN.r, rb: DIN.r * 0.9 },
       { a: [CASSETTE[0], CASSETTE[1], CASSETTE[2] - DIN.len], b: [CASSETTE[0], CASSETTE[1], CASSETTE[2] - DIN.len - 0.06], ra: DIN.r * 0.7, rb: CABLE * 1.1 },
@@ -97,6 +104,19 @@ export const CORDS: readonly Cord[] = [
       { a: offSide(j, PLUG.len * 0.4), b: offSide(j, PLUG.len + 0.05), ra: PLUG.r, rb: LEAD * 1.2 },
     ],
   })),
+  {
+    r: ZIP,
+    lobe: ZIP * 0.85,
+    // Out of the socket in the recorder's left side and, slack, back to the table's edge, swinging out wide enough that
+    // the recorder doesn't hide it from the viewer.
+    pts: [offLeft(AC.len + 0.02), offLeft(AC.len + 0.12, 0.12), offLeft(0.33, 0.05, AC.z - 0.05), offLeft(0.48, ZIP, AC.z - 0.2),
+      [-5.25, ZIP, -3.2], [-5.45, ZIP, -3.7], [-5.6, ZIP, -4.3], [-5.7, ZIP, -4.9], [-5.74, ZIP, -5.2], ...overEdge(-5.76)],
+    fittings: [
+      // The figure-8 plug's body against the side, then its boot.
+      { a: offLeft(-0.01), b: offLeft(AC.len * 0.7), ra: AC.r, rb: AC.r },
+      { a: offLeft(AC.len * 0.6), b: offLeft(AC.len + 0.03), ra: AC.r * 0.8, rb: ZIP * 1.6 },
+    ],
+  },
 ];
 
 /** Catmull-Rom through a cord's points, `n` segments a span. */
@@ -124,7 +144,9 @@ function across(a: Pt, b: Pt, prev: Pt): Pt {
 const allPts = (c: Cord): Pt[] => [...c.pts, ...c.fittings.flatMap((g) => [g.a, g.b])];
 /** The cords reach this far back (model z), for the box the model is marched in. */
 export const CORDS_BACK = Math.min(...CORDS.flatMap((c) => allPts(c).map((p) => p[2]))) - 0.04;
-export const CORDS_SIDE = Math.max(...CORDS.flatMap((c) => allPts(c).map((p) => Math.abs(p[0])))) + 0.04;
+/** And this far left and right (model x). */
+export const CORDS_LEFT = Math.min(...CORDS.flatMap((c) => allPts(c).map((p) => p[0]))) - 0.04;
+export const CORDS_RIGHT = Math.max(...CORDS.flatMap((c) => allPts(c).map((p) => p[0]))) + 0.04;
 
 /** GLSL `vec2 cords(vec3 p, float best)`: the nearest cord (distance, material 5 + its index), each skipped by its box. */
 export function cordsGlsl(): string {

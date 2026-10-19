@@ -103,8 +103,8 @@ vec2 recorder(vec3 p, vec2 r) {
 /** A texel of the print (uv in the region's 0..1), its detail level from a pixel's width \`fp\` and the texels per unit. */
 vec4 recPrint(vec2 uv, float fp, float texels) { return textureLod(uRecPrint, uv, log2(max(fp * texels, 1.0))); }
 
-/** What the part hit is made of. */
-void recMaterial(vec3 p, vec3 n, float id, float fp, float st, inout vec3 alb, inout float gloss, inout float bump) {
+/** What the part hit is made of, seen along \`rd\`. */
+void recMaterial(vec3 p, vec3 n, vec3 rd, float id, float fp, float st, inout vec3 alb, inout float gloss, inout float bump) {
   vec3 q = recLocal(p);
   vec3 ln = recDir(n);
   vec2 topUv = vec2((q.x + REC_B.x) / (2.0 * REC_B.x), (q.z + REC_B.z) / (2.0 * REC_B.z) * PRINT_TOP_V);
@@ -157,15 +157,26 @@ void recMaterial(vec3 p, vec3 n, float id, float fp, float st, inout vec3 alb, i
   // The body: its top is brushed aluminium inside a black rim, the grille punched through it; dark down in the well.
   bool top = ln.y > 0.9 && q.y > REC_B.y - 0.004 && abs(q.x) < REC_B.x - 0.035 && abs(q.z) < REC_B.z - 0.035;
   if (top) {
-    float brush = noise(vec2(q.x * 4.0, q.z * 700.0)) * 0.6 + noise(vec2(q.x * 1.3, q.z * 2300.0)) * 0.4;
+    // A pixel's footprint on the top, x and z apart: seen at a slant it stretches along the view, up to 1 / cos.
+    vec3 d = recDir(rd);
+    vec2 slant = normalize(d.xz + 1e-5) * (1.0 / max(abs(d.y), 0.08) - 1.0);
+    vec2 fw = fp * (1.0 + abs(slant));
+    // The brushing's finest grain fades to its mean once a pixel spans it, or it beats into stripes.
+    float fine = 0.5 + (noise(vec2(q.x * 1.3, q.z * 2300.0)) - 0.5) * (1.0 - smoothstep(0.3, 1.0, fw.y * 2300.0));
+    float brush = noise(vec2(q.x * 4.0, q.z * 700.0)) * 0.6 + fine * 0.4;
     alb = vec3(0.56, 0.565, 0.57) * (0.88 + 0.16 * brush);
     gloss = 0.3;
     bump = 0.0;
     if (inRect(q.xz, GRILLE_R)) {
+      // Staggered holes, 0.032 apart, 0.009 across. Once a pixel spans a good part of the pitch they fade to the
+      // share of the plate they open (pi r^2 / pitch^2), so the rows never beat against the pixels in a moiré.
       vec2 g = q.xz / 0.032;
       g.x += 0.5 * mod(floor(g.y), 2.0);
       float hole = length(fract(g) - 0.5) * 0.032;
-      alb = mix(vec3(0.02), alb, smoothstep(0.009, 0.009 + fp, hole));
+      float w = max(fw.x, fw.y);
+      float metal = smoothstep(0.009 - 0.5 * w, 0.009 + 0.5 * w, hole);
+      metal = mix(metal, 1.0 - 0.2485, smoothstep(0.2, 0.5, w / 0.032));
+      alb = mix(vec3(0.02), alb, metal);
     }
     vec4 ink = recPrint(topUv, fp, TOP_TEXELS);
     alb = mix(alb, ink.rgb, ink.a);

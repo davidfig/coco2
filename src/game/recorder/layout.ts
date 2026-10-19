@@ -3,7 +3,8 @@
  * the model's SDF (`recorderGlsl.ts`), its print (`print.ts`), the cords to it (`computer/cords.ts`) and where it can
  * be clicked. Modelled on Radio Shack's Realistic CCR-81 (1981), the recorder sold for the Color Computer: a slim black
  * portable, a brushed-aluminium top with the speaker grille on the left, a top-loading door with a smoked window on the
- * right, six piano keys along the front, and the EAR, MIC and REM jacks in its right side for the CoCo's cassette cable.
+ * right, six piano keys along the front, the EAR, MIC and REM jacks in its right side for the CoCo's cassette cable, and
+ * its AC socket in the left.
  * About 23.5 × 14.3 × 5.1 cm.
  *
  * Units are the CoCo's model frame (`computer/layout.ts`: about 13.5 cm a unit, x right, y up off the table, z toward
@@ -12,8 +13,8 @@
  * here, so that the cords and the desk's bounds can use it.
  */
 
-/** The body: centre on the table, turn, half width and depth, height. Beside the set's front-left corner. */
-export const REC = { x: -3.15, z: -2.7, yaw: 0.15, hw: 0.87, hd: 0.53, h: 0.38 } as const;
+/** The body: centre on the table, turn, half width and depth, height. Beside the set's front-left corner, room left between them for the power cord to show. */
+export const REC = { x: -3.55, z: -2.7, yaw: 0.15, hw: 0.87, hd: 0.53, h: 0.38 } as const;
 /**
  * The cassette door, in the recorder's frame: its sides (x), its hinge at the back and its front edge (z), its
  * thickness, and how far it opens (radians: nearly upright, so a cassette can be lowered in under it). The well under it holds the cassette, `WELL` deep and inset from the door.
@@ -44,8 +45,8 @@ export const SEAT = { x: (LID.x0 + LID.x1) / 2, y: REC.h - WELL.depth + CAS.hh +
 
 /** Where a cassette lies on the table when it is out (model frame: centre and turn), in front of the recorder. */
 export const SPOTS: readonly { x: number; z: number; yaw: number }[] = [
-  { x: -3.62, z: -1.72, yaw: 0.3 },
-  { x: -2.78, z: -1.62, yaw: -0.12 },
+  { x: -4.02, z: -1.72, yaw: 0.3 },
+  { x: -3.18, z: -1.62, yaw: -0.12 },
 ];
 
 /** A cassette's place: centre (model frame), turn about the vertical, tilt about its own x (its tape edge up). */

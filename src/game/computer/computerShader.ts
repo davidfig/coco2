@@ -3,7 +3,7 @@ import { KEY_DIP_GLSL } from './keys';
 import { PLASTIC_GLSL } from './plastic';
 import { WEAR_GLSL } from './wear';
 import { TABLE_GLSL } from './table';
-import { CORDS_BACK, CORDS_SIDE, cordsGlsl } from './cords';
+import { CORDS_BACK, CORDS_LEFT, CORDS_RIGHT, cordsGlsl } from './cords';
 import { RECORDER_GLSL } from '../recorder';
 import { recorderBox } from '../recorder/layout';
 import { BADGE, CAP, CASE, EYE, KB_X0, KB_Z0, PITCH, PLACE, PLATE, PRINT_BADGE_V0, PRINT_KB_V, PRINT_KEYS, PRINT_W, PLATE_T, TABLE, keysGlsl, ventsGlsl } from './layout';
@@ -43,7 +43,7 @@ const float KEYS_TEXELS = ${f(PRINT_W / (PRINT_KEYS.w * PITCH))}, BADGE_TEXELS =
 const float PRINT_KB_V = ${f(PRINT_KB_V)}, PRINT_BADGE_V0 = ${f(PRINT_BADGE_V0)};
 const vec3 PLATE_C = vec3(0.0, 0.0, ${f((PLATE.z0 + PLATE.z1) / 2)});
 const vec3 PLATE_B = vec3(${f(PLATE.hw)}, ${f(PLATE_T)}, ${f((PLATE.z1 - PLATE.z0) / 2)});
-const vec3 BADGE_C = vec3(0.0, HUMP + 0.003, ${f(BADGE.z)});
+const float BADGE_S = ${f(((CASE.deckZ - BADGE.z) * Math.hypot(CASE.hump - CASE.deckBack, CASE.deckZ - CASE.humpZ)) / (CASE.deckZ - CASE.humpZ))}; // up the slope from the deck
 const vec3 BADGE_B = vec3(${f(BADGE.hw)}, 0.007, ${f(BADGE.hd)});
 const vec3 SLOT_C = vec3(HW, 0.33, -0.55), SLOT_B = vec3(0.12, 0.075, 0.2); // the cartridge slot, right side
 const float SEAM_Y = 0.11;
@@ -102,6 +102,12 @@ vec3 deck(vec3 p) {
   return vec3(q.x, q.y * c + q.z * s, q.z * c - q.y * s);
 }
 
+/** Into the badge's frame on the slope: x across, y off the slope's face, z down the slope from the badge's centre. */
+vec3 badgeFrame(vec3 p) {
+  vec2 q = vec2(p.z - DECK_Z, p.y - DECK_B);
+  return vec3(p.x, dot(q, SLOPE_N), BADGE_S - dot(q, vec2(-SLOPE_N.y, SLOPE_N.x)));
+}
+
 ${KEY_DIP_GLSL}
 /**
  * One cap, q from its centre on the deck's surface, \`hw\` its half width: it rides on its stem over the plate, its
@@ -157,7 +163,7 @@ vec2 map(vec3 p) {
   } else if (kb < r.x) {
     r.x = kb;
   }
-  float badge = sdBox(p - BADGE_C, BADGE_B, 0.004);
+  float badge = sdBox(badgeFrame(p) - vec3(0.0, 0.003, 0.0), BADGE_B, 0.004);
   if (badge < r.x) r = vec2(badge, 4.0);
   vec3 fp = vec3(abs(p.x) - HW + 0.18, p.y - FOOT * 0.5, abs(p.z) - HD + 0.15);
   float foot = max(length(fp.xz) - 0.06, abs(fp.y) - FOOT * 0.5);
@@ -222,14 +228,15 @@ vec3 shade(vec3 p, vec3 rd, float id, float fp) {
     alb = vec3(0.02);
     bump = 0.0;
   } else if (id >= 20.0) {
-    recMaterial(p, n, id, fp, st, alb, gloss, bump);
+    recMaterial(p, n, rd, id, fp, st, alb, gloss, bump);
   } else if (id >= 5.0) {
     alb = id == 5.0 ? vec3(0.045) : vec3(0.07, 0.07, 0.075); // black rubber; the RF lead a little greyer
     gloss = 0.5;
     bump = 0.0;
   } else if (id == 4.0) {
-    vec2 uv = vec2((p.x - BADGE_C.x + BADGE_B.x) / (2.0 * BADGE_B.x), (p.z - BADGE_C.z + BADGE_B.z) / (2.0 * BADGE_B.z));
-    alb = n.y > 0.9 ? textureLod(uPrint, vec2(uv.x, mix(PRINT_BADGE_V0, 1.0, uv.y)), log2(max(fp * BADGE_TEXELS, 1.0))).rgb * 0.8 : vec3(0.03);
+    vec3 bf = badgeFrame(p);
+    vec2 uv = (bf.xz + BADGE_B.xz) / (2.0 * BADGE_B.xz);
+    alb = dot(n, vec3(0.0, SLOPE_N.y, SLOPE_N.x)) > 0.9 ? textureLod(uPrint, vec2(uv.x, mix(PRINT_BADGE_V0, 1.0, uv.y)), log2(max(fp * BADGE_TEXELS, 1.0))).rgb * 0.8 : vec3(0.03);
     gloss = 0.35;
     bump = 0.0; // a smooth printed plate
     alb = mix(alb, alb * 1.3 + 0.05, 0.6 * scratches(p, fp));
@@ -271,7 +278,7 @@ void main() {
   vec3 ro = EYE - AT;
   vec3 rd = normalize(vec3(p, 0.0) - EYE);
   // The boxes it lies in: the machine and its cords, and the recorder (the door open, a cassette carried in).
-  vec2 b = boxSpan(ro, rd, vec3(-${f(CORDS_SIDE)}, 0.0, ${f(CORDS_BACK)}) - 0.02, vec3(${f(CORDS_SIDE)}, HUMP, HD) + 0.02);
+  vec2 b = boxSpan(ro, rd, vec3(${f(CORDS_LEFT)}, 0.0, ${f(CORDS_BACK)}) - 0.02, vec3(${f(CORDS_RIGHT)}, HUMP, HD) + 0.02);
   vec2 rb = boxSpan(ro, rd, vec3(${recorderBox()[0].map(f).join(', ')}), vec3(${recorderBox()[1].map(f).join(', ')}));
   if (rb.x < rb.y) b = b.x < b.y ? vec2(min(b.x, rb.x), max(b.y, rb.y)) : rb;
   float near = b.x, far = b.y;
