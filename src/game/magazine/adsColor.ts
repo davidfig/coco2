@@ -1,8 +1,7 @@
-import { dustCoverScene } from './adsDustCover';
 import { gobblerScene } from './adsGobbler';
 import { lemonadeScene } from './adsLemonade';
 import { paintify } from './coverPaint';
-import { Ctx, INK, MARGIN, PAGE_H, PAGE_W, SANS, SERIF, flow, rng, rowsFor, text, HEAVY } from './paper';
+import { Ctx, MARGIN, PAGE_H, PAGE_W, SANS, SERIF, flow, rng, rowsFor, text, HEAVY } from './paper';
 
 const W = PAGE_W - MARGIN * 2;
 
@@ -109,78 +108,4 @@ export function drawInsideCoverAd(ctx: Ctx): void {
   text(ctx, 'Chip Munk', px + 84, PAGE_H - 62, `italic bold 38px ${SERIF}`, '#ffffff');
   text(ctx, 'INTERNATIONAL', px + 84, PAGE_H - 44, `bold 12px ${SANS}`, '#ffffff');
   text(ctx, 'If your dealer does not have these programs, ask nicely, then ask again.', PAGE_W - 72, PAGE_H - 50, `11px ${SANS}`, '#ffffff', 'right');
-}
-
-/** Inside back cover: two spot-colour, big-type ads. */
-export function drawInsideBackAd(ctx: Ctx): void {
-  const top = ctx.createLinearGradient(0, 0, 0, PAGE_H / 2);
-  top.addColorStop(0, '#2fa8d8');
-  top.addColorStop(1, '#a6e3f2');
-  ctx.fillStyle = top;
-  ctx.fillRect(0, 0, PAGE_W, PAGE_H / 2);
-  ctx.fillStyle = '#f7b23b';
-  ctx.fillRect(0, PAGE_H / 2, PAGE_W, PAGE_H / 2);
-  ctx.fillStyle = INK;
-  ctx.fillRect(0, PAGE_H / 2 - 4, PAGE_W, 8);
-  // Two inks and black, nobody's brush: just the press.
-  paintify(ctx, undefined, true);
-  text(ctx, 'NEVER SEE', PAGE_W / 2, 150, `bold 40px ${SANS}`, INK, 'center');
-  text(ctx, '?SN ERROR', PAGE_W / 2, 270, `124px ${HEAVY}`, '#d52a1e', 'center');
-  text(ctx, 'AGAIN!', PAGE_W / 2, 350, `bold 70px ${SANS}`, INK, 'center');
-  copy(
-    ctx,
-    [
-      { text: 'The TYPE-O-MATIC™ keyboard cover has patented Error Prevention Technology. It simply removes your keys. No keys, no typos, no errors!*', font: `22px ${SERIF}` },
-    ],
-    MARGIN + 60,
-    400,
-    W - 120,
-    80,
-    INK,
-  );
-  text(ctx, 'Only $14.95. Black or beige. Both are the same colour.   *And no programs.', PAGE_W / 2, 560, `bold 20px ${SANS}`, INK, 'center');
-  text(ctx, 'CLOAD-A-MATIC™', PAGE_W / 2, 760, `84px ${HEAVY}`, INK, 'center');
-  text(ctx, 'TAPES THAT LOAD ON THE FIRST TRY!', PAGE_W / 2, 820, `bold 34px ${SANS}`, '#7a1c10', 'center');
-  copy(
-    ctx,
-    [
-      { text: 'Tired of reloading? So were we. Our tapes load first try or your money back, less postage, handling, the tape itself, and a restocking fee of one hundred percent.', font: `22px ${SERIF}` },
-      { text: 'Results may vary. Everything may vary.', font: `italic 22px ${SERIF}` },
-    ],
-    MARGIN + 60,
-    860,
-    W - 120,
-    160,
-    INK,
-  );
-  ctx.fillStyle = INK;
-  ctx.beginPath();
-  ctx.roundRect(MARGIN + 60, 1080, W - 120, 110, 36);
-  ctx.fill();
-  text(ctx, 'ORDER BOTH', MARGIN + 100, 1148, `bold 30px ${SANS}`, '#ffffff');
-  text(ctx, '1-800-555-0148', PAGE_W - MARGIN - 100, 1156, `bold 60px ${SANS}`, '#f4e24a', 'right');
-}
-
-/** The back cover: a full-colour advertisement, in the big-type manner of the real thing. */
-export function drawBackCover(ctx: Ctx): void {
-  const g = ctx.createLinearGradient(0, 0, 0, PAGE_H);
-  g.addColorStop(0, '#f2542d');
-  g.addColorStop(1, '#f9a03f');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, PAGE_W, PAGE_H);
-  const cx = PAGE_W / 2;
-  dustCoverScene(ctx, cx);
-  paintify(ctx);
-  text(ctx, 'Is your CoCo', PAGE_W / 2, 190, `bold 70px ${SANS}`, '#ffffff', 'center');
-  text(ctx, 'WEARING PANTS?', PAGE_W / 2, 280, `92px ${HEAVY}`, '#fff3a0', 'center');
-  text(ctx, 'The DUST-O-GARD™ vinyl cover protects your computer from', PAGE_W / 2, 790, `bold 31px ${SANS}`, '#ffffff', 'center');
-  text(ctx, 'DUST.  CATS.  AND  FAMILY.', PAGE_W / 2, 850, `52px ${HEAVY}`, '#1b1b24', 'center');
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.roundRect(MARGIN + 30, 910, W - 60, 120, 40);
-  ctx.fill();
-  text(ctx, 'ORDER NOW ', MARGIN + 60, 985, `bold 32px ${SANS}`, '#1b1b24');
-  text(ctx, '1-800-555-0172', PAGE_W - MARGIN - 56, 992, `bold 62px ${SANS}`, '#d52a1e', 'right');
-  text(ctx, 'Only $7.95 (cat not included)   •   Fits all models   •   Washable. Mostly.', PAGE_W / 2, 1100, `bold 24px ${SANS}`, '#ffffff', 'center');
-  text(ctx, 'Dust-O-Gard is a trademark of Dust-O-Gard.  We checked.', PAGE_W / 2, 1180, `italic 20px ${SANS}`, 'rgba(255,255,255,0.85)', 'center');
 }

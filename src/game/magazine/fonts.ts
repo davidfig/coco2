@@ -7,6 +7,8 @@ import '@fontsource/source-serif-4/400.css';
 import '@fontsource/source-serif-4/400-italic.css';
 import '@fontsource/source-serif-4/700.css';
 import '@fontsource/source-serif-4/700-italic.css';
+import '@fontsource/source-serif-4/900.css';
+import '@fontsource/source-serif-4/900-italic.css';
 import '@fontsource/courier-prime/400.css';
 import '@fontsource/courier-prime/700.css';
 import '@fontsource/kaushan-script/400.css';
@@ -23,6 +25,8 @@ export const FACES = [
   'italic 400 16px "Source Serif 4"',
   '700 16px "Source Serif 4"',
   'italic 700 16px "Source Serif 4"',
+  '900 16px "Source Serif 4"',
+  'italic 900 16px "Source Serif 4"',
   '400 16px "Courier Prime"',
   '700 16px "Courier Prime"',
   '400 16px "Kaushan Script"',

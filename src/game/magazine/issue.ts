@@ -1,6 +1,8 @@
 import { drawAds } from './ads';
 import { drawCleanerAd } from './adsCleaner';
-import { drawBackCover, drawInsideBackAd, drawInsideCoverAd } from './adsColor';
+import { drawBackCover } from './adsBackCover';
+import { drawInsideCoverAd } from './adsColor';
+import { drawInsideBackAd } from './adsInsideBack';
 import { drawContents, drawEditorial, drawHowTo1, drawHowTo2, drawMap } from './articles';
 import { drawClassifieds } from './classifieds';
 import { drawCover } from './cover';

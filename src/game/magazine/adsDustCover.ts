@@ -1,29 +1,41 @@
 import { airbrush, glint, roundShade } from './adsDetail';
-import { Ctx, PAGE_H, PAGE_W, rng } from './paper';
+import { sweep } from './adsProducts';
+import type { Area } from './coverPaint';
+import { Ctx, PAGE_W, rng } from './paper';
 
 // The back cover's painting, before its type goes on.
 
 const TAU = Math.PI * 2;
 
-/** DUST-O-GARD: a CoCo under a black vinyl cover, looking like a cat. Glossy vinyl lit from the upper left, on a spotlit backdrop. */
-export function dustCoverScene(ctx: Ctx, cx: number): void {
-  const page = { x: 0, y: 0, w: PAGE_W, h: PAGE_H };
-  airbrush(ctx, page, 8, (sc) => {
-    const spot = sc.createRadialGradient(cx - 40, 500, 0, cx - 40, 500, 460);
-    spot.addColorStop(0, 'rgba(255,236,160,0.55)');
-    spot.addColorStop(1, 'rgba(255,236,160,0)');
-    sc.fillStyle = spot;
-    sc.fillRect(0, 0, PAGE_W, PAGE_H);
-    const vig = sc.createRadialGradient(cx, 620, 480, cx, 620, 980);
-    vig.addColorStop(0, 'rgba(130,25,10,0)');
-    vig.addColorStop(1, 'rgba(130,25,10,0.4)');
-    sc.fillStyle = vig;
-    sc.fillRect(0, 0, PAGE_W, PAGE_H);
-    sc.fillStyle = 'rgba(100,25,5,0.55)';
+/**
+ * DUST-O-GARD: a CoCo under a black vinyl cover, looking like a cat, as the studio photograph in the back cover's ad:
+ * glossy vinyl lit from the upper left on a seamless sweep, fitted into `box`.
+ */
+export function dustCoverScene(ctx: Ctx, box: Area): void {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(box.x, box.y, box.w, box.h);
+  ctx.clip();
+  sweep(ctx, box, '#3d4658', '#b8bcc4', 'rgba(255,240,210,0.4)');
+  // The scene was drawn round (cx, 540) in page units; scale it into the box, standing a little below the middle.
+  const cx = PAGE_W / 2;
+  const k = Math.min(box.w / 640, box.h / 470);
+  ctx.translate(box.x + box.w / 2, box.y + box.h * 0.52);
+  ctx.scale(k, k);
+  ctx.translate(-cx, -540);
+  const floor = { x: cx - 400, y: 640, w: 800, h: 140 };
+  airbrush(ctx, floor, 6, (sc) => {
+    sc.fillStyle = 'rgba(15,15,25,0.6)';
     sc.beginPath();
-    sc.ellipse(cx + 34, 706, 330, 24, 0, 0, TAU);
+    sc.ellipse(cx + 30, 704, 320, 22, 0, 0, TAU);
     sc.fill();
   });
+  drawCat(ctx, cx);
+  ctx.restore();
+}
+
+/** The covered computer, in the page units it was first painted in: the vinyl body and ears, its sheen, the face. */
+function drawCat(ctx: Ctx, cx: number): void {
   // Each ear runs left to right, so it winds the same way as the body and the overlap fills instead of cutting a hole.
   const ears: [number, number][][] = [
     [[cx - 250, 430], [cx - 210, 340], [cx - 140, 425]],
