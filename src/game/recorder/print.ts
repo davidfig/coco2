@@ -1,4 +1,4 @@
-import { hashSeed, KESSLER, write } from '../handwriting';
+import { hashSeed, KESSLER, measure, write, type Hand } from '../handwriting';
 import { CAS, GRILLE, HUB, KEYS, KEY_NAMES, LED, REC } from './layout';
 
 /**
@@ -17,10 +17,12 @@ export const PRINT_LABEL_V0 = LABEL_Y / PRINT_SIZE;
 export const PRINT_LABEL_V1 = (LABEL_Y + LABEL_H) / PRINT_SIZE;
 
 const SANS = 'Helvetica, Arial, sans-serif';
-/** What each cassette's maker (M. Kessler, in pencil) wrote on it: the title over the window, and under it. */
-const LABELS: readonly { title: string; under: readonly string[] }[] = [
-  { title: 'RAINBOW ON TAPE - MARCH 86', under: ['Copied by hand, for you. Mistakes are mine.', '- M. Kessler'] },
-  { title: 'RAINBOW ON TAPE - MAY 86', under: ['ABOUT   SHUTDOWN'] },
+/** The date gone over in felt marker, dark blue, so it shows from across the table: Kessler's letters, without the pencil's grain. */
+const MARKER: Hand = { ...KESSLER, pencil: false, tremor: 0.5, ink: [24, 34, 108] };
+/** What each cassette's maker (M. Kessler, in pencil) wrote on it: the title over the window, its date in marker beside it, and under it. */
+const LABELS: readonly { title: string; date: string; under: readonly string[] }[] = [
+  { title: 'RAINBOW ON TAPE', date: 'MARCH 86', under: ['Copied by hand, for you. Mistakes are mine.', '- M. Kessler'] },
+  { title: 'RAINBOW ON TAPE', date: 'MAY 86', under: ['ABOUT   SHUTDOWN'] },
 ];
 
 export function drawRecorderPrint(): HTMLCanvasElement {
@@ -99,8 +101,10 @@ function drawLabel(g: CanvasRenderingContext2D, x0: number, l: (typeof LABELS)[n
   g.roundRect(wx0, wy0, wx1 - wx0, wy1 - wy0, 14);
   g.fill();
   g.restore();
-  // In Kessler's pencil: the title over the window, and what's under it.
-  const pen = (size: number, text: string) => ({ size, seed: hashSeed(text), hand: KESSLER, mood: 0.05 });
+  // In Kessler's pencil: the title over the window, and what's under it; the date in marker at the title's end.
+  const pen = (size: number, text: string) => ({ size, seed: hashSeed(text + l.date), hand: KESSLER, mood: 0.05 });
   write(g, l.title, lx0 + 14, ly0 + 56, pen(15, l.title));
-  l.under.forEach((t, i) => write(g, t, lx0 + 14 + i * 230, ly1 - 31 + i * 18, pen(9, t)));
+  const DATE = 24;
+  write(g, l.date, lx1 - 16 - measure(l.date, DATE, MARKER), ly0 + 57, { size: DATE, seed: hashSeed(l.date), hand: MARKER, mood: 0.08, weight: 2.4 });
+  l.under.forEach((t, i) => write(g, t, lx0 + 14 + i * 230, ly1 - 33 + i * 18, pen(9.5, t)));
 }

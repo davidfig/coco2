@@ -1,4 +1,4 @@
-import { ADVENT, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../puzzles/listings';
+import { ADVENT, FIRST_PROGRAM, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../puzzles/listings';
 import { DECODER, MESSAGE_LINE, PLUG_HELD, SHUTDOWN_REM_LINE } from '../puzzles/listingsMay';
 
 /**
@@ -10,6 +10,7 @@ export const STORY_FLAGS: readonly [flag: string, label: string][] = [
   ['opened-notes', 'held up the notes'],
   ['opened-magazine', 'opened the magazine'],
   ['printed', 'PRINT at the prompt'],
+  ['program-typed', 'typed in the name program'],
   ['first-program', 'ran the name program'],
   ['tape-inserted', 'first CLOAD or CSAVE'],
   ['adventure-loaded', 'ran ADVENT'],
@@ -93,7 +94,7 @@ export interface Checkpoint {
 const START = ['booted'];
 /** Past the fresh start the player has found the notes and the magazine, so the guide no longer calls to them. */
 const GUIDED = [...START, 'opened-notes', 'opened-magazine'];
-const HELLO = [...GUIDED, 'printed', 'first-program'];
+const HELLO = [...GUIDED, 'printed', 'program-typed', 'first-program'];
 const BROKEN = [...HELLO, 'tape-inserted', 'adventure-loaded', 'adventure-sn'];
 const FIXED = [...BROKEN, 'adventure-runs'];
 const LAMP = [...FIXED, 'looked', 'tamper-lamp', 'has-lamp'];
@@ -125,6 +126,7 @@ export const CHECKPOINTS: readonly Checkpoint[] = [
   FRESH,
   { label: 'Found the notes and magazine', flags: GUIDED },
   { label: 'Said hello', flags: [...GUIDED, 'printed'] },
+  { label: 'Typed in the name program', flags: [...GUIDED, 'printed', 'program-typed'], typed: `${FIRST_PROGRAM.join('\n')}\n` },
   { label: 'Ran the name program', flags: HELLO, named: true },
   { label: 'ADVENT loaded, ?SN', flags: BROKEN, named: true, typed: 'CLOAD "ADVENT"\n' },
   { label: 'ADVENT fixed, before LOOK', flags: FIXED, named: true, typed: ADVENT_FIXED },

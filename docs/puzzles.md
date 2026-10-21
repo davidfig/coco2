@@ -18,7 +18,7 @@ Status: draft for discussion. Nothing here is built.
 | Rung | Skill | Taught by | Needed for |
 |------|-------|-----------|------------|
 | A | `PRINT`, ENTER, the OK prompt | page "Say hello" | P1 |
-| B | line numbers, `RUN`, `LIST`, `NEW`; typing in a listing and checking it | tutorial article "Your first program" | P2 |
+| B | line numbers, `RUN`, `LIST`, `NEW`; typing in a listing and checking it | tutorial article "Your first program" (the listing and its RAINBOW CHECK are on the same page) | P2 |
 | C | reading `?SN ERROR IN n`, retyping a line | article "When it goes wrong" | P3 |
 | D | `BREAK`, `LIST` a range, `CONT`; a line number alone deletes a line | article "Stopping a program" | P4, P5 |
 
@@ -26,16 +26,15 @@ Status: draft for discussion. Nothing here is built.
 
 **P1. Say hello.** (exists) `PRINT "HELLO"`. Flag `printed`.
 
-**P2. Hand-code a program.** The tutorial article walks through a four-line program that asks for the player's name
+**P2. Hand-code a program.** The tutorial article walks through a three-line program that asks for the player's name
 and answers:
 ```
-10 CLS
-20 PRINT "WHAT IS YOUR NAME"
-30 INPUT N$
-40 PRINT "HELLO, ";N$
+10 PRINT "WHAT IS YOUR NAME"
+20 INPUT N$
+30 PRINT "HELLO, ";N$
 ```
-The RAINBOW CHECK table (already built for the page 11 listing) tells them which line is off. Detected when a program in memory whose
-lines match the listing reaches line 40 with a name in N$ (RUN alone, or ENTER with no answer, is not enough); flag `first-program`. Payoff: the name goes in localStorage and OK uses it later. The first
+The RAINBOW CHECK table (printed beside the listing on the same page) tells them which line is off. Detected when a program in memory whose
+lines match the listing reaches line 30 with a name in N$ (RUN alone, or ENTER with no answer, is not enough); flag `first-program`. Once the lines in memory match the listing (before any RUN), `program-typed` makes the notebook write "Typed it in. Now RUN it and see what it does". Payoff: the name goes in localStorage and OK uses it later. The first
 time it says the name unprompted is the first uncanny moment.
 
 **P3. The adventure won't start.** `CLOAD "ADVENT"` then `RUN` stops with `?SN ERROR IN 30`. Line 30 has a typo in a

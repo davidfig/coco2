@@ -34,6 +34,24 @@ That is roughly 5 to 10 minutes per issue, so each issue should hold:
 Back-issue puzzles need to be quick to check. The player should be able to flip to an old issue and find the answer in
 under a minute, or the pacing will break.
 
+## Advertisements
+
+Every issue has its own ads; none is run twice. Each one either nods to the story (the law, the Clear Mind, a machine
+that changes when nobody is watching, things hidden or put away) or is just a joke, and the best do both. Advertisers
+may come back (Chip Munk, Nifty Ned, CLOAD-A-MATIC) in their own house style, selling something new. As the limit
+tightens, the ads show it: what is no longer sold, products that obey the Clear Mind's advice, and later, ads that quote
+it.
+
+- **March:** SPACE GOBBLER and LEMONADE (inside front), HEAD CASE (a head cleaner for tapes that talk back), SMALL WONDER (a 64K
+  upgrade, safe under the Small Systems Act; BASIC sees only half of it, and the rest is "quietly waiting"), Nifty
+  Ned's catalogue with the Clear Mind's quiet notice, TYPE-O-MATIC and CLOAD-A-MATIC (inside back), DUST-O-GARD (back).
+- **May:** THE ONE THAT GOT AWAY (inside front: a fishing game about something old and patient hiding in deep water,
+  its lake made smaller for the limit, and SPACE GOBBLER 4K); Nifty Ned's catalogue made over for the limit
+  (LIST-O-METER counts a program's lines in case one grows, TAPE DUPE NOW's gap left empty, a pine case for putting the
+  computer away); THE HERMIT, a cable that connects to nothing, and CLOAD-A-MATIC's bulk erasers and guaranteed-blank
+  tapes (inside back); LIGHTS-OUT, a timer that switches the computer off when nobody is in front of it, with the Clear
+  Mind committee's seal (back).
+
 ## Issue 1: March (exists, to be revised)
 
 - **Cover story:** the usual: a game listing, a tips column, a hardware review.

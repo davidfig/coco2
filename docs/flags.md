@@ -13,6 +13,7 @@ the story answer the puzzle; they should notice, a little later, that something 
 |------|----------------|-------------------|----------------|
 | `booted` | Switched on | None. | |
 | `printed` | Typed `PRINT "HELLO"` | None. The next prompt appears a little late (*proposed*). | Screen |
+| `program-typed` | Typed in the name program exactly as printed, not yet run | None. The notes say to RUN it. | Notes |
 | `first-program` | Typed in the name program, ran it and gave it a name (an empty answer does not count) | OK now has the player's name (kept in localStorage). | Silent |
 | `adventure-runs` | Fixed line 30 of ADVENT | None visible. The "worn tape" typo is the first wrong line on a tape. Later it is reframed (see `found-extra-line`). | Silent |
 | `looked` | Typed `LOOK` | None. | |

@@ -67,7 +67,7 @@ export class Magazine {
    * Put away, how far it lies on the table instead (0..1: main.ts, from `Computer.tableT`, as the view pulls back to the
    * desk) and where the set's picture is (`Tv.picture`), which places the room's camera on screen.
    */
-  desk: () => { t: number; spot?: DeskSpot; picture: readonly number[] } = () => ({ t: 0, picture: [] });
+  desk: () => { t: number; spot?: DeskSpot; picture: readonly number[]; lift?: number } = () => ({ t: 0, picture: [] });
 
   private readonly program: Program;
   private readonly vao: WebGLVertexArrayObject;
@@ -321,7 +321,7 @@ export class Magazine {
   draw(): void {
     const gl = this.gl;
     const desk = this.desk();
-    const { view: v, cam, light, desk: lying } = onTable(this.v, desk.spot ? desk.t * (1 - smooth(this.openT)) : 0, desk.spot!, desk.picture);
+    const { view: v, cam, light, desk: lying } = onTable(this.v, desk.spot ? desk.t * (1 - smooth(this.openT)) : 0, desk.spot!, desk.picture, desk.lift);
     this.v = v;
     if (v.clip[0] >= v.W || v.clip[1] >= v.H || v.clip[2] <= 0 || v.clip[3] <= 0) return;
     const f = this.flip;

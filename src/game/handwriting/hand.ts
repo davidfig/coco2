@@ -16,6 +16,8 @@ export interface Pen {
   ink?: [number, number, number];
   /** Whose hand it is; the player's if not given. */
   hand?: Hand;
+  /** How thick the line is against the hand's own (1): a felt marker's is about 2. */
+  weight?: number;
   /** Told where each character of the line landed (its index, left and right edge), for anything that must find a word again. */
   track?: (index: number, x0: number, x1: number) => void;
 }
@@ -191,7 +193,7 @@ export function write(ctx: CanvasRenderingContext2D, text: string, x: number, y:
       }
       let path = sample(pts.map(([px, py]) => to(px, py)), s.smooth, Math.max(1.2, pen.size * 0.06));
       if (hand.tremor) path = shake(path, hand.tremor * pen.size * 0.022, r);
-      const width = Math.max(1.1, pen.size * 0.075 * hand.weight * (1 + gauss(r) * 0.08));
+      const width = Math.max(1.1, pen.size * 0.075 * hand.weight * (pen.weight ?? 1) * (1 + gauss(r) * 0.08));
       ribbon(ctx, path, width, grain ?? color, r);
       if (m > 0.45 && r() < 0.1 * m) ribbon(ctx, path.map(([px, py]) => [px + gauss(r) * 0.8, py + gauss(r) * 0.8] as P), width * 0.8, grain ?? color, r); // gone over twice
     }

@@ -1,4 +1,4 @@
-/** Seconds after the notes and the magazine have come in before the first call, and between calls after that. */
+/** Seconds before a call once the one called to changes (the notes put down), and between calls after that; a page load's first call comes at once. */
 export const GUIDE_FIRST = 3;
 export const GUIDE_AGAIN = 22;
 /** How long a call holds the magazine slid out. */
@@ -15,7 +15,8 @@ export type Beckon = 'notes' | 'magazine' | null;
 export class Guide {
   private t = 0;
   private due = GUIDE_FIRST;
-  private calling: Beckon = null;
+  /** Undefined until the first frame, whose call comes as soon as the paper is in. */
+  private calling: Beckon | undefined = undefined;
   private held = 0;
 
   constructor(private readonly has: (flag: string) => boolean, private readonly set: (flag: string) => void) {}
@@ -30,7 +31,7 @@ export class Guide {
     if (magazineOpen) this.set('opened-magazine');
     const want: Beckon = !this.has('opened-notes') ? 'notes' : !this.has('opened-magazine') ? 'magazine' : null;
     // A new one to call to (the notes were just put down): it waits as long as the first call did.
-    if (want !== this.calling) [this.calling, this.t, this.due] = [want, 0, GUIDE_FIRST];
+    if (want !== this.calling) [this.calling, this.t, this.due] = [want, 0, this.calling === undefined ? 0 : GUIDE_FIRST];
     if (!want || !ready || notesOpen || magazineOpen) return null;
     if ((this.t += dt) < this.due) return null;
     [this.t, this.due] = [0, GUIDE_AGAIN];

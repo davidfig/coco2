@@ -16,21 +16,22 @@ function guided(): { flags: Set<string>; guide: Guide; run: (secs: number, ready
   return { flags, guide, run };
 }
 
-test('the notes are called to first, then again and again until held up', () => {
+test('the notes are called to as soon as the paper is in, then again and again until held up', () => {
   const { run } = guided();
-  expect(run(GUIDE_FIRST - 0.1)).toEqual([]);
-  expect(run(0.2)).toEqual(['notes']);
+  expect(run(1 / 60)).toEqual(['notes']);
+  expect(run(GUIDE_AGAIN - 0.1)).toEqual([]);
   expect(run(GUIDE_AGAIN * 2)).toEqual(['notes', 'notes']);
 });
 
 test('nothing calls before the paper has come in', () => {
   const { run } = guided();
   expect(run(GUIDE_FIRST * 3, false)).toEqual([]);
-  expect(run(GUIDE_FIRST + 0.1)).toEqual(['notes']);
+  expect(run(1 / 60)).toEqual(['notes']);
 });
 
 test('once the notes have been held up, the magazine is called to, and stops once opened', () => {
   const { flags, guide, run } = guided();
+  run(1 / 60, false);
   expect(run(1, true, true)).toEqual([]);
   expect(flags.has('opened-notes')).toBe(true);
   expect(run(GUIDE_FIRST + 0.1)).toEqual(['magazine']);

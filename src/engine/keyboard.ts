@@ -15,6 +15,8 @@ export class Keyboard {
   private readonly queue: TypedKey[] = [];
   /** The keys held down now, by `KeyboardEvent.code` (`ShiftLeft`, `KeyA`), with the key each went down as. */
   private readonly down = new Map<string, string>();
+  /** A key came from the real keyboard (not `push`ed or `type`d) since the last `takeReal`. */
+  private real = false;
 
   constructor(listen = true) {
     if (!listen) return;
@@ -35,6 +37,7 @@ export class Keyboard {
       const k: TypedKey = { key: e.key, shift: e.shiftKey, ctrl: e.ctrlKey };
       if (e.shiftKey && left !== right) k.shiftSide = left ? 'left' : 'right';
       this.queue.push(k);
+      this.real = true;
       e.preventDefault();
     });
   }
@@ -52,6 +55,13 @@ export class Keyboard {
   /** Everything typed since the last call. */
   drain(): TypedKey[] {
     return this.queue.splice(0);
+  }
+
+  /** Whether a key came from the real keyboard since the last call. */
+  takeReal(): boolean {
+    const r = this.real;
+    this.real = false;
+    return r;
   }
 
   private forgetShifts(): void {

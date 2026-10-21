@@ -5,8 +5,20 @@ the window, with a strip of the tube's black border), showing the CoCo's VDG scr
 shader with curved glass and glare. TypeScript, Vite, no runtime dependencies. Sister project to the *-geometry games
 (`../sword-geometry`, `../space-geometry`, `../astronaut-geometry`); it may never go online, but it follows their rules.
 
-Commands: `pnpm dev` (port 5196, `.claude/launch.json`) · `pnpm typecheck` · `pnpm check:size` · `pnpm test` · `pnpm build`.
+Commands: `pnpm dev` (port 5196, `.claude/launch.json`) · `pnpm typecheck` · `pnpm check:size` · `pnpm test` · `pnpm build` ·
+`pnpm walkthrough`.
 Run `typecheck`, `check:size` and `test` before finishing any change. Design notes: `docs/design.md`.
+
+**Keep the docs current, in the same change.** A change to anything the player meets (a tape, a listing, a puzzle rule,
+a story timer or tampering, a note, a flag, a magazine page the story points at, a checkpoint) isn't finished until:
+- `pnpm walkthrough` has been run and the `docs/walkthrough.md` diff read and committed with it (it is generated: never
+  edit it by hand; if the diff shows something you didn't mean, fix the code). A new beat gets a step in
+  `walkthroughRoute.ts` and a checkpoint in `checkpoints.ts`, and `pnpm test walkthrough` passes.
+- `docs/flow.md` still says where each beat lives (a moved, renamed or new file or constant gets its row).
+- The design docs match what is built: `flags.md` (a flag added, removed or its consequence changed), `puzzles.md`,
+  `beats.md` / `issues.md` / `story.md` (a beat that now plays differently from what they say), `illustration.md`.
+- This file's folder map and sections, for a new file, folder, URL flag, console hook or rule.
+Say in the wrap-up which docs changed, or why none needed to.
 
 @../server-geometry/claude/games.md
 
@@ -33,6 +45,10 @@ Run `typecheck`, `check:size` and `test` before finishing any change. Design not
 
 ## Playtesting
 
+- Read before playing: `pnpm walkthrough` plays the whole game headlessly (`debug/walkthrough.ts`, the route in
+  `walkthroughRoute.ts`: BASIC, both issues' stories and puzzles, the notes) and writes `docs/walkthrough.md`, step by step: what is typed, the screen, the
+  story's own writing, the flags, the notes. `docs/flow.md` maps each beat to the file that makes it. After changing a
+  tape, rule, timer or note, run it again and read the diff; a new beat gets a step in its route.
 - `?clear` starts over: it removes every `coco2.*` localStorage key (CSAVEs, TV knobs, magazine flags, notebook wear)
   and then drops itself from the URL (`src/clear.ts`, imported first in `main.ts`).
 - `?issue=N` starts at the beginning of issue N with the issues before it played through (`?issue=2`: May on the table
@@ -51,6 +67,12 @@ Run `typecheck`, `check:size` and `test` before finishing any change. Design not
   It stays registered for that port after the tab closes, so unregister it and clear its cache when done.
 - `?instant&nosound` is the usual test URL. `?instant` skips the room's lights coming on, the tube warm-up and the
   magazine and notes sliding in, and makes the cassette instant (CLOAD / CSAVE normally take tape time).
+- The view rests on the whole desk and goes in to the set only to read the screen (`story/framing.ts`): real keys typed
+  or the story tampering go in; 10 s at OK with nothing typed, or a tape waiting for the recorder, go back. Clicks never
+  move it (a click on the machine's keys types from across the room). Without `?instant` (or `?book`) the page opens
+  there, the magazine and notes already on the table (`Computer.startWide`). The guide's calls (the notes until held
+  up, then the magazine until opened) show there as a hop (`story/hop.ts`). `?instant` starts in at the set. `keyboard.type` in the console counts as clicked
+  keys: it doesn't go in (`coco.framing.wide = false` does, until the next drift back).
 - The Browser pane's `type` action sends text as input events, not keydowns, so it doesn't reach the game. Type with
   `coco.engine.keyboard.type('LOOK\n')` ("\n" is ENTER, "\b" is ←), then `coco.engine.advance(1/60)`.
 - `coco` on `window` exposes `engine`, `screen`, `basic`, `interp`, `tv`, `vdg`. A hidden pane runs ~1 fps; step with `advance`.
@@ -69,7 +91,7 @@ Run `typecheck`, `check:size` and `test` before finishing any change. Design not
   picture rolls), `.loosen(0.6)` (it cuts out); `coco.tv.flinch()` (the picture starts to collapse and opens again, SHUTDOWN's first win); `coco.stationTest(9)` puts a far station on 9 (`tv.broadcast`).
 - Synthetic pointer events on the canvas need `canvas.setPointerCapture = () => {}` first (it throws for a pointer the
   browser never saw), or a knob drag silently does nothing.
-- Pulled back to the whole desk (a click on the set), the view widens to take in the table where the magazine and the
+- Pulled back to the whole desk, the view widens to take in the table where the magazine and the
   notes lie (either side of the machine, or both to its right in a narrower window: `DESK_LAYOUTS` in
   `computer/layout.ts`), so long as the set keeps 60% of its size; otherwise they stay where they are (`Computer.table`).
 - The notebook page wears with each time it is held up and put down (`coco2.notebook`): `coco.notebook.handled = 60`
@@ -83,7 +105,8 @@ src/main.ts           wires keyboard → BASIC → screen → VDG → TV, ?insta
 src/engine/           engine (loop, canvas size), keyboard (typed-key queue), gpu (programs, full-screen triangle, textures),
                       keptPass (a pass's picture kept, drawn again only when its inputs change)
 src/game/
-  debug/              playtesting only: the F2 menu (debugMenu + debugStyle) and checkpoints (story flags in order, jump points)
+  debug/              playtesting only: the F2 menu (debugMenu + debugStyle) and checkpoints (story flags in order, jump points),
+                      walkthrough + walkthroughRoute (the whole game played headlessly, `pnpm walkthrough`)
   vdg/                the MC6847: charset (the 64-glyph ROM, ASCII → screen byte), palette, vdg (512 bytes → 256×192 RGBA)
   coco/               screen (video memory at $0400, print/scroll, the blinking cursor), blocks (SET/RESET/POINT dots),
                       basic (boot message; the keyboard side: line editor, INPUT replies, INKEY$ keys, BREAK),
@@ -123,7 +146,7 @@ src/game/
                       door and the carry, PLAY latched, `Tape.present`; `coco2.recorder`), hit (clicks),
                       recorderSound (the keys, the door, the cassette dropping in, the motor and tape hiss)
   magazine/           the RAINBOW: book (state, slide-in, GPU pass), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn; lying on the table, folded back on a rounded spine) + bookEdges (the block of paper's sides), bookLayout (TV/book split), bookInput
-                      (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), slips (Kessler's pencilled sticky notes, stuck to a page and drawn over it), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover) + maySky (its spring morning over still water) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, the tape) + mayShutdown (SHUTDOWN's three pages) + mayLetters (letters, classifieds), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner (parody ads), adsInsideBack + adsBackCover (the back
+                      (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), slips (Kessler's pencilled sticky notes, stuck to a page and drawn over it), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover) + maySky (its spring morning over still water) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, the tape) + mayShutdown (SHUTDOWN's three pages) + mayLetters (letters, classifieds) + mayNed (Ned's May catalogue) + mayInsideFront + mayLake + mayFish (THE ONE THAT GOT AWAY, painted) + mayInsideBack + mayProducts (THE HERMIT, CLOAD-A-MATIC) + mayBackCover + mayTimer (LIGHTS-OUT): May's ads, each issue's its own (docs/issues.md, Advertisements), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner + adsMemory (parody ads), adsInsideBack + adsBackCover (the back
                       pages, laid out like real 1986 mail-order and national ads) + adsMail (their type: tight headlines, raised-cent
                       prices, slugs, coupons) + adsProducts (painted studio shots)
   tv/                 tv (uploads the VDG frame, uniforms, power-on, `broadcast`), tvShader (uniforms, main: room → cabinet → tube),

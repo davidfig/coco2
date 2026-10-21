@@ -34,6 +34,8 @@ export class HeadlessCoco {
   private lost: string[] = [];
   /** Where the last `type` began, in transcript lines. */
   private mark = 0;
+  /** Called after every field the machine runs: the story's timers, for a script that plays the whole game. */
+  onFrame?: (dt: number) => void;
 
   /** `fastTape` (the default) makes CLOAD / CSAVE instant, as `?instant` does. */
   constructor({ fastTape = true } = {}) {
@@ -57,6 +59,7 @@ export class HeadlessCoco {
     this.mark = Math.max(0, this.transcript().length - 1);
     this.basic.step(FRAME, keys);
     this.screen.step(FRAME);
+    this.onFrame?.(FRAME);
     return this.settle(maxSeconds);
   }
 
@@ -79,6 +82,7 @@ export class HeadlessCoco {
     for (let t = 0; t < seconds; t += FRAME) {
       this.basic.step(FRAME, []);
       this.screen.step(FRAME);
+      this.onFrame?.(FRAME);
     }
     return this;
   }

@@ -4,7 +4,7 @@ const W = PAGE_W - MARGIN * 2;
 const TAU = Math.PI * 2;
 
 /** A spiky seal with a line or two of white type in it, as the mail-order ads stamp their promises. */
-function burst(ctx: Ctx, cx: number, cy: number, r: number, lines: string[]): void {
+export function burst(ctx: Ctx, cx: number, cy: number, r: number, lines: string[]): void {
   ctx.fillStyle = INK;
   ctx.beginPath();
   for (let i = 0; i < 36; i++) {
@@ -27,7 +27,7 @@ function screenShot(ctx: Ctx, x: number, y: number, w: number, label: string, li
 }
 
 /** A blank to fill in on the coupon: a label and a ruled line to the end of its run. */
-function blank(ctx: Ctx, label: string, x: number, y: number, w: number): void {
+export function blank(ctx: Ctx, label: string, x: number, y: number, w: number): void {
   const lw = text(ctx, label, x, y, `15px ${SANS}`);
   ctx.fillStyle = INK;
   ctx.fillRect(x + lw + 8, y + 2, w - lw - 8, 1.5);

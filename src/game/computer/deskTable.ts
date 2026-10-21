@@ -33,6 +33,8 @@ export class DeskTable {
   /** The arrangement the desk view makes room for; `spots` where each last lay, to go back from. */
   private layout: DeskLayout = {};
   private readonly spots: Required<DeskLayout> = { magazine: DESK_LAYOUTS[0].magazine!, notes: DESK_LAYOUTS[0].notes! };
+  /** The next `step` puts each where it is going at once, with no slide (the page opening on the desk). */
+  snap = false;
 
   constructor(private readonly time: number) {}
 
@@ -62,8 +64,9 @@ export class DeskTable {
       const there = !!spot && (spot === this.spots[what] || this.onTable[what] === 0);
       if (there) this.spots[what] = spot;
       const on = there && focused && room(area, v, spot);
-      this.onTable[what] = Math.min(1, Math.max(0, this.onTable[what] + (on ? dt : -dt) / this.time));
+      this.onTable[what] = this.snap ? +on : Math.min(1, Math.max(0, this.onTable[what] + (on ? dt : -dt) / this.time));
     }
+    this.snap = false;
   }
 
   /** Off the table at once (the machine hidden). */

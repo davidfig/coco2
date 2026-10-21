@@ -127,7 +127,7 @@ export function drawMayNed(ctx: Ctx): void {
     ...entry('TOUCH TYPING', 'Forty words a minute in six weeks. Our tester reached sixty, and we have asked him to slow down.', '$16.95'),
     ...entry('STATE CAPITALS', 'Fifty states, fifty capitals, and a dog that barks when you are wrong. Your family will learn the capitals too, from the next room.', '$14.95'),
   ];
-  flow(ctx, rowsFor(ctx, edu, cw), MARGIN + 20, ey + 50, W - 40, 230, 2, 30);
+  flow(ctx, rowsFor(ctx, edu, cw), MARGIN + 20, ey + 68, W - 40, 216, 2, 30);
   caseAd(ctx, MARGIN + 20, ey + 296, W - 40, 200);
   nedFooter(ctx, top, '*Now at 300 baud. Still busy, and slower.');
 }
