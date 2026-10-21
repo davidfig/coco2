@@ -48,7 +48,7 @@ const notebook = new Notebook(
   // The cassette in the notes: put the magazine away and pull back to the desk, where the recorder is.
   () => {
     magazine.close();
-    if (computer.visible) computer.focused = true;
+    framing.back(true);
   },
 );
 /** The CoCo 2 on the table in front of the set: a trial, `?nococo` leaves it out. Made after the notebook, so a click on the paper is the paper's. */
@@ -57,15 +57,14 @@ computer.visible = !params.has('nococo');
 /** The book is drawn over the machine, so a click on it is the book's: its half of the window while open, else the page peeking in. */
 computer.covered = (nx, ny) => (magazine.open ? magazine.inRect(magazine.book, nx, ny) : overPage(magazine.v, nx, ny));
 /**
- * A click on the set that isn't its own (a knob, the rocker, the smack) puts the book away while it is out; otherwise,
- * a click on the set itself (the glass, the cabinet) goes in to read the screen from across the room, or back out from in.
+ * A click on the set itself (the glass, the cabinet; not a knob, the rocker or the smack) goes in to read the screen
+ * from across the room, or back out from in. With the book out, it goes between the screen close up and the whole set
+ * with the machine, rather than putting the book away.
  */
 computer.onSet = (x, y) => {
-  if (magazine.open) magazine.close();
-  else if (tv.touch.onSet(x, y)) {
-    if (framing.wide) framing.closer();
-    else framing.back();
-  }
+  if (!tv.touch.onSet(x, y)) return;
+  if (framing.wide) framing.closer();
+  else framing.back();
 };
 /** Put away while the view is pulled back to the whole desk, the magazine lies on the table beside the machine if there's room. */
 /** The guide's calls, as they show with the paper lying on the table: a hop. */
@@ -86,7 +85,7 @@ computer.busy = (x, y) => {
   const part = tv.touch.at(x, y)?.part;
   return !!tv.knobs.at(x, y) || (part !== undefined && part !== 'glass');
 };
-const bookInput = attachBookInput(magazine, canvas, () => notebook.covers());
+const bookInput = attachBookInput(magazine, canvas, () => notebook.covers(), computer.visible ? () => {} : undefined);
 const seen = new SeenTracker();
 /** Placeholder for issue 2, shown once issue 1's night has passed. */
 /** `?book` starts with the magazine open (for playtesting). */
@@ -148,13 +147,25 @@ story.sleep();
 story2.sleep();
 story.wake();
 let setOn = tv.powerTime >= 0;
+let bookWasOpen = magazine.open;
+let wideBeforeBook = false;
 engine.updaters.push((dt) => {
   screen.step(dt);
   recorder.step(dt);
   // A tape command waiting with no cassette in: the view pulls back to the desk, where the recorder is.
-  if (recorder.takeBeckon()) framing.back();
-  framing.step(dt, typedReal, screen.tampered.takeMarked(), basic.interp.state === 'idle');
-  if (computer.visible) computer.focused = framing.wide;
+  if (recorder.takeBeckon()) framing.back(true);
+  // Opening the book goes in to the screen, to copy a listing off the page; it stays in while the book is open. Put away,
+  // the view goes back to where it was before (the desk, perhaps), unless the recorder has pulled it back to the desk meanwhile.
+  if (magazine.open && !bookWasOpen) {
+    wideBeforeBook = framing.wide;
+    framing.closer();
+  } else if (!magazine.open && bookWasOpen && !framing.desk) {
+    if (wideBeforeBook) framing.back();
+    else framing.closer();
+  }
+  bookWasOpen = magazine.open;
+  framing.step(dt, typedReal, screen.tampered.takeMarked(), basic.interp.state === 'idle' && !magazine.open);
+  if (computer.visible) computer.focused = framing.wide && (!magazine.open || framing.desk);
   typedReal = false;
   story.step(dt);
   story2.step(dt);
@@ -191,7 +202,9 @@ engine.lateUpdaters.push((dt) => {
   magazine.update(dt, engine.gl.drawingBufferWidth, engine.gl.drawingBufferHeight);
   seen.update(magazine, dt);
   notebook.update(dt);
-  const view = computer.view(dt, magazine.tv, magazine.frame, magazine.openT, tvEnds(engine.gl.drawingBufferWidth / engine.gl.drawingBufferHeight, magazine.openT, magazine.readT));
+  // The view goes in one glide to where the book's move ends (`Computer.view`), in close on the screen beside it unless clicked out.
+  const [bookOut, read, near] = [magazine.open, magazine.reading, !framing.wide].map(Number);
+  const view = computer.view(dt, magazine.tv, magazine.frame, bookOut, tvEnds(engine.gl.drawingBufferWidth / engine.gl.drawingBufferHeight, bookOut, read, near));
   tv.draw(dt, engine.time, vdg.border, view.rect, view.frame, notebook.shade());
   computer.draw(tv.picture, tv.glow);
   // On the table the one looked at last lies on top; the notes held up, or peeking from the corner, are always over the book.

@@ -4,6 +4,7 @@ import { TALL, type TvEnd } from '../magazine/bookLayout';
 import { ACTIVE } from '../tv/pictureShader';
 import { COMPUTER_FRAG } from './computerShader';
 import { MarchCache } from './marchCache';
+import { Glide } from './glide';
 import { CocoKeys, capsBounds, keyAt } from './keys';
 import { CORDS_BACK } from './cords';
 import { DeskTable, type View } from './deskTable';
@@ -17,11 +18,8 @@ interface Rect {
   h: number;
 }
 
-
 /** Room left under the machine (panel units): its shadow. */
 const BELOW = 0.1;
-/** How long the pull back takes, about (seconds). */
-const DESK_TIME = 0.6;
 /** How far the screen's light must move (any channel) before the machine is marched in the new light: past the cursor's blink. */
 const GLOW_STEP = 6 / 256;
 /** A press that moves further than this (CSS px) is a drag (wiping the glass), not a click. */
@@ -86,7 +84,8 @@ export class Computer {
    * How far the magazine and the notes have gone onto the table (0..1, eased): they go as the view pulls back to the
    * desk, each only if the window shows the table round its spot (`DeskSpot`); otherwise they stay where they are.
    */
-  private readonly onDesk = new DeskTable(DESK_TIME);
+  private readonly onDesk = new DeskTable();
+  private readonly glide = new Glide();
 
   constructor(
     private readonly gl: WebGL2RenderingContext,
@@ -116,11 +115,11 @@ export class Computer {
   /**
    * Where the TV should draw (`Tv.draw`'s rectangle and frame), given the book's (`Magazine.tv`, `.frame`): lifted, if
    * the window has room over the set, until the whole machine shows under it (in a tall window undone as the book comes
-   * out under the set); pulled back to the whole desk while `focused` (`open`, `Magazine.openT`: the edges the put-away
-   * book leaves it). The returned rectangle holds the book's, so the set's knobs and glass answer wherever they show.
-   * While the book moves, the view is eased between the ones it has at each end of the move (`ends`, `tvEnds`), not
-   * fitted afresh to the rectangle on the way: the fit slides and lifts the set by cases (the keyboard in view or not,
-   * room over the set or not), which would jump and lurch part way through.
+   * out under the set); pulled back to the whole desk while `focused` (`open`: the book out or not, where it is going,
+   * and so the edges the put-away book leaves it). The returned rectangle holds the book's, so the set's knobs and glass
+   * answer wherever they show. `ends` are where the book's move ends (`tvEnds`): the view goes there in one glide from
+   * wherever it is when the move starts (`Glide`), not through the blends on the way, which slide and lift the set by
+   * cases (the keyboard in view or not, room over the set or not) and, each on its own clock, would move it twice.
    */
   view(dt: number, rect: Rect, frame: number, open: number, ends: readonly TvEnd[]): { rect: Rect; frame: number } {
     const W = this.gl.drawingBufferWidth;
@@ -132,30 +131,36 @@ export class Computer {
       return { rect, frame };
     }
     this.keys.step(dt);
-    this.focusT = Math.min(1, Math.max(0, this.focusT + (this.focused ? dt : -dt) / DESK_TIME));
-    const homes = ends.map((e) => ({ v: this.home(e.tv, e.frame, e.open), w: e.w }));
+    const homes = ends.map((e) => ({ v: this.home(e.tv, e.frame, e.open, e.near), w: e.w }));
     const sum = (f: (v: View) => number) => homes.reduce((n, h) => n + h.w * f(h.v), 0);
     const a: View = { cx: sum((v) => v.cx), cy: sum((v) => v.cy), k: Math.exp(sum((v) => Math.log(v.k))) };
-    // The edges the book and the notebook keep put away, which the desk view may take (none while the book is out).
-    const c = 1 - smooth(Math.min(1, Math.max(0, open)));
-    const window = { ...this.area, x1: this.area.x1 + (W - this.area.x1) * c, y0: this.area.y0 * (1 - c) };
-    const b = this.onDesk.whole(this.area, window, this.desk, a.k);
-    this.onDesk.step(dt, this.focused, b);
-    const t = smooth(this.focusT);
-    if (t === 0) return this.toTv(a);
-    this.shown = this.onDesk.area;
-    return this.toTv({ cx: a.cx + (b.cx - a.cx) * t, cy: a.cy + (b.cy - a.cy) * t, k: a.k * Math.pow(b.k / a.k, t) });
+    // The TV's part of the window where the move ends, and the edges the book and the notebook keep put away, which the desk view may take (none while the book is out).
+    const r = ends.reduce((m, e) => ({ x: m.x + e.w * e.tv.x, y: m.y + e.w * e.tv.y, w: m.w + e.w * e.tv.w, h: m.h + e.w * e.tv.h }), { x: 0, y: 0, w: 0, h: 0 });
+    const area = { x0: r.x * W, y0: r.y * H, x1: (r.x + r.w) * W, y1: (r.y + r.h) * H };
+    const c = 1 - open;
+    const window = { ...area, x1: area.x1 + (W - area.x1) * c, y0: area.y0 * (1 - c) };
+    const b = this.onDesk.whole(area, window, this.desk, a.k);
+    const v = this.glide.step(dt, this.focused ? b : a, `${this.focused} ${ends.map((e) => `${e.open} ${e.frame}`)}`, open);
+    // The desk and the papers on it keep the glide's time, so the book coming out and all of them end together.
+    this.focusT = Math.min(1, Math.max(0, this.focusT + (this.focused ? dt : -dt) / this.glide.secs));
+    this.onDesk.step(dt, this.focused, b, this.glide.secs);
+    if (this.focusT > 0) this.shown = this.onDesk.area;
+    return this.toTv(v);
   }
 
   /** Pulled back to the whole desk at once, the magazine and the notes already lying on the table (the page's opening). */
   startWide(): void {
     this.focused = true;
     this.focusT = 1;
+    this.glide.snap();
     this.onDesk.snap = true;
   }
 
-  /** The book's view of the set in TV rectangle `rect`, lifted to show the machine if there's room over the set. */
-  private home(rect: Rect, frame: number, open: number): View {
+  /**
+   * The book's view of the set in TV rectangle `rect`, lifted to show the machine if there's room over the set; in close
+   * on the screen beside the open book (`near`), it stays centred on the picture.
+   */
+  private home(rect: Rect, frame: number, open: number, near: number): View {
     const W = this.gl.drawingBufferWidth;
     const H = this.gl.drawingBufferHeight;
     const area = { x0: rect.x * W, y0: rect.y * H, x1: (rect.x + rect.w) * W, y1: (rect.y + rect.h) * H };
@@ -167,8 +172,8 @@ export class Computer {
     const top = cy + (py + frame) * k;
     const bottom = cy + (lowestPoint() - BELOW) * k;
     const t = W / H < TALL ? smooth(Math.min(1, Math.max(0, open))) : 0;
-    const ly = cy + Math.max(0, Math.min(-bottom, H - top)) * (1 - t);
-    return { cx: cx + this.slide(area, cx, ly, k, px), cy: ly, k };
+    const ly = cy + Math.max(0, Math.min(-bottom, H - top)) * (1 - t) * (1 - near);
+    return { cx: cx + this.slide(area, cx, ly, k, px) * (1 - near), cy: ly, k };
   }
 
   /**

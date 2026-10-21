@@ -27,7 +27,7 @@ const smooth = (t: number): number => t * t * (3 - 2 * t);
 
 /**
  * The magazine and the notes on the table, for the view pulled back to the whole desk: which of `DESK_LAYOUTS` it
- * makes room for (`whole`), and how far each has gone onto the table (0..1, eased over `time`). Each goes only if the
+ * makes room for (`whole`), and how far each has gone onto the table (0..1, eased over the view's move: `step`'s `time`). Each goes only if the
  * window shows the table round its spot; otherwise it stays where it is.
  */
 export class DeskTable {
@@ -39,8 +39,6 @@ export class DeskTable {
   area: Area = { x0: 0, y0: 0, x1: 0, y1: 0 };
   /** The next `step` puts each where it is going at once, with no slide (the page opening on the desk). */
   snap = false;
-
-  constructor(private readonly time: number) {}
 
   /**
    * The whole desk (`desk`, panel bounds) in `area`, centred; never closer in than `k`. It pulls back further to take in
@@ -65,8 +63,8 @@ export class DeskTable {
     return base;
   }
 
-  /** Move each on or off the table: on while `focused` and its spot shows in `v` (the whole view, `whole`) inside its `area`. */
-  step(dt: number, focused: boolean, v: View): void {
+  /** Move each on or off the table over `time` (seconds): on while `focused` and its spot shows in `v` (the whole view, `whole`) inside its `area`. */
+  step(dt: number, focused: boolean, v: View, time: number): void {
     const area = this.area;
     for (const what of ['magazine', 'notes'] as const) {
       const spot = this.layout[what];
@@ -74,7 +72,7 @@ export class DeskTable {
       const there = !!spot && (spot === this.spots[what] || this.onTable[what] === 0);
       if (there) this.spots[what] = spot;
       const on = there && focused && room(area, v, spot);
-      this.onTable[what] = this.snap ? +on : Math.min(1, Math.max(0, this.onTable[what] + (on ? dt : -dt) / this.time));
+      this.onTable[what] = this.snap ? +on : Math.min(1, Math.max(0, this.onTable[what] + (on ? dt : -dt) / time));
     }
     this.snap = false;
   }

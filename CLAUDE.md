@@ -67,13 +67,19 @@ Say in the wrap-up which docs changed, or why none needed to.
   It stays registered for that port after the tab closes, so unregister it and clear its cache when done.
 - `?instant&nosound` is the usual test URL. `?instant` skips the room's lights coming on, the tube warm-up and the
   magazine and notes sliding in, and makes the cassette instant (CLOAD / CSAVE normally take tape time).
-- The view rests on the whole desk and goes in to the set only to read the screen (`story/framing.ts`): real keys typed
-  or the story tampering go in, as does a click on the set itself (glass or cabinet, not a knob, the rocker or the smack), and another such click comes back out;
-  10 s at OK with nothing typed, or a tape waiting for the recorder, go back. No other click moves it (a click on the
-  machine's keys types from across the room). Without `?instant` (or `?book`) the page opens
+- The view rests on the whole desk and goes in to the set only to read the screen (`story/framing.ts`): the story tampering
+  goes in, as does a click on the set itself (glass or cabinet, not a knob, the rocker or the smack), and another such click comes back out;
+  10 s at OK with nothing typed, or a tape waiting for the recorder, go back. Typing never moves it (real keys only hold off the drift back). No other click moves it (a click on the
+  machine's keys types from across the room). With the magazine open the same click goes between the screen close up
+  (`NEAR_FRAME`, `bookLayout.ts`; above the book in a tall window) and the whole set with the machine (`SIDE_FRAME`) instead of putting
+  the book away: opening it goes in, it doesn't drift back out while open, putting it away goes back to the view it was opened from
+  (the desk or the set), and only the recorder pulls back to the desk (`Framing.desk`).
+  Each change of where the view is going is one glide there from where it is (`computer/glide.ts`), never the
+  book's, the desk's and the close-up's easings stacked, which would move it twice. The desk and the papers going on or off the table
+  take the glide's time (the book's 0.9 s as it comes out or goes away), so everything ends together. Without `?instant` (or `?book`) the page opens
   there, the magazine and notes already on the table (`Computer.startWide`). The guide's calls (the notes until held
   up, then the magazine until opened) show there as a hop (`story/hop.ts`). `?instant` starts in at the set. `keyboard.type` in the console counts as clicked
-  keys: it doesn't go in (`coco.framing.wide = false` does, until the next drift back).
+  keys (`coco.framing.wide = false` goes in, until the next drift back).
 - The Browser pane's `type` action sends text as input events, not keydowns, so it doesn't reach the game. Type with
   `coco.engine.keyboard.type('LOOK\n')` ("\n" is ENTER, "\b" is ←), then `coco.engine.advance(1/60)`.
 - `coco` on `window` exposes `engine`, `screen`, `basic`, `interp`, `tv`, `vdg`. A hidden pane runs ~1 fps; step with `advance`.

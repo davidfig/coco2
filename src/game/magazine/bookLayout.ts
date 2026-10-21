@@ -47,8 +47,12 @@ export const ROLL = 0.35;
 /** …and that corner sits this far (share of the book's rect) below the rect's top. */
 export const CORNER_DROP = 0.18;
 export const PEEK_HOVER = 0.04;
-/** How much of the set shows round the picture (`Tv.draw`'s `frame`): book put away, beside it, at reading size. */
+/**
+ * How much of the set shows round the picture (`Tv.draw`'s `frame`): book put away, beside it (in close on the screen,
+ * or out to the whole set and the machine: `Magazine.near`, a click on the set), at reading size.
+ */
 export const CLOSED_FRAME = 0.08;
+export const NEAR_FRAME = 0.4;
 export const SIDE_FRAME = 0.95;
 export const READ_FRAME = 0.4;
 /** Beside the set, the book takes at most this share of the window (width, or height when tall): the set has the rest. */
@@ -143,23 +147,35 @@ export function layoutAt(aspect: number, hoverT: number, openT: number, readT: n
   };
 }
 
-/** The TV's rectangle and frame at one end of the book's moves (put away or out, side by side or reading), and its share now. */
+/** The TV's rectangle and frame at one end of the book's moves (put away or out, side by side or reading, in close or not), and its share now. */
 export interface TvEnd {
   tv: Rect;
   frame: number;
   open: number;
+  near: number;
   w: number;
 }
 
-/** The ends the arrangement is between now (`layoutAt`'s TV and `Magazine.frame` are these blended, two ways at once), each with its weight. */
-export function tvEnds(aspect: number, openT: number, readT: number): TvEnd[] {
-  const [o, r] = [smooth(openT), smooth(readT)];
+/** `Tv.draw`'s frame for the book `open` and `read` (0..1, eased), in close on the screen by `near`. */
+export function tvFrame(open: number, read: number, near: number): number {
+  return lerp(CLOSED_FRAME, lerp(lerp(SIDE_FRAME, NEAR_FRAME, near), READ_FRAME, read), open);
+}
+
+/** The ends the arrangement is between now (`layoutAt`'s TV and `Magazine.frame` are these blended, three ways at once), each with its weight. */
+export function tvEnds(aspect: number, openT: number, readT: number, nearT: number): TvEnd[] {
+  const [o, r, n] = [smooth(openT), smooth(readT), smooth(nearT)];
   const ends: TvEnd[] = [];
   for (const open of [0, 1])
-    for (const read of [0, 1]) {
-      const w = (open ? o : 1 - o) * (read ? r : 1 - r);
-      if (w > 0) ends.push({ tv: layoutAt(aspect, 0, open, read).tv, frame: lerp(CLOSED_FRAME, lerp(SIDE_FRAME, READ_FRAME, read), open), open, w });
-    }
+    for (const read of [0, 1])
+      for (const near of [0, 1]) {
+        const w = (open ? o : 1 - o) * (read ? r : 1 - r) * (near ? n : 1 - n);
+        if (w === 0) continue;
+        const L = layoutAt(aspect, 0, open, read);
+        // In close in a tall window, the set fits above the book, which otherwise comes up over its bottom.
+        const top = L.book.y + L.book.h;
+        const tv = near && open && aspect < TALL ? { ...L.tv, y: top, h: L.tv.y + L.tv.h - top } : L.tv;
+        ends.push({ tv, frame: tvFrame(open, read, near), open, near: open * near, w });
+      }
   return ends;
 }
 

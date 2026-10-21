@@ -2,7 +2,7 @@ import { FULLSCREEN_VERT, KeptPass, Program, linkProgram } from '../../engine';
 import type { DeskSpot } from '../computer/layout';
 import { camBounds, onTable, setCam } from './bookCam';
 import { BOOK_FRAG } from './bookShader';
-import { CLOSED_FRAME, Flip, READ_FRAME, SIDE_FRAME, PAGE_FIT_H, PAGE_NEAR_W, PAGE_UNIT_H, Rect, TILT, View, bookBounds, clamp, layoutAt, leafLayers, lerp, putAway, screenToBook, smooth, spreadView, viewIn } from './bookLayout';
+import { Flip, PAGE_FIT_H, PAGE_NEAR_W, PAGE_UNIT_H, Rect, TILT, View, bookBounds, clamp, layoutAt, leafLayers, lerp, putAway, screenToBook, smooth, spreadView, tvFrame, viewIn } from './bookLayout';
 import { IssueState, newState } from './data';
 import { PagePainter } from './pagePainter';
 import { PageTextures } from './pageTextures';
@@ -268,8 +268,7 @@ export class Magazine {
     this.notesTuck = lay.notes;
     this.notesTv = lay.notesTv;
     const open = smooth(this.openT);
-    const read = smooth(this.readT);
-    this.frame = lerp(CLOSED_FRAME, lerp(SIDE_FRAME, READ_FRAME, read), open);
+    this.frame = tvFrame(open, smooth(this.readT), 0);
 
     const sv = spreadView(this.phi(), this.count / 2);
     const rw = lay.book.w * W;

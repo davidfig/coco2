@@ -17,7 +17,7 @@ const HINT_KEY = 'coco2.rainbow.hint';
  * away, PAGE UP/DOWN turn. A few starbursts on the page corner remain (bookCorner). Typing is left alone so the CoCo keeps listening
  * while the magazine is open.
  */
-export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers: () => Cover[]): { update: (light?: string) => void } {
+export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers: () => Cover[], onSet = () => mag.close()): { update: (light?: string) => void } {
   const norm = (e: MouseEvent): [number, number] => {
     const r = canvas.getBoundingClientRect();
     return [(e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height];
@@ -165,8 +165,8 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers
       if (overPage(mag.v, nx, ny)) mag.show();
       return;
     }
-    // A click on the set puts the magazine away, as ✕ does.
-    if (mag.inRect(mag.tv, nx, ny)) return mag.close();
+    // A click on the set puts the magazine away, as ✕ does (`onSet`: with the machine in front of it, main.ts has it go in and out instead).
+    if (mag.inRect(mag.tv, nx, ny)) return onSet();
     if (!mag.inRect(mag.book, nx, ny)) return;
     clearTimeout(clickTimer);
     // A contents page number turns straight to its page, at any size.
