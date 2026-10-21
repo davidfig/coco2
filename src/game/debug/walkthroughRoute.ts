@@ -24,7 +24,7 @@ export const MARCH: readonly Part[] = [
       { say: 'Holds up the notes', act: (p) => p.set('opened-notes') },
       { say: 'Opens the magazine', act: (p) => p.set('opened-magazine') },
       { say: `Says hello (the notes point at p.${pageNo('screen')})`, type: ['PRINT "HELLO"'] },
-      { say: `Types in the name program from p.${pageNo('typeIn')}`, type: [...FIRST_PROGRAM] },
+      { say: `Types in the name program from p.${pageNo('program')}`, type: [...FIRST_PROGRAM] },
       { say: 'Runs it', type: ['RUN'] },
       { say: 'Gives it a name', type: [NAME] },
     ],

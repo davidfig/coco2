@@ -3,11 +3,12 @@ import { drawCleanerAd } from './adsCleaner';
 import { drawBackCover } from './adsBackCover';
 import { drawInsideCoverAd } from './adsColor';
 import { drawInsideBackAd } from './adsInsideBack';
+import { drawMemoryAd } from './adsMemory';
 import { drawContents, drawEditorial, drawHowTo1, drawHowTo2, drawMap } from './articles';
 import { drawClassifieds } from './classifieds';
 import { drawCover } from './cover';
 import type { IssueState } from './data';
-import { drawGuessListing, drawListing } from './extras';
+import { drawGuessListing } from './extras';
 import { drawFirstProgram, drawStopping, drawTape } from './learn';
 import { drawLetters } from './letters';
 import { ISSUES, ISSUE_DATE, type AnyPageId, type IssueId } from './pages';
@@ -46,7 +47,7 @@ const PAGES: Record<AnyPageId, PageDef> = {
   words: { draw: drawHowTo2 },
   map: { draw: drawMap },
   cleanerAd: { draw: drawCleanerAd },
-  typeIn: { draw: drawListing },
+  memoryAd: { draw: drawMemoryAd },
   program: { draw: drawFirstProgram },
   stopping: { draw: drawStopping },
   guess: { draw: drawGuessListing },

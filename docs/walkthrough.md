@@ -35,7 +35,7 @@ OK
 
 - flag `printed` (0:01)
 - notes ~~PRINT "HELLO" first. p.6~~
-- notes + Type in the program, p.7. Help: p.8 ❓
+- notes + Type in the program, p.7 ❓
 
 **5. Types in the name program from p.7** (0:03)
 
@@ -65,13 +65,13 @@ OK
 ```
 
 - flag `first-program` (0:05)
-- notes ~~Type in the program, p.7. Help: p.8~~
+- notes ~~Type in the program, p.7~~
 - notes ~~Typed it in. Now RUN it and see what it does~~
-- notes + Adventure is on the tape. CLOAD it, RUN. p.9 ❓
+- notes + Adventure is on the tape. CLOAD it, RUN. p.8 ❓
 
 ### Issue 1: ADVENT
 
-**8. Loads the adventure (p.9) and runs it** (0:06)
+**8. Loads the adventure (p.8) and runs it** (0:06)
 
 ```
 CLOAD "ADVENT"
@@ -85,9 +85,9 @@ OK
 - flag `tape-inserted` (0:06)
 - flag `adventure-loaded` (0:06)
 - flag `adventure-sn` (0:06)
-- notes ~~Adventure is on the tape. CLOAD it, RUN. p.9~~
+- notes ~~Adventure is on the tape. CLOAD it, RUN. p.8~~
 - notes + Label on the tape, in pencil: "Copied by hand, for you. Mistakes are mine. - M. Kessler"
-- notes + ?SN ERROR IN 30. LIST 30, fix it. p.8 ❓
+- notes + ?SN ERROR IN 30. LIST 30, fix it. p.7 ❓
 
 **9. Lists the broken line and types it as the magazine prints it** (0:07)
 
@@ -106,7 +106,7 @@ TYPE LOOK TO BEGIN.
 ```
 
 - flag `adventure-runs` (0:07)
-- notes ~~?SN ERROR IN 30. LIST 30, fix it. p.8~~
+- notes ~~?SN ERROR IN 30. LIST 30, fix it. p.7~~
 - notes + PRNT for PRINT in line 30. Kessler's mistake?
 - notes + Runs now. Says: type LOOK ❓
 
@@ -143,7 +143,7 @@ EXITS: NORTH, WEST.
 
 - flag `has-lamp` (0:11)
 - notes ~~Pitch dark. Feel around for a light~~
-- notes + Got the lamp. Walk my map, p.11 ❓
+- notes + Got the lamp. Walk my map, p.10 ❓
 
 **12. West to the cellar: the box** (0:12)
 
@@ -192,7 +192,7 @@ WHEELS IN THAT ORDER.
 - flag `lock-examined` (0:13)
 - flag `door-examined` (0:13)
 - flag `plate-read` (0:13)
-- notes + 4 rooms, 4 numbers. In order: read my map like a page, p.11 ❓
+- notes + 4 rooms, 4 numbers. In order: read my map like a page, p.10 ❓
 
 **14. West to the gallery: the mirror** (0:14)
 
@@ -288,10 +288,10 @@ SOFTLY, A VOICE BREATHES:
 - flag `mapped` (0:17)
 - flag `altar-read` (0:17)
 - flag `whisper-listened` (0:17)
-- notes ~~Got the lamp. Walk my map, p.11~~
+- notes ~~Got the lamp. Walk my map, p.10~~
 - notes + ~~Chapel: a whisper, gone before I hear it~~ (answered at once)
 - notes + ~~Been everywhere but behind the hall's north door. Locked. EXAMINE DOOR?~~ (answered at once)
-- notes + ~~Altar: "wrote it in my lines, the 270s". ESC, LIST 270-280? p.13~~ (answered at once)
+- notes + ~~Altar: "wrote it in my lines, the 270s". ESC, LIST 270-280? p.12~~ (answered at once)
 - notes + Held my breath in the chapel. A voice: "Two"
 
 **18. Back to the cellar: opens the box** (0:18)
@@ -371,7 +371,7 @@ A CHEST OF GOLD SITS HERE.
 ```
 
 - flag `door-open` (0:20)
-- notes ~~4 rooms, 4 numbers. In order: read my map like a page, p.11~~
+- notes ~~4 rooms, 4 numbers. In order: read my map like a page, p.10~~
 - notes ~~Wrong code. Some wheels click: right number, right place?~~
 - notes + Clock, whisper, mirror, card, in map order. Open!
 
@@ -399,7 +399,7 @@ OK
 
 ### Issue 1: GUESS and the extra line
 
-**22. Loads GUESS to check it against p.14** (0:25)
+**22. Loads GUESS to check it against p.13** (0:25)
 
 ```
 CLOAD "GUESS"
@@ -411,7 +411,7 @@ OK
 - flag `tamper-name` (0:28)
 - **story** row 8: `ALEX` → `OK` (0:31)
 - notes + After I won, HELLO wrote itself on the screen. I didn't type it
-- notes + "Mistakes are mine." GUESS is printed, p.14. CHECK it ❓
+- notes + "Mistakes are mine." GUESS is printed, p.13. CHECK it ❓
 - notes + The prompt said my name instead of OK. Just for a second
 
 **23. CHECKs it** (0:31)
@@ -466,13 +466,13 @@ OK
 ```
 
 - flag `found-extra-line` (0:32)
-- notes + Odd line in GUESS. Is it on p.14? ❓
+- notes + Odd line in GUESS. Is it on p.13? ❓
 
-**25. Turns to GUESS on p.14** (0:33)
+**25. Turns to GUESS on p.13** (0:33)
 
 - flag `seen-guess` (0:33)
-- notes ~~"Mistakes are mine." GUESS is printed, p.14. CHECK it~~
-- notes ~~Odd line in GUESS. Is it on p.14?~~
+- notes ~~"Mistakes are mine." GUESS is printed, p.13. CHECK it~~
+- notes ~~Odd line in GUESS. Is it on p.13?~~
 - notes + Line 125: "Is anyone reading this"
 - notes + Who is asking? ❓
 - notes + Delete it (type 125)? Or leave it? ❓

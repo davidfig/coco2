@@ -42,7 +42,8 @@ may come back (Chip Munk, Nifty Ned, CLOAD-A-MATIC) in their own house style, se
 tightens, the ads show it: what is no longer sold, products that obey the Clear Mind's advice, and later, ads that quote
 it.
 
-- **March:** SPACE GOBBLER and LEMONADE (inside front), HEAD CASE (a head cleaner for tapes that talk back), Nifty
+- **March:** SPACE GOBBLER and LEMONADE (inside front), HEAD CASE (a head cleaner for tapes that talk back), SMALL WONDER (a 64K
+  upgrade, safe under the Small Systems Act; BASIC sees only half of it, and the rest is "quietly waiting"), Nifty
   Ned's catalogue with the Clear Mind's quiet notice, TYPE-O-MATIC and CLOAD-A-MATIC (inside back), DUST-O-GARD (back).
 - **May:** THE ONE THAT GOT AWAY (inside front: a fishing game about something old and patient hiding in deep water,
   its lake made smaller for the limit, and SPACE GOBBLER 4K); Nifty Ned's catalogue made over for the limit

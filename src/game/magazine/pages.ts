@@ -10,10 +10,9 @@ export const PAGE_IDS = [
   'contents',
   'letters',
   'editorial',
-  // The features follow the puzzles: say hello, type a program, load the adventure (and fix it), play it, map it, stop
+  // The features follow the puzzles: say hello, type a program and check it, load the adventure (and fix it), play it, map it, stop
   // it to read its lines, then check GUESS against its listing.
   'screen',
-  'typeIn',
   'program',
   'tape',
   'words',
@@ -21,6 +20,7 @@ export const PAGE_IDS = [
   'cleanerAd',
   'stopping',
   'guess',
+  'memoryAd',
   'classifieds',
   'marketplace',
   'insideBack',

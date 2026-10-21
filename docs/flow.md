@@ -37,7 +37,7 @@ The guide bounces the notes, then nudges the magazine, until each has been opene
 | Beat | The player | The game | Flags |
 |------|------------|----------|-------|
 | Hello | `PRINT "HELLO"` (the notes point at the screen page) | | `printed` |
-| The name program | Types the lines from the type-in page | Notes: RUN it and see what it does | `program-typed` |
+| The name program | Types the lines from Your First Program (`program`, `learn.ts`) | Notes: RUN it and see what it does | `program-typed` |
 | Its first run | RUNs, gives a name | Keeps the name (`coco2.name`) | `first-program` |
 | The tape | Puts the March cassette in, `CLOAD "ADVENT"`, RUN | Notes copy the pencil label: M. Kessler | `tape-inserted`, `adventure-loaded` |
 | A worn tape | Reads `?SN ERROR IN 30`, LISTs it, retypes it as printed | | `adventure-sn`, `adventure-runs` |

@@ -1,4 +1,6 @@
 import { Ctx, INK, MARGIN, MONO, PAGE_H, PAGE_W, SANS, SERIF, colWidth, flow, headline, pullQuote, rowsFor, sidebar, text } from './paper';
+import { FIRST_PROGRAM } from '../puzzles';
+import { listing } from './extras';
 import { pageNo } from './pages';
 
 const W = PAGE_W - MARGIN * 2;
@@ -33,48 +35,22 @@ const ERRORS: readonly [string, string][] = [
   ['?CN ERROR', 'Cannot continue. Nothing to carry on, or the program was changed.'],
 ];
 
-/** writing a program, and what the error messages mean. */
+/** writing a program, the one to type in with its RAINBOW CHECK, and what the error messages mean. */
 export function drawFirstProgram(ctx: Ctx): void {
-  const y = headline(ctx, 'Your First Program', ['Line numbers, RUN, and a machine that remembers . . .', 'And what to do when it says ERROR . . .'], 'Dale Wick');
+  const y = headline(ctx, 'Your First Program', ['Line numbers, RUN, and a program that asks your name . . .', 'And what to do when it says ERROR . . .'], 'Dale Wick');
   body(
     ctx,
     [
-      { text: 'Until now the CoCo has forgotten each line the moment it obeyed it. Start a line with a number and that changes: the CoCo keeps it. A line with a number is part of a program.', before: 0 },
-      { text: 'Type 10 PRINT "HI" and press ENTER. Nothing happens, because the line has been stored, not run. Type 20 PRINT "THERE", then type RUN. The lines run in number order, whatever order you typed them in. We count by tens so there is room to squeeze a line between.' },
-      { text: 'LIST shows the CoCo what it remembers. To change a line, type it again with the same number. To remove one, type only its number. NEW wipes the lot. Try each; none of them can hurt.' },
-      { text: 'The program on page ' + pageNo('typeIn') + ' asks your name. INPUT waits for a reply and puts it in N$. The dollar sign means words, not figures. When the last line has run the program ends and OK comes back; type RUN to meet it again.' },
-      { text: 'Type it in exactly as printed, one line at a time, and check your sums against the table. When you have finished, type RUN.' },
+      { text: 'Until now the CoCo has forgotten each line the moment it obeyed it. Start a line with a number and that changes: the CoCo keeps it. A line with a number is part of a program, and RUN runs the lines in number order, whatever order you typed them in. We count by tens so there is room to squeeze a line between.', before: 0 },
+      { text: 'LIST shows what the CoCo remembers. To change a line, type it again with the same number. To remove one, type only its number. NEW wipes the lot. None of them can hurt.' },
+      { text: 'Below is a program that asks your name. INPUT waits for a reply and puts it in N$; the dollar sign means words, not figures. Type every line exactly as printed and press ENTER after each one. Spaces count. So do commas and quotation marks.' },
+      { text: 'Then type CHECK. The CoCo prints its own RAINBOW CHECK numbers; compare them with the table beside the listing. The first number that differs is on the line with the mistake. When they all agree, type RUN.' },
     ],
     y,
-    290,
+    230,
   );
-  const fy = screenBox(
-    ctx,
-    MARGIN + 12,
-    y + 300,
-    420,
-    ['10 PRINT "HI"', '20 PRINT "THERE"', 'LIST', '10 PRINT "HI"', '20 PRINT "THERE"', 'OK', 'RUN', 'HI', 'THERE'],
-    'Fig. 3: Two lines stored, listed, and run.',
-  );
-  const sx = MARGIN + 470;
-  const sw = W - 470;
-  sidebar(ctx, 'Try It Now', sx, y + 288, sw, fy - y - 288 - 50);
-  flow(
-    ctx,
-    rowsFor(
-      ctx,
-      [
-        { text: 'Type the lines in Fig. 3 yourself, then add 15 PRINT "AND" and LIST again. It lands between the others.', before: 0, align: 'left' },
-        { text: 'Then type 15 on its own and press ENTER. Line 15 is gone.', align: 'left' },
-        { text: 'Now type 10 PRINT "HELLO" and LIST. Line 10 has changed. The old one is gone.', align: 'left' },
-      ],
-      sw - 36,
-    ),
-    sx + 18,
-    y + 288 + 66,
-    sw - 36,
-    200,
-  );
+  const fy = listing(ctx, FIRST_PROGRAM, y + 250) + 30;
+  pullQuote(ctx, 'Type it exactly as printed. The CoCo has a way of being right.', MARGIN, y + 440, W * 0.56);
   // The error table.
   let ty = fy + 10;
   ctx.fillStyle = INK;
