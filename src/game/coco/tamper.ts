@@ -17,11 +17,13 @@ export class Tamper {
   /** Seconds since the screen was made. */
   clock = 0;
   private changed = true;
+  /** The story has marked a cell since the last `takeMarked` (not a scroll or a wipe). */
+  private marked = false;
 
   mark(cell: number, old: number): void {
     this.at[cell] = this.clock;
     this.before[cell] = old;
-    this.changed = true;
+    this.changed = this.marked = true;
   }
 
   /** True if the cell holds the story's text (it has a mark BASIC has not written over). */
@@ -50,6 +52,12 @@ export class Tamper {
 
   step(dt: number): void {
     this.clock += dt;
+  }
+
+  takeMarked(): boolean {
+    const m = this.marked;
+    this.marked = false;
+    return m;
   }
 
   takeChanged(): boolean {

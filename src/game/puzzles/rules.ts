@@ -31,6 +31,11 @@ export function firstProgramName(e: BasicEvent, interp: Interpreter): string {
   return String(interp.vars.get({ name: 'N$' })).trim().toUpperCase().slice(0, 12);
 }
 
+/** P2, half way: the tutorial's program is in memory exactly as printed (the notebook then says to RUN it). */
+const programTyped: Rule = (e, ctx) => {
+  if (e.type === 'edit' && programIs(ctx.interp.program, FIRST_PROGRAM)) ctx.set('program-typed');
+};
+
 /** P2: the tutorial's program, typed in exactly, has been run and told a name (the story keeps it). */
 const firstProgram: Rule = (e, ctx) => {
   if (firstProgramName(e, ctx.interp)) ctx.set('first-program');
@@ -201,4 +206,4 @@ const extraLine: Rule = (() => {
   };
 })();
 
-export const ISSUE_1_RULES: readonly Rule[] = [sayHello, firstProgram, tapeInserted, adventureLoaded, adventureError, adventureRuns, looked, hasLamp, mapped, doorExamined, plateRead, clues, hasKey, whisperFound, readCode, doorOpen, adventureWon, extraLine];
+export const ISSUE_1_RULES: readonly Rule[] = [sayHello, programTyped, firstProgram, tapeInserted, adventureLoaded, adventureError, adventureRuns, looked, hasLamp, mapped, doorExamined, plateRead, clues, hasKey, whisperFound, readCode, doorOpen, adventureWon, extraLine];

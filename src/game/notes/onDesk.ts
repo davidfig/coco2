@@ -25,14 +25,14 @@ export function sheetQuad(s: Sheet): Quad {
  * it goes off into the room at an even rate of shrinking, rather than in a straight line through the room, which from
  * so near the eye would swing it wide.
  */
-export function onTable(own: Layer[], t: number, spot: DeskSpot, n: number, sheet: number, picture: readonly number[]): (Layer & { quad: Quad })[] {
+export function onTable(own: Layer[], t: number, spot: DeskSpot, n: number, sheet: number, picture: readonly number[], lift = 0): (Layer & { quad: Quad })[] {
   const flat = own.map((l) => ({ ...l, quad: sheetQuad(l) }));
   if (t <= 0) return flat;
   const view = pictureView(picture);
   const desk = layers({ cx: 0, cy: 0, hx: spot.hw, hy: spot.hd, rot: 0 }, n, sheet, [0, 0], null);
   if (desk.length !== flat.length) return flat;
   return flat.map((l, i) => {
-    const [a, b] = [heldPose(view, l, spot.hw), tablePose(spot, desk[i])];
+    const [a, b] = [heldPose(view, l, spot.hw), tablePose(spot, desk[i], lift)];
     const [pa, pb] = [toSight(a.c), toSight(b.c)];
     const sight: Vec3 = [pa[0] + (pb[0] - pa[0]) * t, pa[1] + (pb[1] - pa[1]) * t, pa[2] * Math.pow(pb[2] / pa[2], t)];
     const p = { c: fromSight(sight), q: slerp(a.q, b.q, t) };
@@ -59,12 +59,14 @@ function heldPose(view: { cx: number; cy: number; k: number }, s: Sheet, hw: num
 }
 
 /** Sheet `s` of the pile lying at `spot` (its place and turn in the spot's frame, world units), face up on the table. */
-function tablePose(spot: DeskSpot, s: Sheet): Pose {
+function tablePose(spot: DeskSpot, s: Sheet, lift: number): Pose {
   const { ux, uy } = spotAxes(spot);
   const [c, n] = [Math.cos(s.rot), Math.sin(s.rot)];
   const x = ux.map((v, i) => c * v + n * uy[i]);
   const y = ux.map((v, i) => -n * v + c * uy[i]);
-  return { c: onSpot(spot, s.cx, s.cy), q: quatFromAxes(x, y, [0, 1, 0]) };
+  const at = onSpot(spot, s.cx, s.cy);
+  at[1] += lift;
+  return { c: at, q: quatFromAxes(x, y, [0, 1, 0]) };
 }
 
 /**

@@ -11,6 +11,8 @@ export interface Pen {
   mood?: number;
   slant?: number;
   ink?: [number, number, number];
+  /** How thick the line is against a ballpoint's (1): a felt marker's is about 2. */
+  weight?: number;
   /** Told where each character of the line landed (its index, left and right edge), for anything that must find a word again. */
   track?: (index: number, x0: number, x1: number) => void;
 }
@@ -188,7 +190,7 @@ export function write(ctx: CanvasRenderingContext2D, text: string, x: number, y:
         nudge(pts[pts.length - 1], pts[pts.length - 2]);
       }
       const path = sample(pts.map(([px, py]) => to(px, py)), s.smooth, Math.max(1.2, pen.size * 0.06));
-      const width = Math.max(1.1, pen.size * 0.075 * (1 + gauss(r) * 0.08));
+      const width = Math.max(1.1, pen.size * 0.075 * (pen.weight ?? 1) * (1 + gauss(r) * 0.08));
       ribbon(ctx, path, width, color, r);
       if (m > 0.45 && r() < 0.1 * m) ribbon(ctx, path.map(([px, py]) => [px + gauss(r) * 0.8, py + gauss(r) * 0.8] as P), width * 0.8, color, r); // gone over twice
     }

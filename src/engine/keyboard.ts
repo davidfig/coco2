@@ -11,6 +11,8 @@ export interface TypedKey {
  */
 export class Keyboard {
   private readonly queue: TypedKey[] = [];
+  /** A key came from the real keyboard (not `push`ed or `type`d) since the last `takeReal`. */
+  private real = false;
 
   constructor(listen = true) {
     if (!listen) return;
@@ -20,6 +22,7 @@ export class Keyboard {
       const named = e.key.length > 1;
       if (named && !KEEP.has(e.key)) return;
       this.queue.push({ key: e.key, shift: e.shiftKey, ctrl: e.ctrlKey });
+      this.real = true;
       e.preventDefault();
     });
   }
@@ -27,6 +30,13 @@ export class Keyboard {
   /** Everything typed since the last call. */
   drain(): TypedKey[] {
     return this.queue.splice(0);
+  }
+
+  /** Whether a key came from the real keyboard since the last call. */
+  takeReal(): boolean {
+    const r = this.real;
+    this.real = false;
+    return r;
   }
 
   /** Queue one key as if pressed (the CoCo's own keyboard, clicked). */

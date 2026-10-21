@@ -43,6 +43,7 @@ export const NOTES: readonly Note[] = [
   { id: 'parcel', when: null, text: 'A box on the step: the March 1986 RAINBOW and a tape. No name on it', mood: 0.04 },
   { id: 'start', when: null, text: `PRINT "HELLO" first. p.${pageNo('screen')}`, mood: 0.04, ask: true, solved: 'printed' },
   { id: 'prog', when: 'printed', text: `Type in the program, p.${pageNo('typeIn')}. Help: p.${pageNo('program')}`, mood: 0.05, ask: true, solved: 'first-program' },
+  { id: 'run', when: 'program-typed', text: 'Typed it in. Now RUN it and see what it does', mood: 0.05, ask: true, solved: 'first-program', skipIf: 'first-program' },
   { id: 'tape', when: 'first-program', text: `Adventure is on the tape. CLOAD it, RUN. p.${pageNo('tape')}`, mood: 0.08, ask: true, solved: 'adventure-loaded' },
   { id: 'label', when: 'tape-inserted', text: 'Label on the tape, in pencil: "Copied by hand, for you. Mistakes are mine. - M. Kessler"', mood: 0.08 },
   { id: 'sn', when: 'adventure-sn', text: `?SN ERROR IN 30. LIST 30, fix it. p.${pageNo('program')}`, mood: 0.09, ask: true, solved: 'adventure-runs' },

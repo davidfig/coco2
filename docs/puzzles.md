@@ -26,16 +26,15 @@ Status: draft for discussion. Nothing here is built.
 
 **P1. Say hello.** (exists) `PRINT "HELLO"`. Flag `printed`.
 
-**P2. Hand-code a program.** The tutorial article walks through a four-line program that asks for the player's name
+**P2. Hand-code a program.** The tutorial article walks through a three-line program that asks for the player's name
 and answers:
 ```
-10 CLS
-20 PRINT "WHAT IS YOUR NAME"
-30 INPUT N$
-40 PRINT "HELLO, ";N$
+10 PRINT "WHAT IS YOUR NAME"
+20 INPUT N$
+30 PRINT "HELLO, ";N$
 ```
 The RAINBOW CHECK table (already built for the page 11 listing) tells them which line is off. Detected when a program in memory whose
-lines match the listing reaches line 40 with a name in N$ (RUN alone, or ENTER with no answer, is not enough); flag `first-program`. Payoff: the name goes in localStorage and OK uses it later. The first
+lines match the listing reaches line 30 with a name in N$ (RUN alone, or ENTER with no answer, is not enough); flag `first-program`. Once the lines in memory match the listing (before any RUN), `program-typed` makes the notebook write "Typed it in. Now RUN it and see what it does". Payoff: the name goes in localStorage and OK uses it later. The first
 time it says the name unprompted is the first uncanny moment.
 
 **P3. The adventure won't start.** `CLOAD "ADVENT"` then `RUN` stops with `?SN ERROR IN 30`. Line 30 has a typo in a

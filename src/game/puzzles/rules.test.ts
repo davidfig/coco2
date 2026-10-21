@@ -16,7 +16,10 @@ const typeFirstProgram = (coco: HeadlessCoco): HeadlessCoco => coco.type('NEW\n'
 
 test('P2: typing the first program in does not count until it has run', () => {
   const { coco, flags } = watched();
-  typeFirstProgram(coco);
+  coco.type('NEW\n' + FIRST_PROGRAM.slice(0, -1).join('\n') + '\n');
+  expect(flags.has('program-typed')).toBe(false);
+  coco.type(FIRST_PROGRAM.at(-1) + '\n');
+  expect(flags.has('program-typed')).toBe(true);
   expect(flags.has('first-program')).toBe(false);
   coco.type('RUN\n');
   expect(coco.interp.state).toBe('input');
@@ -38,6 +41,6 @@ test('P2: answering with a name ticks first-program', () => {
 
 test('P2: a different program asking for N$ does not count', () => {
   const { coco, flags } = watched();
-  coco.type('NEW\n10 INPUT N$\n40 PRINT N$\nRUN\nADA\n');
+  coco.type('NEW\n10 INPUT N$\n30 PRINT N$\nRUN\nADA\n');
   expect(flags.has('first-program')).toBe(false);
 });

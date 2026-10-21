@@ -43,9 +43,9 @@ const DRAWN_TOP = Math.max(
  * The CoCo 2 on the table in front of the set (a trial: `?nococo` leaves it out). Drawn over the TV's pass, lined up
  * with the set through `Tv.picture`; whatever is drawn after it (the book, the notebook) goes over it. It sets where
  * the TV draws (`view`): lifted to show the whole machine when there's room, and pulled back to the whole desk (set,
- * machine, cords) after a click on the machine or anywhere else in the TV's part of the window that nothing else takes
- (`busy`: the knobs, the rocker, the smack, the notebook while out); a second click goes back. While the book is out
- that click puts it away instead (`isOut`). A click on a key types it instead (`keys`).
+ * machine, cords) while `focused` (main.ts decides, through `Framing`). A click in the TV's part of the window that
+ * nothing else takes (`busy`: the knobs, the rocker, the smack, the notebook while out) puts the book away while it is
+ * out (`isOut`). A click on a key types it (`keys`); one on the recorder or a cassette is the recorder's.
  */
 export class Computer {
   private readonly program: Program;
@@ -57,7 +57,7 @@ export class Computer {
   /** The screen's light the march was last given. */
   private lit: number[] = [];
   visible = true;
-  /** Pulled back to the whole desk (a click on the machine), and how far along the way there (0..1). */
+  /** Pulled back to the whole desk (main.ts: `Framing`), and how far along the way there (0..1). */
   focused = false;
   private focusT = 0;
   private hover: 'case' | 'key' | 'set' | 'recorder' | null = null;
@@ -73,7 +73,7 @@ export class Computer {
   covered: (nx: number, ny: number) => boolean = () => false;
   /** Whether a click at a point (buffer pixels, y up) is something else's: a knob, the rocker, the smack, the notebook out. */
   busy: (x: number, y: number) => boolean = () => false;
-  /** Something out (main.ts: the book) that a click on the set puts away (`putAway`) instead of pulling back or going in. */
+  /** Something out (main.ts: the book) that a click on the set puts away (`putAway`). */
   isOut: () => boolean = () => false;
   putAway: () => void = () => {};
   /** The TV's part of the window (buffer pixels) and the picture (`Tv.picture`) as last drawn, for the pointer. */
@@ -134,6 +134,13 @@ export class Computer {
     const t = smooth(this.focusT);
     if (t === 0) return this.toTv(a);
     return this.toTv({ cx: a.cx + (b.cx - a.cx) * t, cy: a.cy + (b.cy - a.cy) * t, k: a.k * Math.pow(b.k / a.k, t) });
+  }
+
+  /** Pulled back to the whole desk at once, the magazine and the notes already lying on the table (the page's opening). */
+  startWide(): void {
+    this.focused = true;
+    this.focusT = 1;
+    this.onDesk.snap = true;
   }
 
   /** The book's view of the set, lifted to show the machine if there's room over the set. */
@@ -237,8 +244,8 @@ export class Computer {
         }
         e.stopImmediatePropagation();
         e.preventDefault();
-        if (at === 'case') this.focused = !this.focused;
-        else if ('rec' in at) this.recorder?.click(at.rec);
+        if (at === 'case') return;
+        if ('rec' in at) this.recorder?.click(at.rec);
         else this.keys.press(at.row, at.i);
       },
       { capture: true },
@@ -247,10 +254,7 @@ export class Computer {
       'pointerup',
       (e) => {
         this.keys.release();
-        if (this.press?.id === e.pointerId) {
-          if (this.isOut()) this.putAway();
-          else this.focused = !this.focused;
-        }
+        if (this.press?.id === e.pointerId && this.isOut()) this.putAway();
         this.press = null;
       },
       true,
@@ -271,11 +275,10 @@ export class Computer {
     );
   }
 
-  /** The pointer over the machine: a key can be pressed; elsewhere a click pulls back to the desk, or goes back in. */
+  /** The pointer over the machine: a key or the recorder can be pressed. */
   cursor(): void {
-    if (this.press || (this.hover === 'set' && this.isOut())) return;
+    if (this.press) return;
     if (this.hover === 'key' || this.hover === 'recorder') this.canvas.style.cursor = 'pointer';
-    else if (this.hover) this.canvas.style.cursor = this.focused ? 'zoom-in' : 'zoom-out';
   }
 
   /** `picture` and `glow` are the TV's last frame. */

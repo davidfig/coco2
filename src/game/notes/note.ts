@@ -77,7 +77,7 @@ export class Notebook {
    * Put down, how far the pile lies on the table instead of peeking in (0..1: main.ts, from `Computer.tableT`, as the
    * view pulls back to the desk) and where the set's picture is (`Tv.picture`), which places the room's camera on screen.
    */
-  desk: () => { t: number; spot?: DeskSpot; picture: readonly number[] } = () => ({ t: 0, picture: [] });
+  desk: () => { t: number; spot?: DeskSpot; picture: readonly number[]; lift?: number } = () => ({ t: 0, picture: [] });
   /** Whether something lying over the paper on the table takes pixel (x, y) (bottom-left origin): the magazine, if it was read last. */
   covered: (x: number, y: number) => boolean = () => false;
 
@@ -168,7 +168,7 @@ export class Notebook {
   /** Every sheet that shows, from the bottom up, as drawn: eased from where `layers` puts it onto the table by `onDesk`. */
   private placed(): (Layer & { quad: Quad })[] {
     const d = this.desk();
-    return onTable(this.layers(), this.onDesk(), d.spot!, this.sheets, this.sheet, d.picture);
+    return onTable(this.layers(), this.onDesk(), d.spot!, this.sheets, this.sheet, d.picture, d.lift);
   }
 
   private hit(x: number, y: number): boolean {

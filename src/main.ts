@@ -13,7 +13,7 @@ import { SeenTracker } from './game/magazine/seen';
 import { RoomLights } from './game/room/lights';
 import { smooth } from './game/magazine/bookLayout';
 import { ISSUE_1_RULES, ISSUE_2_RULES, PuzzleWatcher } from './game/puzzles';
-import { Guide, Issue1Story, Issue2Story } from './game/story';
+import { Framing, Guide, Hop, Issue1Story, Issue2Story } from './game/story';
 import { Shake, TouchKeys, installable, noZoom, wantsTouchKeys } from './game/touch';
 import { Tv } from './game/tv/tv';
 import { TAMPER_STYLES, TamperStyle } from './game/tv/tvShader';
@@ -46,8 +46,14 @@ computer.covered = (nx, ny) => (magazine.open ? magazine.inRect(magazine.book, n
 computer.isOut = () => magazine.open;
 computer.putAway = () => magazine.close();
 /** Put away while the view is pulled back to the whole desk, the magazine lies on the table beside the machine if there's room. */
-magazine.desk = () => ({ ...computer.table('magazine'), picture: tv.picture });
-notebook.desk = () => ({ ...computer.table('notes'), picture: tv.picture });
+/** The guide's calls, as they show with the paper lying on the table: a hop. */
+const hops = { magazine: new Hop(), notes: new Hop() };
+for (const [what, paper] of [['magazine', magazine], ['notes', notebook]] as const) {
+  paper.desk = () => {
+    const d = computer.table(what);
+    return { ...d, picture: tv.picture, lift: hops[what].lift(d.spot.hd) };
+  };
+}
 /** On the table, whichever of the two was looked at last lies on top (the notes, to begin with). */
 let notesOnTop = true;
 notebook.covered = (x, y) => !notesOnTop && overPage(magazine.v, x / engine.gl.drawingBufferWidth, y / engine.gl.drawingBufferHeight);
@@ -89,6 +95,10 @@ let litFor = instant ? Infinity : 0;
 const ARRIVE = { book: [0.15, 0.9], notes: [0.45, 0.8] } as const;
 const arrival = ([start, secs]: readonly [number, number]): number => smooth(Math.min(1, Math.max(0, (litFor - start) / secs)));
 magazine.arrive = notebook.arrive = arrival(ARRIVE.book);
+/** The view rests on the whole desk and goes in to the set when the screen needs reading (`Framing`); the page opens there. */
+const framing = new Framing(computer.visible && !instant && !params.has('book'));
+if (framing.wide) computer.startWide();
+let typedReal = false;
 // The set comes back as it was left: switched off stays off (the CoCo still boots behind it).
 if (readTvSettings().on !== false) tv.switchOn(!instant, instant ? 0 : lights.onAt + 0.35);
 
@@ -103,6 +113,7 @@ const shake = new Shake(() => tv.touch.smack());
 tv.touch.onHandSmack = () => shake.ask();
 engine.earlyUpdaters.push((dt) => {
   const typed = engine.keyboard.drain();
+  typedReal ||= engine.keyboard.takeReal();
   computer.keys.typed(typed);
   basic.step(dt, typed);
 });
@@ -115,7 +126,10 @@ engine.updaters.push((dt) => {
   screen.step(dt);
   recorder.step(dt);
   // A tape command waiting with no cassette in: the view pulls back to the desk, where the recorder is.
-  if (recorder.takeBeckon() && computer.visible) computer.focused = true;
+  if (recorder.takeBeckon()) framing.back();
+  framing.step(dt, typedReal, screen.tampered.takeMarked(), basic.interp.state === 'idle');
+  if (computer.visible) computer.focused = framing.wide;
+  typedReal = false;
   story.step(dt);
   story2.step(dt);
   const on = tv.powerTime >= 0;
@@ -142,7 +156,11 @@ engine.lateUpdaters.push((dt) => {
     notebook.arrive = arrival(ARRIVE.notes);
     if (magazine.arrive === 1 && notebook.arrive === 1) litFor = Infinity;
   }
-  if (guide.step(dt, litFor === Infinity, notebook.open, magazine.open) === 'notes') notebook.bounce();
+  // The paper is in once it has come in at the window's edge, or, lying on the table, as soon as the lights are up.
+  const call = guide.step(dt, litFor === Infinity || (lights.on && framing.wide), notebook.open, magazine.open);
+  if (call === 'notes') notebook.bounce();
+  if (call) hops[call].start();
+  for (const h of Object.values(hops)) h.step(dt);
   magazine.beckoned = guide.magazineOut;
   magazine.update(dt, engine.gl.drawingBufferWidth, engine.gl.drawingBufferHeight);
   seen.update(magazine, dt);
@@ -191,7 +209,7 @@ function stationTest(channel = 9): void {
   v.render(card.vram);
   tv.broadcast(channel, v, 0.6);
 }
-Object.assign(window, { coco: { engine, lights, computer, recorder, screen, basic, interp: basic.interp, tv, vdg, magazine, touchKeys, puzzles, story, story2, notebook, tamperTest, stationTest } });
+Object.assign(window, { coco: { engine, lights, computer, framing, recorder, screen, basic, interp: basic.interp, tv, vdg, magazine, touchKeys, puzzles, story, story2, notebook, tamperTest, stationTest } });
 
 /** Playtesting: F2 opens the debug menu (checkpoints, flags, name, TV hooks) in dev builds; `?debug` opens it at start, in any build. */
 if (import.meta.env.DEV || params.has('debug')) {

@@ -36,14 +36,14 @@ export function viewCam(v: View): Cam {
  * The room's camera (the eye before the set, `Tv.picture` placing it on screen) with the magazine lying on the table at
  * `spot`, the part of it in view (`win`, book x) centred there. A book unit (the page's width) is the spot's width.
  */
-export function deskCam(spot: DeskSpot, picture: readonly number[], win: readonly [number, number]): Cam {
+export function deskCam(spot: DeskSpot, picture: readonly number[], win: readonly [number, number], lift = 0): Cam {
   const S = 2 * spot.hw;
   const view = pictureView(picture);
   const A = rayMatrix(view);
   const { ux, uy } = spotAxes(spot);
   const R = [ux, uy, [0, 1, 0]];
   const wc = 0.5 * (win[0] + win[1]);
-  const at = [spot.x - S * wc * ux[0], TABLE, spot.z - S * wc * ux[2]];
+  const at = [spot.x - S * wc * ux[0], TABLE + lift, spot.z - S * wc * ux[2]];
   const m: number[] = [];
   for (let r = 0; r < 3; r++) for (let col = 0; col < 3; col++) m.push((R[r][0] * A[col] + R[r][1] * A[3 + col] + R[r][2] * A[6 + col]) / S);
   const e = EYE_AT.map((v, i) => v - at[i]);
@@ -149,10 +149,10 @@ const DESK_PAPER_THICKNESS = 0.022;
  * coming out, it rises off it). The view to draw and point with (its `cam` set while on the table), the camera, the light,
  * and how far it lies (`uDesk`).
  */
-export function onTable(v: View, t: number, spot: DeskSpot, picture: readonly number[]): { view: View; cam: Cam; light: number; desk: number } {
+export function onTable(v: View, t: number, spot: DeskSpot, picture: readonly number[], lift = 0): { view: View; cam: Cam; light: number; desk: number } {
   const own = viewCam(v);
   if (t <= 0) return { view: v, cam: own, light: 1, desk: 0 };
-  const cam = mixCam(own, deskCam(spot, picture, v.win), t, [0.5 * (v.win[0] + v.win[1]), 0, 0]);
+  const cam = mixCam(own, deskCam(spot, picture, v.win, lift), t, [0.5 * (v.win[0] + v.win[1]), 0, 0]);
   const c = v.clip;
   const clip: View['clip'] = [lerp(c[0], 0, t), lerp(c[1], 0, t), lerp(c[2], v.W, t), lerp(c[3], v.H, t)];
   // Seen from across the room the block of paper shows its true thickness, its sides a band of sheet edges. Put down
