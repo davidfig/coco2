@@ -18,6 +18,7 @@ import { drawMayTape, drawSecret } from './mayCode';
 import { drawShutdown, drawShutdownEnd, drawShutdownList } from './mayShutdown';
 import { drawMayClassifieds, drawMayLetters } from './mayLetters';
 import { beginLinks } from './pageLinks';
+import { drawSlip } from './slips';
 import { Ctx, PAGE_H, PAGE_W, furniture, inkPass, paperBase } from './paper';
 
 /** The most pages any issue has: the book's texture array holds that many layers. */
@@ -77,12 +78,13 @@ export function drawPage(issue: IssueId, i: number, ctx: Ctx, s: IssueState): vo
   const id = ISSUES[issue][i];
   const def = PAGES[id];
   beginLinks(id);
-  if (def.colour) {
+  if (def.colour) def.draw(ctx, s);
+  else {
+    paperBase(ctx, 1000 + i, def.stock);
     def.draw(ctx, s);
-    return;
+    if (!def.noFoot) furniture(ctx, i, ISSUE_DATE[issue]);
+    inkPass(ctx, 1000 + i);
   }
-  paperBase(ctx, 1000 + i, def.stock);
-  def.draw(ctx, s);
-  if (!def.noFoot) furniture(ctx, i, ISSUE_DATE[issue]);
-  inkPass(ctx, 1000 + i);
+  // Anything tucked in at this page lies on top of the print.
+  drawSlip(ctx, id);
 }

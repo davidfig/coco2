@@ -1,5 +1,5 @@
 import { dash, hashSeed, measure, wrap, write } from '../handwriting';
-import { type Written, doodle, ringPath, ringRef } from './doodles';
+import { type Spot, type Written, doodle, ringPath, ringRef } from './doodles';
 import { DAYS, type Note, isSolved, noteText, visibleNotes } from './notes';
 import { type InkMark, ageOver, ageUnder } from './wear';
 import type { IssueId } from '../magazine/pages';
@@ -176,7 +176,8 @@ function paper(ctx: CanvasRenderingContext2D, sheet = 0): void {
 
 /**
  * A "p.N" in the notes, as a rectangle on the sheet: clicking it turns the magazine to that page (`page` is its index).
- * "May p.N" is a page of the May issue; a bare "p.N" is March's.
+ * "May p.N" is a page of the May issue; a bare "p.N" is March's. A ringed doodle (doodles.ts's `Spot`) is one too, with
+ * `to` saying where a click on it goes instead.
  */
 export interface PageLink {
   x: number;
@@ -185,15 +186,22 @@ export interface PageLink {
   h: number;
   page: number;
   issue: IssueId;
+  to?: Spot['to'];
   /** Its ring's shape (doodles.ts's `ringPath`): the hover traces the very same ring again. */
   seed: number;
   mood: number;
-  /** The ring layer's channel its ring is in: none that overlaps it shares it. */
+  /** The ring layer's channel its ring is in: none whose `box` overlaps it shares it. */
   slot: number;
+  /** Its ring's bounds, sheet pixels. */
+  box: [number, number, number, number];
+  /** Its note is crossed out: the step it pointed at is done, and the ring is blue. */
+  done: boolean;
 }
 
 /** The red pen the page references are ringed with, on a later read-through. */
 export const RING_INK: [number, number, number] = [185, 40, 35];
+/** The blue pen the notes are written in; a done step's ring is inked over in it. */
+export const PEN_INK: [number, number, number] = [28, 58, 170];
 
 /** The ring the pen draws round a page reference, in sheet pixels: drawn on the sheet, and traced again under the pointer. */
 export function ringPoints(l: PageLink): [number, number][] {
@@ -231,7 +239,7 @@ export function sheetSigs(flags: ReadonlySet<string>, handled: number): string[]
 
 /**
  * Draw one sheet of the notebook (0 = the first; by default the newest) for the flags the player has set, worn by
- * `handled` readings (see wear.ts). Returns its page references and how many sheets there are.
+ * `handled` readings (see wear.ts). Returns its page references (and ringed doodles) and how many sheets there are.
  */
 export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<string>, handled: number, sheet?: number): { links: PageLink[]; count: number } {
   const sheets = paginate(flags);
@@ -239,7 +247,6 @@ export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<stri
   paper(ctx, k);
   ctx.fillStyle = '#000';
   ctx.fillRect(0, RING_Y, SHEET_W, SHEET_H);
-  const rings: { box: number[]; slot: number }[] = [];
   ageUnder(ctx, SHEET_W, SHEET_H, EDGE, handled, k);
   // Only the first sheet is headed, with the title and the date; the later ones carry their page number there instead.
   let titleEnd = LEFT - 36;
@@ -254,10 +261,20 @@ export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<stri
     write(ctx, no, dateStart, 50, { size: DATE_SIZE, seed: 40 + k, mood: 0.05 });
   }
   let row = 1;
-  const INK: [number, number, number] = [28, 58, 170];
+  const INK = PEN_INK;
   const inks: InkMark[] = [];
   const links: PageLink[] = [];
   const written: Written[] = [];
+  const done = new Set<string>();
+  // A reference ringed in red on the ring layer, in a colour channel no ring it overlaps has.
+  const ring = (link: PageLink): void => {
+    const pts = ringPoints(link);
+    const box = (link.box = [Math.min(...pts.map((p) => p[0])) - 4, Math.min(...pts.map((p) => p[1])) - 4, Math.max(...pts.map((p) => p[0])) + 4, Math.max(...pts.map((p) => p[1])) + 4]);
+    const taken = links.filter((o) => o.box[0] < box[2] && box[0] < o.box[2] && o.box[1] < box[3] && box[1] < o.box[3]).map((o) => o.slot);
+    link.slot = [0, 1, 2].find((n) => !taken.includes(n)) ?? 0;
+    links.push(link);
+    ringRef(ctx, pts.map(([px, py]) => [px, py + RING_Y]), link.slot);
+  };
   for (const { note, solved, lines } of sheets[k]) {
     if (note.date) {
       // A new day: its date at the right, over that day's notes.
@@ -280,15 +297,9 @@ export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<stri
         const a = spans[m.index!]?.[0];
         const b = spans[m.index! + m[0].length - 1]?.[1];
         if (a === undefined || b === undefined) continue;
-        const link = { x: a - 8, y: y - 6 - pen.size * 1.2, w: b - a + 16, h: pen.size * 1.6, page: Number(m[2]) - 1, issue: m[1] ? ('may' as const) : ('march' as const), seed: hashSeed(`${note.id}:ref:${m.index}`), mood: note.mood, slot: 0 };
-        const pts = ringPoints(link);
-        const box = [Math.min(...pts.map((p) => p[0])) - 4, Math.min(...pts.map((p) => p[1])) - 4, Math.max(...pts.map((p) => p[0])) + 4, Math.max(...pts.map((p) => p[1])) + 4];
-        const taken = rings.filter((o) => o.box[0] < box[2] && box[0] < o.box[2] && o.box[1] < box[3] && box[1] < o.box[3]).map((o) => o.slot);
-        link.slot = [0, 1, 2].find((n) => !taken.includes(n)) ?? 0;
-        rings.push({ box, slot: link.slot });
-        links.push(link);
-        ringRef(ctx, pts.map(([px, py]) => [px, py + RING_Y]), link.slot);
+        ring({ x: a - 8, y: y - 6 - pen.size * 1.2, w: b - a + 16, h: pen.size * 1.6, page: Number(m[2]) - 1, issue: m[1] ? 'may' : 'march', seed: hashSeed(`${note.id}:ref:${m.index}`), mood: note.mood, slot: 0, box: [0, 0, 0, 0], done: solved });
       }
+      if (solved) done.add(note.id);
       if (solved) dash(ctx, LEFT - 6, y - 14, LEFT + w + 6, y - 15, { ...pen, size: 24, mood: 0.5 });
       if (i === lines.length - 1) {
         inks.push({ x: LEFT + w, y, seed: hashSeed(`${note.id}:ink`), mood: note.mood, ink });
@@ -297,7 +308,7 @@ export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<stri
       row++;
     });
   }
-  doodle(ctx, written, {
+  const spots = doodle(ctx, written, {
     margin: LEFT - 14,
     right: SHEET_W - 30,
     hole: { x: HOLE_X, ys: HOLES },
@@ -305,6 +316,7 @@ export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<stri
     sheet: k,
     ink: INK,
   });
+  for (const s of spots) ring({ ...s, page: -1, issue: 'march', seed: hashSeed(`${s.id}:spot`), mood: written.find((n) => n.id === s.id)?.mood ?? 0, slot: 0, box: [0, 0, 0, 0], done: done.has(s.id) });
   ageOver(ctx, SHEET_W, SHEET_H, EDGE, handled, inks, k);
   return { links, count: sheets.length };
 }

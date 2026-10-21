@@ -108,6 +108,19 @@ const THEMED: Partial<Record<string, Name>> = {
   'saw-pleads': 'eye',
   'saw-thanks': 'heart',
 };
+/** Doodles ringed in red pen like a page reference, and where a click on one goes: the cassette beside the tape's note shows the recorder. */
+const SPOTS: Partial<Record<string, Spot['to']>> = { tape: 'recorder' };
+
+/** A ringed doodle on a sheet (sheet pixels), the note it was drawn beside, and where a click on it goes. */
+export interface Spot {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  to: 'recorder';
+}
+
 /** What a pen draws when its owner is just waiting for the next idea; then when something is wrong. */
 const IDLE: readonly Name[] = ['star', 'cube', 'spiral', 'smiley', 'bolt', 'sun', 'flower', 'rainbow', 'wave', 'noughts', 'pyramid', 'asterisk', 'rocket', 'hatched'];
 const UNEASY: readonly Name[] = ['eye', 'spiral', 'target', 'hatched', 'query', 'spiral', 'asterisk'];
@@ -174,7 +187,9 @@ export function ringWidth(along: number): number {
 export function ringPath(aspect: number, seed: number, mood: number): [number, number][] {
   const r = rand(seed);
   const g = (): number => r() + r() - 1;
-  const turns = r() < 0.2 + mood * 0.4 ? 1.6 + r() * 0.5 : 1.08 + r() * 0.25;
+  // A calm pen goes round once; an uneasy one (mood over 0.3) may go round again.
+  const again = r() < 0.2 + mood * 0.4 && mood > 0.3;
+  const turns = again ? 1.6 + r() * 0.5 : 1.08 + r() * 0.25;
   const dir = r() < 0.75 ? 1 : -1;
   const start = r() * Math.PI * 2;
   const tilt = g() * 0.12;
@@ -196,8 +211,9 @@ export function ringPath(aspect: number, seed: number, mood: number): [number, n
 
 const pick = <T>(list: readonly T[], r: Rand): T => list[Math.floor(r() * list.length)];
 
-/** Draw the doodles for the notes written on one sheet. */
-export function doodle(ctx: CanvasRenderingContext2D, notes: readonly Written[], m: Margins): void {
+/** Draw the doodles for the notes written on one sheet. Returns the ones to ring, which take a click. */
+export function doodle(ctx: CanvasRenderingContext2D, notes: readonly Written[], m: Margins): Spot[] {
+  const spots: Spot[] = [];
   ctx.save();
   // Ink lands only on paper: not in a punch hole or past the torn edge.
   ctx.globalCompositeOperation = 'source-atop';
@@ -225,7 +241,10 @@ export function doodle(ctx: CanvasRenderingContext2D, notes: readonly Written[],
     const w = SHAPES[name].w * size;
     const room = m.right - (n.end + 34);
     if (room >= w) {
-      draw(name, n.end + 34 + r() * Math.min(room - w, 120), n.bottom + 1 + (r() - 0.5) * 4, size, seed, n.mood);
+      const [x, y] = [n.end + 34 + r() * Math.min(room - w, 120), n.bottom + 1 + (r() - 0.5) * 4];
+      draw(name, x, y, size, seed, n.mood);
+      const to = SPOTS[n.id];
+      if (to) spots.push({ id: n.id, x: x - 4, y: y - size - 4, w: w + 8, h: size + 8, to });
       continue;
     }
     // No room after the words: something small in the margin beside the note instead, an arrow if it is a question.
@@ -259,4 +278,5 @@ export function doodle(ctx: CanvasRenderingContext2D, notes: readonly Written[],
     sketch(ctx, ring.strokes, m.hole.x, h, { size: 22 + r() * 4, seed, mood: notes[after].mood, ink: m.ink, passes: 2 });
   });
   ctx.restore();
+  return spots;
 }

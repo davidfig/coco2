@@ -52,6 +52,7 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers
     overLink = !down?.moved && mag.linkUnder(nx, ny) !== undefined;
     const p = pointers.get(e.pointerId);
     if (!p) return;
+    if (outside(e)) return finishTurn();
     const dx = e.clientX - p.x;
     const dy = e.clientY - p.y;
     p.x = e.clientX;
@@ -106,7 +107,30 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers
     mag.anchor = null;
   }
 
+  /** A captured pointer still reports moves once it is past the window's edge. */
+  const outside = (e: PointerEvent) =>
+    e.clientX < 0 || e.clientY < 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight;
+
+  /** The pointer left the window mid-turn: the turn goes on over rather than falling back, and the press ends here. */
+  function finishTurn(): void {
+    if (!hold && !slide) return;
+    if (hold) {
+      mag.drop(1);
+      hold = null;
+    }
+    if (slide) {
+      mag.turn(slide.dir);
+      mag.camHeld = false;
+      slide = null;
+    }
+    pointers.clear();
+    down = null;
+    heardTurn();
+  }
+
   const release = (e: PointerEvent) => {
+    // A mouse is cancelled only by the window losing it (out of the window, another app): that finishes the turn too.
+    if (e.type === 'pointercancel' && e.pointerType === 'mouse' && (hold || slide)) return finishTurn();
     if (!pointers.delete(e.pointerId)) return;
     if (pointers.size > 0) return;
     const wasClick = down && !down.moved;
@@ -133,6 +157,8 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
   canvas.addEventListener('pointerleave', () => (mag.hover = false));
+  document.documentElement.addEventListener('mouseleave', finishTurn);
+  window.addEventListener('blur', finishTurn);
 
   function click(nx: number, ny: number): void {
     if (!mag.open) {

@@ -36,7 +36,21 @@ const tv = new Tv(engine.gl, canvas, sound);
 const ghostVdg = new Vdg();
 const magazine = new Magazine(engine.gl);
 /** Made before the book's input so that a click on the paper is the paper's. */
-const notebook = new Notebook(engine.gl, canvas, () => magazine.state.flags, () => magazine.notesTv, () => magazine.notesTuck, () => tv.glow, () => tv.picture, (page, issue) => magazine.showPage(page, issue));
+const notebook = new Notebook(
+  engine.gl,
+  canvas,
+  () => magazine.state.flags,
+  () => magazine.notesTv,
+  () => magazine.notesTuck,
+  () => tv.glow,
+  () => tv.picture,
+  (page, issue) => magazine.showPage(page, issue),
+  // The cassette in the notes: put the magazine away and pull back to the desk, where the recorder is.
+  () => {
+    magazine.close();
+    if (computer.visible) computer.focused = true;
+  },
+);
 /** The CoCo 2 on the table in front of the set: a trial, `?nococo` leaves it out. Made after the notebook, so a click on the paper is the paper's. */
 const computer = new Computer(engine.gl, canvas);
 computer.visible = !params.has('nococo');
@@ -47,7 +61,11 @@ computer.isOut = () => magazine.open;
 computer.putAway = () => magazine.close();
 /** Put away while the view is pulled back to the whole desk, the magazine lies on the table beside the machine if there's room. */
 magazine.desk = () => ({ ...computer.table('magazine'), picture: tv.picture });
-notebook.desk = () => ({ ...computer.table('notes'), picture: tv.picture });
+/** With the magazine at reading size the notes lie on their spot on the table too, rather than shrinking into the corner (out of view, perhaps). */
+notebook.desk = () => {
+  const d = computer.table('notes');
+  return { ...d, t: Math.max(d.t, smooth(magazine.readT)), picture: tv.picture };
+};
 /** On the table, whichever of the two was looked at last lies on top (the notes, to begin with). */
 let notesOnTop = true;
 notebook.covered = (x, y) => !notesOnTop && overPage(magazine.v, x / engine.gl.drawingBufferWidth, y / engine.gl.drawingBufferHeight);
@@ -103,6 +121,8 @@ const shake = new Shake(() => tv.touch.smack());
 tv.touch.onHandSmack = () => shake.ask();
 engine.earlyUpdaters.push((dt) => {
   const typed = engine.keyboard.drain();
+  const shifts = engine.keyboard.shiftsHeld();
+  computer.keys.held(engine.keyboard.held(), shifts.left, shifts.right);
   computer.keys.typed(typed);
   basic.step(dt, typed);
 });

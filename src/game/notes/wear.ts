@@ -128,10 +128,12 @@ export function ageOver(ctx: CanvasRenderingContext2D, W: number, H: number, edg
   for (const mark of inks) penMark(ctx, mark);
   if (sheet === 0) firstCreases(ctx, W, H, edge, handled);
   else laterCreases(ctx, W, H, edge, handled, sheet);
+  // A mug's foot is about 3 in across (the sheet is about 7¾ in wide), so a ring may run off the page's edge.
+  const inch = W / 7.7;
   COFFEE.forEach((at, i) => {
     if (handled < at) return;
     const r = seeded(sheet * 1009 + 1301 + i * 17);
-    coffee(ctx, edge + 90 + r() * (W - edge - 180), 90 + r() * (H - 180), 62 + r() * 18, r);
+    coffee(ctx, edge + inch + r() * (W - edge - 1.6 * inch), inch + r() * (H - 2 * inch), (1.4 + r() * 0.25) * inch, r);
   });
   ctx.restore();
 }

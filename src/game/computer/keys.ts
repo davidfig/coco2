@@ -35,11 +35,16 @@ interface Moving {
 
 /**
  * The CoCo's keyboard as something to press: a click on a cap types it (as a real keydown would) and pushes the cap
- * down while the button is held; SHIFT latches for the next key. Keys typed on the real keyboard tap their caps too.
+ * down while the button is held; SHIFT latches for the next key. Keys on the real keyboard press their caps too,
+ * down while held (`held`), or a tap for each one typed (`typed`: `Keyboard.type`, or a press shorter than a frame).
  */
 export class CocoKeys {
   private readonly moving = new Map<Key, Moving>();
   private shift = false;
+  /** The real keyboard's SHIFTs held down (left, right): their caps stay down with them. */
+  private heldShifts = [false, false];
+  /** The other caps held down on the real keyboard. */
+  private heldCaps = new Set<Key>();
   private readonly uniforms = new Float32Array(KEYS_MOVING * 4);
 
   constructor(private readonly send: (k: TypedKey) => void) {}
@@ -49,7 +54,7 @@ export class CocoKeys {
     const key = ROWS[row][i];
     if (key.label === 'SHIFT') {
       this.shift = !this.shift;
-      for (const k of this.shiftKeys()) this.move(k.row, k.key).held = this.shift;
+      this.holdShifts();
       return;
     }
     this.move(row, key).held = true;
@@ -58,8 +63,29 @@ export class CocoKeys {
     this.send({ key: sent, shift: this.shift, ctrl: false });
     if (this.shift) {
       this.shift = false;
-      for (const k of this.shiftKeys()) this.move(k.row, k.key).held = false;
+      this.holdShifts();
     }
+  }
+
+  /**
+   * The keys held on the real keyboard now (`Keyboard.held`) and its SHIFTs: their caps go down with the keydown and
+   * come up with the keyup, SHIFT too as a finger rests on it before the next key.
+   */
+  held(keys: readonly string[], left: boolean, right: boolean): void {
+    const caps = new Map<Key, number>();
+    for (const name of keys) {
+      const found = capFor(name);
+      if (found) caps.set(found.key, found.row);
+    }
+    for (const key of this.heldCaps) {
+      const m = this.moving.get(key);
+      if (m && !caps.has(key)) m.held = false;
+    }
+    for (const [key, row] of caps) this.move(row, key).held = true;
+    this.heldCaps = new Set(caps.keys());
+    if (left === this.heldShifts[0] && right === this.heldShifts[1]) return;
+    this.heldShifts = [left, right];
+    this.holdShifts();
   }
 
   /** The pointer came up: every clicked cap but a latched SHIFT goes back up. */
@@ -73,7 +99,7 @@ export class CocoKeys {
       const found = capFor(t.key);
       if (!found) continue;
       this.tap(found.row, found.key);
-      if (found.shifted || (t.shift && t.key.length > 1)) for (const k of this.shiftKeys()) this.tap(k.row, k.key);
+      if (found.shifted || (t.shift && t.key.length > 1)) for (const k of this.shiftKeys(t.shiftSide)) this.tap(k.row, k.key);
     }
   }
 
@@ -100,6 +126,14 @@ export class CocoKeys {
     return this.uniforms;
   }
 
+  /** Each SHIFT cap down while latched by a click or held on the real keyboard. */
+  private holdShifts(): void {
+    this.shiftKeys().forEach((k, i) => {
+      const down = this.shift || this.heldShifts[i];
+      if (down || this.moving.has(k.key)) this.move(k.row, k.key).held = down;
+    });
+  }
+
   private tap(row: number, key: Key): void {
     this.move(row, key).hold = TAP;
   }
@@ -110,8 +144,10 @@ export class CocoKeys {
     return m;
   }
 
-  private shiftKeys(): { row: number; key: Key }[] {
-    return ROWS.flatMap((keys, row) => keys.filter((k) => k.label === 'SHIFT').map((key) => ({ row, key })));
+  /** The SHIFT caps, left then right; only the one on `side` if given. */
+  private shiftKeys(side?: 'left' | 'right'): { row: number; key: Key }[] {
+    const all = ROWS.flatMap((keys, row) => keys.filter((k) => k.label === 'SHIFT').map((key) => ({ row, key })));
+    return side === 'left' ? all.slice(0, 1) : side === 'right' ? all.slice(-1) : all;
   }
 }
 

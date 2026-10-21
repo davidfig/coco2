@@ -1,4 +1,7 @@
-import { GLYPHS, type Glyph, type Stroke } from './glyphs';
+import type { Glyph, Stroke } from './glyphs';
+import { PLAYER, type Hand } from './hands';
+import { graphite, shake } from './pencil';
+import { clamp, gauss, mulberry32, type Rand } from './rand';
 
 /**
  * A pen. `size` is the cap height in pixels; `mood` runs 0 (calm, neat) to 1 (rushed, shaking) and loosens every kind
@@ -11,26 +14,13 @@ export interface Pen {
   mood?: number;
   slant?: number;
   ink?: [number, number, number];
+  /** Whose hand it is; the player's if not given. */
+  hand?: Hand;
   /** Told where each character of the line landed (its index, left and right edge), for anything that must find a word again. */
   track?: (index: number, x0: number, x1: number) => void;
 }
 
 type P = [number, number];
-type Rand = () => number;
-
-const BLUE_BLACK: [number, number, number] = [28, 58, 170];
-
-function mulberry32(a: number): Rand {
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-const gauss = (r: Rand): number => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
-const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
 /** A stable number from a string, for seeding. */
 export function hashSeed(s: string): number {
@@ -65,7 +55,7 @@ function sample(pts: P[], smooth: boolean, step: number): P[] {
 }
 
 /** Fill a stroke as a ribbon whose width rises and falls like a ballpoint's, thick where it lands, thin where it lifts. */
-function ribbon(ctx: CanvasRenderingContext2D, pts: P[], width: number, color: string, r: Rand): void {
+function ribbon(ctx: CanvasRenderingContext2D, pts: P[], width: number, color: string | CanvasPattern, r: Rand): void {
   const n = pts.length;
   const phase = r() * 10;
   const w = pts.map((_, i) => {
@@ -101,31 +91,37 @@ function ribbon(ctx: CanvasRenderingContext2D, pts: P[], width: number, color: s
   dot(pts[n - 1], w[n - 1]);
 }
 
-function pick(ch: string, r: Rand): Glyph | null {
-  const variants = GLYPHS[ch] ?? GLYPHS[ch.toUpperCase()];
-  return variants ? variants[Math.floor(r() * variants.length)] : null;
+/** The forms `hand` has for `ch`, and how big it writes them: a lower-case letter it has no form for is a small capital. */
+function forms(ch: string, hand: Hand): { variants: Glyph[]; scale: number } | null {
+  const own = hand.glyphs[ch];
+  if (own) return { variants: own, scale: 1 };
+  const up = hand.glyphs[ch.toUpperCase()];
+  if (!up) return null;
+  return { variants: up, scale: ch !== ch.toUpperCase() && hand.smallCaps ? hand.smallCaps : 1 };
 }
 
-const ADVANCE_GAP = 0.15;
-const SPACE = 0.42;
+function pick(ch: string, r: Rand, hand: Hand): { g: Glyph; scale: number } | null {
+  const f = forms(ch, hand);
+  return f ? { g: f.variants[Math.floor(r() * f.variants.length)], scale: f.scale } : null;
+}
 
 /** How wide `text` comes out, on average (used for wrapping; every real letter differs a little). */
-export function measure(text: string, size: number): number {
+export function measure(text: string, size: number, hand: Hand = PLAYER): number {
   let w = 0;
   for (const ch of text) {
-    const g = (GLYPHS[ch] ?? GLYPHS[ch.toUpperCase()])?.[0];
-    w += (g ? g.w + ADVANCE_GAP : SPACE) * size;
+    const f = forms(ch, hand);
+    w += (f ? f.variants[0].w * f.scale + hand.gap : hand.space) * size;
   }
   return w;
 }
 
 /** Break `text` into lines no wider than `maxW`. */
-export function wrap(text: string, size: number, maxW: number): string[] {
+export function wrap(text: string, size: number, maxW: number, hand: Hand = PLAYER): string[] {
   const lines: string[] = [];
   let line = '';
   for (const word of text.split(' ')) {
     const next = line ? `${line} ${word}` : word;
-    if (line && measure(next, size) > maxW) {
+    if (line && measure(next, size, hand) > maxW) {
       lines.push(line);
       line = word;
     } else line = next;
@@ -143,31 +139,37 @@ export function wrap(text: string, size: number, maxW: number): string[] {
 export function write(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, pen: Pen): number {
   const r = mulberry32(pen.seed);
   const mood = pen.mood ?? 0;
-  const slantBase = pen.slant ?? 0.14;
-  const ink = pen.ink ?? BLUE_BLACK;
+  const hand = pen.hand ?? PLAYER;
+  const v = hand.wander;
+  const slantBase = pen.slant ?? hand.slant;
+  const ink = pen.ink ?? hand.ink;
+  const grain = hand.pencil ? graphite(ctx, ink) : null;
   const up = text;
   const wander = r() * 6;
   // The whole line leans uphill or downhill a little, and the baseline rolls at two speeds on top of that.
-  const hill = gauss(r) * 0.018;
+  const hill = gauss(r) * 0.018 * v;
   const wander2 = r() * 6;
   let cx = x;
   for (let i = 0; i < up.length; i++) {
-    const g = pick(up[i], r);
+    const picked = pick(up[i], r, hand);
     const x0 = cx;
-    if (!g) {
-      cx += SPACE * pen.size * (1 + gauss(r) * 0.12);
+    if (!picked) {
+      cx += hand.space * pen.size * (1 + gauss(r) * 0.12);
       pen.track?.(i, x0, cx);
       continue;
     }
+    const g = picked.g;
     const m = clamp(mood + 0.18 * (i / Math.max(1, up.length)), 0, 1);
-    const sc = clamp(1 + gauss(r) * (0.06 + 0.1 * m), 0.78, 1.28) * pen.size;
-    const rot = gauss(r) * (0.03 + 0.09 * m);
-    const slant = slantBase + gauss(r) * 0.05;
-    const drift = (Math.sin(wander + i * 0.33) * 0.07 * (1 + m) + Math.sin(wander2 + i * 1.1) * 0.035 + gauss(r) * 0.04 * (1 + m) + hill * (cx - x) / pen.size) * pen.size;
+    const sc = clamp(1 + gauss(r) * (0.06 + 0.1 * m) * v, 0.78, 1.28) * pen.size * picked.scale;
+    const rot = gauss(r) * (0.03 + 0.09 * m) * v;
+    const slant = slantBase + gauss(r) * 0.05 * v;
+    const drift = (Math.sin(wander + i * 0.33) * 0.07 * (1 + m) * v + Math.sin(wander2 + i * 1.1) * 0.035 * v + gauss(r) * 0.04 * (1 + m) * v + hill * (cx - x) / pen.size) * pen.size;
     const cos = Math.cos(rot);
     const sin = Math.sin(rot);
     const shade = Math.round(gauss(r) * 9);
     const color = `rgb(${ink[0] + shade},${ink[1] + shade},${ink[2] + shade})`;
+    // A pencil's pressure shows in how dark the letter is.
+    if (grain) ctx.globalAlpha = clamp(0.95 + gauss(r) * 0.05, 0.75, 1);
     const to = (px: number, py: number): P => {
       const sx = px + slant * py;
       return [cx + (sx * cos - py * sin) * sc, y + drift - (sx * sin + py * cos) * sc];
@@ -187,14 +189,16 @@ export function write(ctx: CanvasRenderingContext2D, text: string, x: number, y:
         nudge(pts[0], pts[1]);
         nudge(pts[pts.length - 1], pts[pts.length - 2]);
       }
-      const path = sample(pts.map(([px, py]) => to(px, py)), s.smooth, Math.max(1.2, pen.size * 0.06));
-      const width = Math.max(1.1, pen.size * 0.075 * (1 + gauss(r) * 0.08));
-      ribbon(ctx, path, width, color, r);
-      if (m > 0.45 && r() < 0.1 * m) ribbon(ctx, path.map(([px, py]) => [px + gauss(r) * 0.8, py + gauss(r) * 0.8] as P), width * 0.8, color, r); // gone over twice
+      let path = sample(pts.map(([px, py]) => to(px, py)), s.smooth, Math.max(1.2, pen.size * 0.06));
+      if (hand.tremor) path = shake(path, hand.tremor * pen.size * 0.022, r);
+      const width = Math.max(1.1, pen.size * 0.075 * hand.weight * (1 + gauss(r) * 0.08));
+      ribbon(ctx, path, width, grain ?? color, r);
+      if (m > 0.45 && r() < 0.1 * m) ribbon(ctx, path.map(([px, py]) => [px + gauss(r) * 0.8, py + gauss(r) * 0.8] as P), width * 0.8, grain ?? color, r); // gone over twice
     }
-    cx += (g.w * sc) + pen.size * (ADVANCE_GAP + gauss(r) * 0.035 + 0.05 * m);
+    cx += (g.w * sc) + pen.size * (hand.gap + gauss(r) * 0.035 * v + 0.05 * m);
     pen.track?.(i, x0, cx);
   }
+  if (grain) ctx.globalAlpha = 1;
   return cx - x;
 }
 
@@ -208,7 +212,7 @@ export function dash(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: 
     const t = i / n;
     pts.push([x0 + (x1 - x0) * t + gauss(r) * 2, y0 + (y1 - y0) * t + gauss(r) * pen.size * (0.04 + 0.06 * mood)]);
   }
-  const ink = pen.ink ?? BLUE_BLACK;
+  const ink = pen.ink ?? PLAYER.ink;
   ribbon(ctx, sample(pts, true, Math.max(1.2, pen.size * 0.06)), Math.max(1.2, pen.size * 0.08), `rgb(${ink[0]},${ink[1]},${ink[2]})`, r);
 }
 
@@ -220,7 +224,7 @@ export function dash(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: 
 export function sketch(ctx: CanvasRenderingContext2D, strokes: readonly Stroke[], x: number, y: number, pen: Pen & { passes?: number; press?: number }): void {
   const r = mulberry32(pen.seed ^ 0x5bd1e995);
   const mood = pen.mood ?? 0;
-  const ink = pen.ink ?? BLUE_BLACK;
+  const ink = pen.ink ?? PLAYER.ink;
   const rot = gauss(r) * (0.06 + 0.1 * mood);
   const [cos, sin] = [Math.cos(rot), Math.sin(rot)];
   const slant = (pen.slant ?? 0) + gauss(r) * 0.04;
@@ -250,7 +254,7 @@ export function sketch(ctx: CanvasRenderingContext2D, strokes: readonly Stroke[]
 export function scrawl(ctx: CanvasRenderingContext2D, pts: readonly (readonly [number, number])[], pen: Pen): void {
   const r = mulberry32(pen.seed ^ 0x27d4eb2f);
   const mood = pen.mood ?? 0;
-  const ink = pen.ink ?? BLUE_BLACK;
+  const ink = pen.ink ?? PLAYER.ink;
   const wave = pen.size * (0.05 + 0.2 * mood);
   const path: P[] = [];
   for (let i = 0; i < pts.length - 1; i++) {

@@ -97,6 +97,8 @@ check table, notices, and decides: delete it (type the line number) or keep it. 
 ticks, and the issue-2 trigger waits on it. The choice is recorded (`deleted-extra-line`) so OK can remember it.
 Tutorial note: the page's check table is the only way to see the difference without comparing every line.
 
+Kessler's typos (not a puzzle): the tape's GUESS also has three swapped-letter slips in its strings (GUESS MY NUBMER, TOO HIHG., TIRES!), owned up to by the sticky on the GUESS page. The magazine prints them right (`GUESS_TYPOS`, `puzzles/listings.ts`). They run fine and, a swap keeping a line's sum, CHECK agrees with the table, so they never get in the way of finding line 125.
+
 ## Built
 
 - The puzzle watcher and rules for P1–P4 (`src/game/puzzles/`), and `tapes/advent.bas` (eight rooms, see the map above;

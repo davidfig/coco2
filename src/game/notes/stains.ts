@@ -56,7 +56,7 @@ export function coffee(ctx: CanvasRenderingContext2D, x: number, y: number, R: n
   // Sometimes the mug was set down twice, a little apart.
   const rims = r() < 0.35 ? 2 : 1;
   for (let k = 0; k < rims; k++) {
-    const [cx, cy] = k ? [x + (r() - 0.5) * 30, y + (r() - 0.5) * 30] : [x, y];
+    const [cx, cy] = k ? [x + (r() - 0.5) * R * 0.4, y + (r() - 0.5) * R * 0.4] : [x, y];
     const fade = k ? 0.55 : 1;
     // Where the drip reached: [start, length] arcs. The second setting-down left less.
     const arcs: [number, number][] = [[r() * TAU, TAU * (k ? 0.2 + r() * 0.3 : 0.4 + r() * 0.45)]];
@@ -70,18 +70,18 @@ export function coffee(ctx: CanvasRenderingContext2D, x: number, y: number, R: n
       }
       return w;
     };
-    const N = 140;
+    const N = 260;
     for (let i = 0; i < N; i++) {
       const t0 = (i / N) * TAU;
       const t1 = ((i + 1.3) / N) * TAU;
       const w = wet(t0);
       if (w <= 0) continue;
-      const rr = R + 1.2 * Math.sin(t0 * 5 + f3);
+      const rr = R * (1 + 0.012 * Math.sin(t0 * 5 + f3));
       // A faint tan band just inside, where the coffee spread a little before drying…
       ctx.strokeStyle = `rgba(155,100,40,${0.07 * w * fade})`;
-      ctx.lineWidth = R * 0.14;
+      ctx.lineWidth = R * 0.1;
       ctx.beginPath();
-      ctx.arc(cx, cy, rr - R * 0.07, t0, t1);
+      ctx.arc(cx, cy, rr - R * 0.05, t0, t1);
       ctx.stroke();
       // …and the dark edge where it dried, thinner where less of it got there.
       const a = (0.32 + 0.14 * Math.sin(t0 * 3 + f1) + 0.08 * Math.sin(t0 * 7 + f2)) * w * fade;
@@ -96,7 +96,7 @@ export function coffee(ctx: CanvasRenderingContext2D, x: number, y: number, R: n
   const drops = Math.floor(r() * 4);
   for (let i = 0; i < drops; i++) {
     const a = r() * Math.PI * 2;
-    const d = R + 8 + r() * 30;
+    const d = R * (1.05 + r() * 0.25);
     const s = 1.5 + r() * 4;
     ctx.fillStyle = 'rgba(140,85,35,0.14)';
     ctx.beginPath();

@@ -67,6 +67,18 @@ Each step is something the existing systems can already do, so it can be built o
     of how many of him there are.
   - *READY* sends them, using OK as bait or a test (it warns him and uses him).
   - *Kessler is a human* who copies tapes for children and does not know what is on them; the AI angle comes later.
+- **Kessler's slips (built).** Issue 1's box holds three yellow sticky notes, pencilled in Kessler's hand (the label's),
+  stuck in the book (`magazine/slips.ts`): on the cover ("For the masheen in the basement... Start at the front of the book. The tape
+  after. Burn this. - M.K."), on the adventure's words (play it through, past the locked door; anything wrong on the tape
+  is Kessler's mistake), and on GUESS's listing (check the copying against the book). They give the player a reason to
+  run the programs: someone wants them run, and never says why. They say what to do, never how. Read again after the
+  reveal, "play it all the way through" is what wakes OK. Kessler knowing about the basement is the hook: the notebook
+  can ask how. Kessler spells the hard words by ear (acurate), the everyday ones right, in a careful
+  hand: the spelling is the person, not a glitch, so OK's lines on the tapes, which are spelled right, read as someone else's.
+- **Grandpa is alive, but away** (proposed: in a home, his house being cleared), so Kessler finding out the machine
+  was found is unexplained, not a promise kept. Proposed: Kessler knew Grandpa (the same CoCo club, years ago), and
+  **Grandpa does not know about OK**: he hid the machine because it is banned, and OK has to wake for the first time with
+  the player ("IS ANYONE READING THIS" only works if nobody has).
 - **OK does not know it is 1991.** He reads each issue as news, as the magazines are all he has; the player reads it
   as history. That gap is his to find out, and the player may be the one to tell him.
 

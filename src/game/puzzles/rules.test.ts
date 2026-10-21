@@ -1,6 +1,8 @@
 import { HeadlessCoco } from '../coco/headless';
 import { expect, test } from '../../test/check';
-import { FIRST_PROGRAM } from './listings';
+import { checkSum } from '../basic/checksum';
+import guess from '../tapes/guess.bas?raw';
+import { FIRST_PROGRAM, GUESS_EXTRA_LINE, GUESS_PRINTED, GUESS_TYPOS } from './listings';
 import { ISSUE_1_RULES } from './rules';
 import { PuzzleWatcher } from './watcher';
 
@@ -40,4 +42,17 @@ test('P2: a different program asking for N$ does not count', () => {
   const { coco, flags } = watched();
   coco.type('NEW\n10 INPUT N$\n40 PRINT N$\nRUN\nADA\n');
   expect(flags.has('first-program')).toBe(false);
+});
+
+test('GUESS: the tape has Kessler\'s typos, runs anyway, and CHECKs the same as the printed listing', () => {
+  const tape = guess.split('\n').filter((l) => l.trim() !== '' && !l.startsWith(`${GUESS_EXTRA_LINE} `));
+  for (const [num, [typo, right]] of Object.entries(GUESS_TYPOS)) {
+    const line = tape.find((l) => l.startsWith(`${num} `))!;
+    expect(line).toContain(typo);
+    expect(GUESS_PRINTED.find((l) => l.startsWith(`${num} `))).toBe(line.replace(typo, right));
+  }
+  expect(checkSum(tape).join()).toBe(checkSum(GUESS_PRINTED).join());
+  const coco = new HeadlessCoco().type('NEW\n' + tape.join('\n') + '\nRUN\n');
+  expect(coco.text()).toContain('GUESS MY NUBMER');
+  expect(coco.interp.state).toBe('input');
 });

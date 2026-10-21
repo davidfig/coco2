@@ -115,5 +115,8 @@ export function parse(s: string): Glyph {
   return { w: Number(w), strokes };
 }
 
-/** Every glyph's variants, parsed once. */
-export const GLYPHS: Record<string, Glyph[]> = Object.fromEntries(Object.entries(SOURCE).map(([k, v]) => [k, v.map(parse)]));
+/** A whole hand's skeletons (`SOURCE` above, or another writer's), every variant parsed once. */
+export const parseSet = (source: Record<string, string[]>): Record<string, Glyph[]> => Object.fromEntries(Object.entries(source).map(([k, v]) => [k, v.map(parse)]));
+
+/** The player's letters. */
+export const GLYPHS = parseSet(SOURCE);

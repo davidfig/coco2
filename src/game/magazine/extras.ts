@@ -2,7 +2,7 @@ import { houseAd } from './ads';
 import { checkSum } from '../basic/checksum';
 import { FIRST_PROGRAM, GUESS_PRINTED } from '../puzzles';
 import { pageNo } from './pages';
-import { Ctx, INK, MARGIN, MONO, PAGE_W, SANS, SERIF, banner, colWidth, flow, rowsFor, text } from './paper';
+import { Ctx, INK, MARGIN, MONO, PAGE_W, SANS, SERIF, banner, colWidth, flow, rowsFor, sidebar, text } from './paper';
 
 const W = PAGE_W - MARGIN * 2;
 const GAP = 24;
@@ -16,6 +16,8 @@ export interface TypeIn {
   by: string;
   intro: { text: string; before?: number }[];
   lines: readonly string[];
+  /** The steps for the box under a short listing that says how to type it in and run it. */
+  howTo?: readonly string[];
 }
 
 /** The first type-in page prints the first puzzle's program; `puzzles/listings.ts` holds it so the watcher knows it too. */
@@ -29,6 +31,13 @@ const SAY_YOUR_NAME: TypeIn = {
     { text: 'Spaces count. So do commas and quotation marks. Do not try to be clever: type it exactly as it is printed, even if you think you see a mistake. The CoCo has a way of being right.' },
   ],
   lines: FIRST_PROGRAM,
+  howTo: [
+    'Type NEW and press ENTER, to clear out any old program.',
+    'Type each line, pressing ENTER at its end. The left arrow rubs out a mistake.',
+    'Type CHECK and press ENTER, and compare.',
+    'After you finish typing in the last line, type RUN and press ENTER.',
+    'At the question mark, type your name and press ENTER.',
+  ],
 };
 
 /** GUESS as it should be, so a worn or tampered tape can be compared against it. */
@@ -66,6 +75,7 @@ export function drawTypeIn(ctx: Ctx, p: TypeIn): void {
     }
   }
   ctx.fillRect(MARGIN, y + 6, lw, 2);
+  const hy = p.howTo ? howTo(ctx, p.howTo, MARGIN, y + 30, lw) : 0;
   const bx = MARGIN + lw + 30;
   const bw = W - lw - 30;
   const rowH = p.lines.length > 16 ? 22 : p.lines.length > 8 ? 26 : 28;
@@ -88,8 +98,24 @@ export function drawTypeIn(ctx: Ctx, p: TypeIn): void {
     bw - 36,
     130,
   );
-  const adY = Math.max(860, ly + boxH + 40);
+  const adY = Math.max(860, ly + boxH + 40, hy + 30);
   if (adY < 1000) houseAd(ctx, MARGIN, adY, W);
+}
+
+/** A boxed list of numbered steps under the listing: how to get it into the CoCo and run it. Returns its bottom. */
+function howTo(ctx: Ctx, steps: readonly string[], x: number, y: number, w: number): number {
+  const lh = 20;
+  const tw = w - 76;
+  const wrapped = steps.map((t) => rowsFor(ctx, [{ text: t, font: `17px ${SERIF}`, lh, align: 'left', before: 0 }], tw));
+  const h = 62 + wrapped.reduce((n, r) => n + r.length * lh + 8, 0) + 8;
+  sidebar(ctx, 'How To Run It', x, y, w, h);
+  let sy = y + 62;
+  wrapped.forEach((rows, i) => {
+    text(ctx, `${i + 1}.`, x + 26, sy + lh * 0.73, `bold 17px ${SANS}`);
+    flow(ctx, rows, x + 52, sy, tw, rows.length * lh);
+    sy += rows.length * lh + 8;
+  });
+  return y + h;
 }
 
 /** the first type-in, the program that asks your name. */

@@ -3,7 +3,7 @@ import { NOTE_STRIP, type Rect, lerp, smooth } from '../magazine/bookLayout';
 import type { IssueId } from '../magazine/pages';
 import type { Shade } from '../tv/tv';
 import { NOTE_FRAG } from './noteShader';
-import { NOTES } from './notes';
+import { NOTES, noteReads } from './notes';
 import { DEAL_TIME, type Deal, type Layer, type Sheet, inside, layers, openTime, pulled } from './pile';
 import { type PageLink, SHEET_DPI, SHEET_H, SHEET_W, sheetSigs } from './sheet';
 import { SheetPainter, type SheetsDone, uploadSheets } from './sheetPainter';
@@ -22,7 +22,7 @@ const BOUNCE_TIME = 0.55;
 /** The real sheet (`SHEET_DPI`) against the picture of a 13 in set (about 10.4 in across), so the page keeps that share of the TV's width. */
 const PAGE_IN_TV = SHEET_W / SHEET_DPI / 10.4;
 /** Flags that change what the notebook page says. */
-const WATCHED = [...new Set(NOTES.flatMap((n) => [n.when, n.solved, n.orSolved, n.skipIf, ...(n.reads ?? [])].flat().filter((f): f is string => !!f)))];
+const WATCHED = [...new Set(NOTES.flatMap((n) => [n.when, n.solved, n.orSolved, n.skipIf, ...noteReads(n)].flat().filter((f): f is string => !!f)))];
 
 /**
  * The player's notebook page. It peeks up from the bottom-left corner of the window (as the magazine peeks in from the
@@ -81,7 +81,7 @@ export class Notebook {
   /** Whether something lying over the paper on the table takes pixel (x, y) (bottom-left origin): the magazine, if it was read last. */
   covered: (x: number, y: number) => boolean = () => false;
 
-  constructor(private readonly gl: WebGL2RenderingContext, private readonly canvas: HTMLCanvasElement, private readonly flags: () => ReadonlySet<string>, private readonly tv: () => Rect, private readonly tuck: () => number, private readonly glow: () => readonly number[], private readonly picture: () => readonly number[], private readonly onPage: (index: number, issue: IssueId) => void) {
+  constructor(private readonly gl: WebGL2RenderingContext, private readonly canvas: HTMLCanvasElement, private readonly flags: () => ReadonlySet<string>, private readonly tv: () => Rect, private readonly tuck: () => number, private readonly glow: () => readonly number[], private readonly picture: () => readonly number[], private readonly onPage: (index: number, issue: IssueId) => void, private readonly onSpot: (to: NonNullable<PageLink['to']>) => void) {
     this.program = linkProgram(gl, FULLSCREEN_VERT, NOTE_FRAG);
     this.vao = gl.createVertexArray()!;
     this.refresh(false);
@@ -325,11 +325,11 @@ export class Notebook {
               // Pulled far enough, it goes on under the pile; short of that it springs back (see update).
               if (type === 'pointerup' && Math.hypot(...this.off) > 0.35 * s.hx) this.turn(1, this.off);
             } else if (type === 'pointerup') {
-              // A click: on a page reference it puts the notes down and turns the magazine to that page; anywhere else it puts them down.
+              // A click puts the notes down; on a page reference it turns the magazine there (a ringed doodle: shows what it pictures).
               const link = this.linkAt(...px(e as PointerEvent));
               this.putDown();
               this.linkMark.over = this.overTop = false;
-              if (link) this.onPage(link.page, link.issue);
+              if (link) (link.to ? this.onSpot(link.to) : this.onPage(link.page, link.issue));
             }
           }
           if (type === 'wheel' && this.open && e.timeStamp - this.lastTurn > 300) {
@@ -392,7 +392,7 @@ export class Notebook {
   }
 
   draw(): void {
-    const sheets = this.placed().map((p) => ({ quad: p.quad, tex: this.texs[p.sheet], mark: p.sheet === this.sheet && !this.deal ? this.linkMark.mark() : undefined }));
+    const sheets = this.placed().map((p) => ({ quad: p.quad, tex: this.texs[p.sheet], links: this.linkMark.links[p.sheet] ?? [], mark: p.sheet === this.sheet && !this.deal ? this.linkMark.mark() : undefined }));
     const light = 1 + (DESK_LIGHT - 1) * this.onDesk();
     drawPile(this.gl, this.program, this.vao, sheets, { open: smooth(this.openT), lift: this.lift, glow: this.glow(), picture: this.picture(), light });
   }

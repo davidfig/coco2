@@ -72,10 +72,25 @@ export const GUESS_EXTRA_TEXT = guess
   .replace(/^\d+ REM /, '')
   .trim();
 
-/** GUESS as the magazine prints it: the tape file without the extra line. */
+/**
+ * Kessler's typing slips in the tape's GUESS (the sticky on its page owns up to them): a word on the tape and as printed,
+ * by line. Each is two letters swapped inside a string, so the program runs as it should and, a swap keeping a line's sum,
+ * CHECK agrees with the magazine's table: they are a payoff for reading closely, not part of the puzzle (that is line 125).
+ */
+export const GUESS_TYPOS: Readonly<Record<number, readonly [tape: string, printed: string]>> = {
+  30: ['NUBMER', 'NUMBER'],
+  110: ['HIHG', 'HIGH'],
+  120: ['TIRES', 'TRIES'],
+};
+
+/** GUESS as the magazine prints it: the tape file without the extra line, and with Kessler's typing put right. */
 export const GUESS_PRINTED: readonly string[] = guess
   .split('\n')
-  .filter((l) => l.trim() !== '' && !l.startsWith(`${GUESS_EXTRA_LINE} `));
+  .filter((l) => l.trim() !== '' && !l.startsWith(`${GUESS_EXTRA_LINE} `))
+  .map((l) => {
+    const typo = GUESS_TYPOS[Number(l.split(' ')[0])];
+    return typo ? l.replace(typo[0], typo[1]) : l;
+  });
 
 /** The door's code, read from ADVENT's own `IF C$=` line so that the rules can never drift from the tape. */
 export const ADVENT_CODE = /IF C\$="(\d+)"/.exec(advent)![1];

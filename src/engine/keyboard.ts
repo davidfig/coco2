@@ -3,6 +3,8 @@ export interface TypedKey {
   key: string;
   shift: boolean;
   ctrl: boolean;
+  /** Which SHIFT was held, when only one was (from the real keyboard); unset for both, or when it isn't known. */
+  shiftSide?: 'left' | 'right';
 }
 
 /**
@@ -11,22 +13,50 @@ export interface TypedKey {
  */
 export class Keyboard {
   private readonly queue: TypedKey[] = [];
+  /** The keys held down now, by `KeyboardEvent.code` (`ShiftLeft`, `KeyA`), with the key each went down as. */
+  private readonly down = new Map<string, string>();
 
   constructor(listen = true) {
     if (!listen) return;
+    window.addEventListener('keyup', (e) => {
+      this.down.delete(e.code);
+      if (!e.shiftKey && !e.code.startsWith('Shift')) this.forgetShifts(); // a keyup missed while the page was away
+    });
+    window.addEventListener('blur', () => this.down.clear());
     window.addEventListener('keydown', (e) => {
+      if (!e.shiftKey) this.forgetShifts(); // a keyup missed while the page was away
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.down.set(e.code, 'Shift');
       if (e.metaKey || e.altKey) return; // leave browser shortcuts alone
       if (e.ctrlKey && e.key !== 'c' && e.key !== 'C') return;
       const named = e.key.length > 1;
       if (named && !KEEP.has(e.key)) return;
-      this.queue.push({ key: e.key, shift: e.shiftKey, ctrl: e.ctrlKey });
+      this.down.set(e.code, e.key);
+      const { left, right } = this.shiftsHeld();
+      const k: TypedKey = { key: e.key, shift: e.shiftKey, ctrl: e.ctrlKey };
+      if (e.shiftKey && left !== right) k.shiftSide = left ? 'left' : 'right';
+      this.queue.push(k);
       e.preventDefault();
     });
+  }
+
+  /** Whether the real keyboard's left and right SHIFT are held down now. */
+  shiftsHeld(): { left: boolean; right: boolean } {
+    return { left: this.down.has('ShiftLeft'), right: this.down.has('ShiftRight') };
+  }
+
+  /** The keys held down on the real keyboard now, but SHIFT, as they went down (`KeyboardEvent.key`). */
+  held(): string[] {
+    return [...this.down.values()].filter((k) => k !== 'Shift');
   }
 
   /** Everything typed since the last call. */
   drain(): TypedKey[] {
     return this.queue.splice(0);
+  }
+
+  private forgetShifts(): void {
+    this.down.delete('ShiftLeft');
+    this.down.delete('ShiftRight');
   }
 
   /** Queue one key as if pressed (the CoCo's own keyboard, clicked). */
