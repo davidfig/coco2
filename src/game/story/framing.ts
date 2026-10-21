@@ -5,8 +5,8 @@ export const BACK_AFTER = 10;
  * Where the view rests: the whole desk (set, machine, recorder, the magazine and the notes on the table), going in to
  * the set only when the screen needs reading. Typing on the real keyboard goes in, as does the story changing the screen
  * (a tamper, which would be missed from across the room); a while at OK with nothing typed drifts back, and a tape
- * command waiting for a cassette pulls back at once (`back`). Clicks never move it: a click on the machine's keys types
- * without going in, the keyboard being in view.
+ * command waiting for a cassette pulls back at once (`back`). A click on the set goes in (`closer`), and another comes
+ * back out (`back`); no other click moves it: a click on the machine's keys types without going in, the keyboard being in view.
  */
 export class Framing {
   private still = 0;
@@ -24,7 +24,13 @@ export class Framing {
     if (this.still >= BACK_AFTER) this.wide = true;
   }
 
-  /** Back to the desk at once (the recorder is wanted). */
+  /** In to the set (a click on it); the drift back starts over. */
+  closer(): void {
+    this.wide = false;
+    this.still = 0;
+  }
+
+  /** Back to the desk at once (the recorder is wanted, or the set clicked again). */
   back(): void {
     this.wide = true;
     this.still = 0;

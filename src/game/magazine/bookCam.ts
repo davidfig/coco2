@@ -1,6 +1,7 @@
-import { EYE, EYE_AT, type DeskSpot, TABLE, pictureView, rayMatrix, spotAxes } from '../computer/layout';
+import { facing } from '../computer/facing';
+import { EYE, type DeskSpot, TABLE, onSpot, pictureView, spotAxes } from '../computer/layout';
 import { type Quat, axesOf, quatFromAxes, slerp } from '../computer/pose';
-import { CAM_DIST, PAGE_UNIT_H, PAPER_THICKNESS, type View, lerp } from './bookLayout';
+import { CAM_DIST, PAGE_UNIT_H, PAPER_THICKNESS, type View, clamp, lerp, smooth } from './bookLayout';
 
 /**
  * The camera the book shader casts its rays from (`uRayO`, `uRayM`): the eye in book space, and the ray through pixel
@@ -34,21 +35,25 @@ export function viewCam(v: View): Cam {
 
 /**
  * The room's camera (the eye before the set, `Tv.picture` placing it on screen) with the magazine lying on the table at
- * `spot`, the part of it in view (`win`, book x) centred there. A book unit (the page's width) is the spot's width.
+ * `spot`, the part of it in view (`win`, book x) centred there, seen square on (`facing`) so that lying off to the side
+ * of the desk view it isn't stretched. A book unit (the page's width) is the spot's width.
  */
 export function deskCam(spot: DeskSpot, picture: readonly number[], win: readonly [number, number], lift = 0): Cam {
   const S = 2 * spot.hw;
   const view = pictureView(picture);
-  const A = rayMatrix(view);
+  const centre = onSpot(spot, 0, 0);
+  centre[1] += lift;
+  const seen = facing(view, centre, 1);
+  const A = seen.rays;
   const { ux, uy } = spotAxes(spot);
   const R = [ux, uy, [0, 1, 0]];
   const wc = 0.5 * (win[0] + win[1]);
   const at = [spot.x - S * wc * ux[0], TABLE + lift, spot.z - S * wc * ux[2]];
   const m: number[] = [];
   for (let r = 0; r < 3; r++) for (let col = 0; col < 3; col++) m.push((R[r][0] * A[col] + R[r][1] * A[3 + col] + R[r][2] * A[6 + col]) / S);
-  const e = EYE_AT.map((v, i) => v - at[i]);
+  const e = seen.eye.map((v, i) => v - at[i]);
   const o = R.map((row) => (row[0] * e[0] + row[1] * e[1] + row[2] * e[2]) / S) as Cam['o'];
-  const far = Math.hypot(EYE_AT[0] - spot.x, EYE_AT[1] - TABLE, EYE_AT[2] - spot.z);
+  const far = Math.hypot(seen.eye[0] - spot.x, seen.eye[1] - TABLE, seen.eye[2] - spot.z);
   return { o, m, scale: (view.k * EYE.d * S) / far, focal: view.k * EYE.d };
 }
 
@@ -123,7 +128,7 @@ export function camToScreen(cam: Cam, p: readonly number[]): [number, number] | 
 /** Where the book can draw (pixels: x0, y0, x1, y1) through camera `cam`, as `bookBounds` for the book's own. */
 export function camBounds(cam: Cam, v: View, turning: boolean): [number, number, number, number] {
   const hh = PAGE_UNIT_H / 2 + 0.3;
-  const xs = turning ? [Math.min(v.win[0], -1.1), Math.max(v.win[1], 1.1)] : [v.win[0] - 0.3, v.win[1] + 0.3];
+  const xs = turning ? [Math.min(v.see[0], -1.1), Math.max(v.see[1], 1.1)] : [v.see[0] - 0.3, v.see[1] + 0.3];
   const b = [Infinity, Infinity, -Infinity, -Infinity];
   for (const bx of xs)
     for (const by of [-hh, hh])
@@ -145,22 +150,37 @@ export const DESK_LIGHT = 0.72;
 const DESK_PAPER_THICKNESS = 0.022;
 
 /**
- * Put away with the desk in view, the magazine lies on the table at `spot`, seen through the room's camera (`t` of the way there:
- * coming out, it rises off it). The view to draw and point with (its `cam` set while on the table), the camera, the light,
- * and how far it lies (`uDesk`).
+ * Put away with the desk in view (`d` of the way there), the magazine lies on the table at `spot`, seen through the
+ * room's camera; coming out (`open`, eased), it rises off it straight to `out`, the view with the book all the way out,
+ * never by way of the put-away corner `v` is easing from (that path would hang back, then lurch). The view to draw and
+ * point with (its `cam` set while on the table), the camera, the light, how far it lies (`uDesk`) and how far open flat
+ * at a spread rather than folded back (`uSpread`).
  */
-export function onTable(v: View, t: number, spot: DeskSpot, picture: readonly number[], lift = 0): { view: View; cam: Cam; light: number; desk: number } {
+export function onTable(v: View, out: View, d: number, open: number, spot: DeskSpot, picture: readonly number[], lift = 0): { view: View; cam: Cam; light: number; desk: number; spread: number } {
   const own = viewCam(v);
-  if (t <= 0) return { view: v, cam: own, light: 1, desk: 0 };
-  const cam = mixCam(own, deskCam(spot, picture, v.win, lift), t, [0.5 * (v.win[0] + v.win[1]), 0, 0]);
+  const t = d * (1 - open);
+  if (t <= 0) return { view: v, cam: own, light: 1, desk: 0, spread: 0 };
+  const at = [0.5 * (v.win[0] + v.win[1]), 0, 0];
+  const table = deskCam(spot, picture, v.win, lift);
+  const rise = open > 0 ? mixCam(table, viewCam(out), open, at) : table;
+  const cam = d < 1 ? mixCam(own, rise, d, at) : rise;
   const c = v.clip;
   const clip: View['clip'] = [lerp(c[0], 0, t), lerp(c[1], 0, t), lerp(c[2], v.W, t), lerp(c[3], v.H, t)];
   // Seen from across the room the block of paper shows its true thickness, its sides a band of sheet edges. Put down
-  // open at a page, it is folded back on its spine: the whole block lies under the page in view, the other half under.
+  // open at a right-hand page, it is folded back on its spine: the whole block lies under the page in view, the other
+  // half under. Open at a left-hand page with a right-hand one beside it, it lies open flat, the right-hand page reaching
+  // away from the set as far as the window shows (the left page stays on the spot; the set is the other side).
+  const spread = smooth(clamp(-2 * v.c, 0, 1)) * clamp(v.ext[1], 0, 1);
   const k = lerp(1, DESK_PAPER_THICKNESS / PAPER_THICKNESS, t);
   const all = v.ext[2] + v.ext[3];
-  const ext: View['ext'] = [v.ext[0], v.ext[1], lerp(v.ext[2], all, t) * k, lerp(v.ext[3], all, t) * k];
-  return { view: { ...v, cam, clip, ext }, cam, light: lerp(1, DESK_LIGHT, t), desk: t };
+  const stack = (s: number) => lerp(s, lerp(all, s, spread), t) * k;
+  const ext: View['ext'] = [v.ext[0], v.ext[1], stack(v.ext[2]), stack(v.ext[3])];
+  // Folded back on its spine, only the page in view lies up: the facing page is gone as soon as it starts down. Open
+  // flat, it comes back as the book goes down (putting it away hid it).
+  const folded = lerp(v.see[1], v.win[1], clamp(t * 4, 0, 1));
+  const flat = lerp(v.see[1], v.ext[1], smooth(clamp(t * 2, 0, 1)));
+  const see: View['see'] = [v.see[0], lerp(folded, flat, spread)];
+  return { view: { ...v, cam, clip, ext, see }, cam, light: lerp(1, DESK_LIGHT, t), desk: t, spread };
 }
 
 /** Hand camera `cam` and the room's `light` to the book shader (`uRayO`, `uRayM`, `uScale`, `uFocal`, `uLight`). */

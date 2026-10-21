@@ -31,8 +31,8 @@ export const TABLE = -1.44;
  * wall a little behind that, a gap the power cord (cords.ts) drops down.
  */
 export const EDGE = { gap: 0.45, thick: 0.22, floor: 5.4, set: 2.8, back: -3.18, wall: -3.3 } as const;
-/** How much of the space under the table shows below its edge when the view pulls back to the desk (panel units). */
-const UNDER = 0.55;
+/** The space under the table that shows below its edge in the desk view (panel units); a wide window crops it first, to fill its width. */
+export const UNDER = 0.55;
 /** The viewer's eye: its height and how far in front of the TV's face (the TV's front plane maps 1:1 to panel units). */
 export const EYE = { y: 1.0, d: 8 } as const;
 
@@ -94,10 +94,10 @@ const NOTE = { hw: (SHEET_W / SHEET_DPI / 2) * INCH, hd: (SHEET_H / SHEET_DPI / 
 /** Where each lies, if anywhere: one arrangement of the desk. */
 export type DeskLayout = { magazine?: DeskSpot; notes?: DeskSpot };
 /** Both to the right of the machine, the notes lying half over the magazine: for a window with less room either side. */
-const STACKED: Required<DeskLayout> = { magazine: { x: 2.0, z: 1.2, yaw: -0.12, ...MAG }, notes: { x: 2.2, z: 2.45, yaw: -0.2, ...NOTE } };
+const STACKED: Required<DeskLayout> = { magazine: { x: 2.22, z: 1.2, yaw: -0.12, ...MAG }, notes: { x: 2.42, z: 2.45, yaw: -0.2, ...NOTE } };
 /** The arrangements to try, best first: either side of the machine, both to its right, then one alone. */
 export const DESK_LAYOUTS: readonly DeskLayout[] = [
-  { magazine: { x: 2.08, z: 2.15, yaw: -0.13, ...MAG }, notes: { x: -2.85, z: 2.2, yaw: 0.06, ...NOTE } },
+  { magazine: { x: 2.3, z: 2.15, yaw: -0.13, ...MAG }, notes: { x: -3.08, z: 2.2, yaw: 0.06, ...NOTE } },
   STACKED,
   { magazine: STACKED.magazine },
   { notes: STACKED.notes },

@@ -2,7 +2,7 @@ import { FULLSCREEN_VERT, KeptPass, Program, linkProgram } from '../../engine';
 import type { DeskSpot } from '../computer/layout';
 import { camBounds, onTable, setCam } from './bookCam';
 import { BOOK_FRAG } from './bookShader';
-import { CLOSED_FRAME, Flip, READ_FRAME, SIDE_FRAME, PAGE_FIT_H, PAGE_FIT_W, PAGE_UNIT_H, Rect, TILT, View, bookBounds, clamp, layoutAt, leafLayers, lerp, putAway, screenToBook, smooth, spreadView } from './bookLayout';
+import { CLOSED_FRAME, Flip, READ_FRAME, SIDE_FRAME, PAGE_FIT_H, PAGE_NEAR_W, PAGE_UNIT_H, Rect, TILT, View, bookBounds, clamp, layoutAt, leafLayers, lerp, putAway, screenToBook, smooth, spreadView, viewIn } from './bookLayout';
 import { IssueState, newState } from './data';
 import { PagePainter } from './pagePainter';
 import { PageTextures } from './pageTextures';
@@ -54,7 +54,8 @@ export class Magazine {
   pan = { x: 0, y: 0 };
   /** Where a zoom is anchored: a screen point (window fractions) and the book point under it. */
   anchor: { nx: number; ny: number; px: number; py: number } | null = null;
-  v: View = { W: 1, H: 1, rect: [0, 0, 1, 1], scale: 1, fit: 1, vx: 0, vy: 0, c: 0, ext: [0, 1, 0, 1], win: [0, 1], tilt: 0, roll: 0, pivot: [0, 0], clip: [0, 0, 1, 1] };
+  v: View = { W: 1, H: 1, rect: [0, 0, 1, 1], scale: 1, fit: 1, vx: 0, vy: 0, c: 0, ext: [0, 1, 0, 1], win: [0, 1], see: [0, 1], tilt: 0, roll: 0, pivot: [0, 0], clip: [0, 0, 1, 1] };
+  private out: View = this.v; // all the way out, where it rises to off the table (`onTable`): `viewIn` the rect it grows toward
   /** The arrangement of window now: the TV's rectangle and how much of the set is in view. */
   tv: Rect = { x: 0, y: 0, w: 1, h: 1 };
   book: Rect = { x: 1, y: 0, w: 0.5, h: 1 };
@@ -277,7 +278,7 @@ export class Magazine {
     const camGoal = this.pageGoal % 2 === 0 ? 0.5 : -0.5;
     if (!this.camHeld) this.camX += (camGoal - this.camX) * (1 - Math.exp(-dt * 9));
     if (!this.camHeld && Math.abs(this.camX - camGoal) < 0.002) this.camX = camGoal;
-    const fit = Math.min(rw / PAGE_FIT_W, rh / (PAGE_UNIT_H * PAGE_FIT_H));
+    const fit = Math.min(rw / PAGE_NEAR_W, rh / (PAGE_UNIT_H * PAGE_FIT_H));
     this.zoom += (this.zoomGoal - this.zoom) * (1 - Math.exp(-dt * 10));
     if (Math.abs(this.zoom - this.zoomGoal) < 0.002) this.zoom = this.zoomGoal;
     const scale = fit * this.zoom;
@@ -293,7 +294,9 @@ export class Magazine {
     this.pan.x = clamp(this.pan.x, -limX, limX);
     this.pan.y = clamp(this.pan.y, -limY, limY);
     const win: View['win'] = [Math.max(sv.xmin, this.camX - 0.5), Math.min(sv.xmax, this.camX + 0.5)];
-    const v: View = { W, H, rect, scale, fit, vx: this.camX + this.pan.x, vy: this.pan.y, c: this.camX, ext: [sv.xmin, sv.xmax, sv.stackL, sv.stackR], win, tilt: TILT, roll: 0, pivot: [0, 0], clip: rect };
+    // On a left-hand page the right-hand one shows at the edge as far as the rect lets it, opening out as the view slides there.
+    const v: View = { W, H, rect, scale, fit, vx: this.camX + this.pan.x, vy: this.pan.y, c: this.camX, ext: [sv.xmin, sv.xmax, sv.stackL, sv.stackR], win, see: [win[0], lerp(win[1], sv.xmax, smooth(clamp(-2 * this.camX, 0, 1)))], tilt: TILT, roll: 0, pivot: [0, 0], clip: rect };
+    this.out = putAway(viewIn(v, layoutAt(W / H, this.hoverT, 1, this.readT, this.arrive).book, this.zoom), 1);
     this.v = putAway(v, open);
   }
 
@@ -321,7 +324,7 @@ export class Magazine {
   draw(): void {
     const gl = this.gl;
     const desk = this.desk();
-    const { view: v, cam, light, desk: lying } = onTable(this.v, desk.spot ? desk.t * (1 - smooth(this.openT)) : 0, desk.spot!, desk.picture, desk.lift);
+    const { view: v, cam, light, desk: lying, spread } = onTable(this.v, this.out, desk.spot ? desk.t : 0, smooth(this.openT), desk.spot!, desk.picture, desk.lift);
     this.v = v;
     if (v.clip[0] >= v.W || v.clip[1] >= v.H || v.clip[2] <= 0 || v.clip[3] <= 0) return;
     const f = this.flip;
@@ -329,10 +332,10 @@ export class Magazine {
     for (const i of [L, R, F, B]) if (i >= 0) this.ensure(i);
     const bounds = v.cam ? camBounds(cam, v, !!f) : bookBounds(v, !!f);
     const angle = f ? Math.PI * (f.dir > 0 ? smooth(f.t) : 1 - smooth(f.t)) : 0;
-    const vals = { res: [v.W, v.H], clip: v.clip, theta: angle, flipOn: f ? 1 : 0, bend: this.bend, fold: smooth(this.openT), layers: [L, R, F, B], ext: v.ext, win: v.win };
+    const vals = { res: [v.W, v.H], clip: v.clip, theta: angle, flipOn: f ? 1 : 0, bend: this.bend, fold: smooth(this.openT), layers: [L, R, F, B], ext: v.ext, win: v.win, see: v.see };
     // The book lies still more often than not while the rest moves: its picture is kept, and marched again only when
     // something it shows changes (the view, the leaf, a page painted).
-    const key = [...Object.values(vals).flat(), ...cam.o, ...cam.m, cam.scale, cam.focal, light, lying, ...bounds, this.count, this.pages.version];
+    const key = [...Object.values(vals).flat(), ...cam.o, ...cam.m, cam.scale, cam.focal, light, lying, spread, ...bounds, this.count, this.pages.version];
     gl.bindVertexArray(this.vao);
     this.kept.draw(key, bounds, () => {
       gl.useProgram(this.program.prog);
@@ -348,9 +351,8 @@ export class Magazine {
       [u.uL, u.uR, u.uF, u.uB].forEach((loc, i) => gl.uniform1f(loc, vals.layers[i]));
       gl.uniform4f(u.uExt, ...v.ext);
       gl.uniform2f(u.uWin, ...v.win);
-      gl.uniform1f(u.uDesk, lying);
-      gl.uniform1f(u.uTexW, PAGE_W);
-      gl.uniform1f(u.uLastPage, this.count - 1);
+      gl.uniform2f(u.uSee, ...v.see);
+      for (const [loc, x] of [[u.uDesk, lying], [u.uSpread, spread], [u.uTexW, PAGE_W], [u.uLastPage, this.count - 1]] as const) gl.uniform1f(loc, x);
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.pages.tex);
       gl.uniform1i(u.uPages, 1);

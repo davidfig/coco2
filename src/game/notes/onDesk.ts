@@ -1,4 +1,5 @@
-import { EYE, type DeskSpot, onSpot, pictureView, spotAxes, toPixels } from '../computer/layout';
+import { facing } from '../computer/facing';
+import { EYE, type DeskSpot, onSpot, pictureView, spotAxes } from '../computer/layout';
 import { type Pose, type Vec3, poseAt, quatFromAxes, slerp } from '../computer/pose';
 import { TUBE_C } from '../tv/cabinetShader';
 import { type Layer, type Sheet, layers } from './pile';
@@ -23,7 +24,8 @@ export function sheetQuad(s: Sheet): Quad {
  * off as makes it look the size it is drawn, square to the view) and laid down where it lies on the table, turning
  * evenly as it goes, seen through the room's camera all the way. Its centre crosses the screen in a straight line while
  * it goes off into the room at an even rate of shrinking, rather than in a straight line through the room, which from
- * so near the eye would swing it wide.
+ * so near the eye would swing it wide. On the way down it comes to be seen square on (`facing`), so that lying off to
+ * the side of the desk view it isn't stretched.
  */
 export function onTable(own: Layer[], t: number, spot: DeskSpot, n: number, sheet: number, picture: readonly number[], lift = 0): (Layer & { quad: Quad })[] {
   const flat = own.map((l) => ({ ...l, quad: sheetQuad(l) }));
@@ -36,7 +38,8 @@ export function onTable(own: Layer[], t: number, spot: DeskSpot, n: number, shee
     const [pa, pb] = [toSight(a.c), toSight(b.c)];
     const sight: Vec3 = [pa[0] + (pb[0] - pa[0]) * t, pa[1] + (pb[1] - pa[1]) * t, pa[2] * Math.pow(pb[2] / pa[2], t)];
     const p = { c: fromSight(sight), q: slerp(a.q, b.q, t) };
-    return { ...l, quad: CORNERS.map(([u, v]) => toPixels(view, poseAt(p, u * spot.hw, v * spot.hd))) };
+    const seen = facing(view, p.c, t);
+    return { ...l, quad: CORNERS.map(([u, v]) => seen.toPixels(poseAt(p, u * spot.hw, v * spot.hd))) };
   });
 }
 

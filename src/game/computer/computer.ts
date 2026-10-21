@@ -1,6 +1,6 @@
 import { FULLSCREEN_VERT, Program, TypedKey, linkProgram, scissor } from '../../engine';
 import { TUBE, TUBE_C } from '../tv/cabinetShader';
-import { TALL } from '../magazine/bookLayout';
+import { TALL, type TvEnd } from '../magazine/bookLayout';
 import { ACTIVE } from '../tv/pictureShader';
 import { COMPUTER_FRAG } from './computerShader';
 import { MarchCache } from './marchCache';
@@ -44,8 +44,8 @@ const DRAWN_TOP = Math.max(
  * with the set through `Tv.picture`; whatever is drawn after it (the book, the notebook) goes over it. It sets where
  * the TV draws (`view`): lifted to show the whole machine when there's room, and pulled back to the whole desk (set,
  * machine, cords) while `focused` (main.ts decides, through `Framing`). A click in the TV's part of the window that
- * nothing else takes (`busy`: the knobs, the rocker, the smack, the notebook while out) puts the book away while it is
- * out (`isOut`). A click on a key types it (`keys`); one on the recorder or a cassette is the recorder's.
+ * nothing else takes (`busy`: the knobs, the rocker, the smack, the notebook while out) is main.ts's (`onSet`: it puts
+ * the book away, or goes in to the set or back out). A click on a key types it (`keys`); one on the recorder or a cassette is the recorder's.
  */
 export class Computer {
   private readonly program: Program;
@@ -61,8 +61,8 @@ export class Computer {
   focused = false;
   private focusT = 0;
   private hover: 'case' | 'key' | 'set' | 'recorder' | null = null;
-  /** A press in the TV's part of the window that becomes a click (pulling back or going in) if it is let go without moving. */
-  private press: { id: number; x: number; y: number } | null = null;
+  /** A press in the TV's part of the window that becomes a click (`onSet`) if it is let go without moving; `at` is where (buffer pixels, y up). */
+  private press: { id: number; x: number; y: number; at: [number, number] } | null = null;
   /** Where a click on a key goes (main.ts: the keyboard's queue, as if typed). */
   onKey: (k: TypedKey) => void = () => {};
   readonly keys = new CocoKeys((k) => this.onKey(k));
@@ -73,11 +73,12 @@ export class Computer {
   covered: (nx: number, ny: number) => boolean = () => false;
   /** Whether a click at a point (buffer pixels, y up) is something else's: a knob, the rocker, the smack, the notebook out. */
   busy: (x: number, y: number) => boolean = () => false;
-  /** Something out (main.ts: the book) that a click on the set puts away (`putAway`). */
-  isOut: () => boolean = () => false;
-  putAway: () => void = () => {};
+  /** A click in the TV's part of the window that nothing else took, at a point in buffer pixels (y up). */
+  onSet: (x: number, y: number) => void = () => {};
   /** The TV's part of the window (buffer pixels) and the picture (`Tv.picture`) as last drawn, for the pointer. */
   private area = { x0: 0, y0: 0, x1: 0, y1: 0 };
+  /** What the view fills: `area`, or pulled back to the desk, the desk view's (`DeskTable.area`), which holds it. */
+  private shown = this.area;
   private picture: readonly number[] = [0, 0, 1, 1];
   private readonly desk = deskBounds();
   private readonly keyboard = keyboardBounds();
@@ -114,25 +115,35 @@ export class Computer {
 
   /**
    * Where the TV should draw (`Tv.draw`'s rectangle and frame), given the book's (`Magazine.tv`, `.frame`): lifted, if
-   * the window has room over the set, until the whole machine shows under it (in a tall window `open`, `Magazine.openT`,
-   * undoes that as the book comes out under the set); pulled back to the whole desk while `focused`. The returned
-   * rectangle holds the book's, so the set's knobs and glass answer wherever they show.
+   * the window has room over the set, until the whole machine shows under it (in a tall window undone as the book comes
+   * out under the set); pulled back to the whole desk while `focused` (`open`, `Magazine.openT`: the edges the put-away
+   * book leaves it). The returned rectangle holds the book's, so the set's knobs and glass answer wherever they show.
+   * While the book moves, the view is eased between the ones it has at each end of the move (`ends`, `tvEnds`), not
+   * fitted afresh to the rectangle on the way: the fit slides and lifts the set by cases (the keyboard in view or not,
+   * room over the set or not), which would jump and lurch part way through.
    */
-  view(dt: number, rect: Rect, frame: number, open: number): { rect: Rect; frame: number } {
+  view(dt: number, rect: Rect, frame: number, open: number, ends: readonly TvEnd[]): { rect: Rect; frame: number } {
     const W = this.gl.drawingBufferWidth;
     const H = this.gl.drawingBufferHeight;
     this.area = { x0: rect.x * W, y0: rect.y * H, x1: (rect.x + rect.w) * W, y1: (rect.y + rect.h) * H };
+    this.shown = this.area;
     if (!this.visible) {
       this.onDesk.clear();
       return { rect, frame };
     }
     this.keys.step(dt);
     this.focusT = Math.min(1, Math.max(0, this.focusT + (this.focused ? dt : -dt) / DESK_TIME));
-    const a = this.home(rect, frame, open);
-    const b = this.onDesk.whole(this.area, this.desk, a.k);
-    this.onDesk.step(dt, this.focused, this.area, b);
+    const homes = ends.map((e) => ({ v: this.home(e.tv, e.frame, e.open), w: e.w }));
+    const sum = (f: (v: View) => number) => homes.reduce((n, h) => n + h.w * f(h.v), 0);
+    const a: View = { cx: sum((v) => v.cx), cy: sum((v) => v.cy), k: Math.exp(sum((v) => Math.log(v.k))) };
+    // The edges the book and the notebook keep put away, which the desk view may take (none while the book is out).
+    const c = 1 - smooth(Math.min(1, Math.max(0, open)));
+    const window = { ...this.area, x1: this.area.x1 + (W - this.area.x1) * c, y0: this.area.y0 * (1 - c) };
+    const b = this.onDesk.whole(this.area, window, this.desk, a.k);
+    this.onDesk.step(dt, this.focused, b);
     const t = smooth(this.focusT);
     if (t === 0) return this.toTv(a);
+    this.shown = this.onDesk.area;
     return this.toTv({ cx: a.cx + (b.cx - a.cx) * t, cy: a.cy + (b.cy - a.cy) * t, k: a.k * Math.pow(b.k / a.k, t) });
   }
 
@@ -143,10 +154,11 @@ export class Computer {
     this.onDesk.snap = true;
   }
 
-  /** The book's view of the set, lifted to show the machine if there's room over the set. */
+  /** The book's view of the set in TV rectangle `rect`, lifted to show the machine if there's room over the set. */
   private home(rect: Rect, frame: number, open: number): View {
     const W = this.gl.drawingBufferWidth;
     const H = this.gl.drawingBufferHeight;
+    const area = { x0: rect.x * W, y0: rect.y * H, x1: (rect.x + rect.w) * W, y1: (rect.y + rect.h) * H };
     const [px, py] = [TUBE[0] * ACTIVE[0], TUBE[1] * ACTIVE[1]];
     // As Tv.draw: pixels per panel unit, the picture's centre; the set's top edge and the machine's lowest point.
     const k = (0.5 * rect.h * H) / Math.max(py + frame, (px + frame) / ((rect.w * W) / (rect.h * H)));
@@ -156,15 +168,14 @@ export class Computer {
     const bottom = cy + (lowestPoint() - BELOW) * k;
     const t = W / H < TALL ? smooth(Math.min(1, Math.max(0, open))) : 0;
     const ly = cy + Math.max(0, Math.min(-bottom, H - top)) * (1 - t);
-    return { cx: cx + this.slide(cx, ly, k, px), cy: ly, k };
+    return { cx: cx + this.slide(area, cx, ly, k, px), cy: ly, k };
   }
 
   /**
    * How far to slide the set sideways (pixels) so that more of the keyboard shows, all of it if it fits in the TV's
-   * part of the window; the picture always stays inside it. Nothing while the keyboard is off the bottom.
+   * part of the window (`a`); the picture always stays inside it. Nothing while the keyboard is off the bottom.
    */
-  private slide(cx: number, cy: number, k: number, px: number): number {
-    const a = this.area;
+  private slide(a: typeof this.area, cx: number, cy: number, k: number, px: number): number {
     const [x0, , x1, y1] = this.keyboard;
     if (cy + (y1 - TUBE_C[1]) * k < a.y0) return 0;
     const l = cx + (x0 - TUBE_C[0]) * k;
@@ -193,7 +204,7 @@ export class Computer {
   private toTv(v: View): { rect: Rect; frame: number } {
     const W = this.gl.drawingBufferWidth;
     const H = this.gl.drawingBufferHeight;
-    const a = this.area;
+    const a = this.shown;
     const hw = Math.max(v.cx - a.x0, a.x1 - v.cx, 1);
     const hh = Math.max(v.cy - a.y0, a.y1 - v.cy, 1);
     const s = hh / v.k;
@@ -208,11 +219,9 @@ export class Computer {
   private under(e: PointerEvent): { row: number; i: number } | { rec: CassetteId | 'recorder' } | 'case' | 'set' | null {
     const c = this.canvas;
     const r = c.getBoundingClientRect();
-    const s = this.gl.drawingBufferWidth / c.clientWidth;
-    const x = (e.clientX - r.left) * s;
-    const y = (r.bottom - e.clientY) * s;
+    const [x, y] = this.toBuffer(e);
     if (this.covered((e.clientX - r.left) / r.width, (r.bottom - e.clientY) / r.height)) return null;
-    const a = this.area;
+    const a = this.shown;
     if (x < a.x0 || x > a.x1 || y < a.y0 || y > a.y1) return null;
     if (this.busy(x, y)) return null;
     const p = this.picture;
@@ -223,6 +232,14 @@ export class Computer {
     if (rec) return { rec };
     if (!onCase(px, py)) return 'set';
     return keyAt(px, py) ?? 'case';
+  }
+
+  /** A pointer event's place in buffer pixels, y up. */
+  private toBuffer(e: PointerEvent): [number, number] {
+    const c = this.canvas;
+    const r = c.getBoundingClientRect();
+    const s = this.gl.drawingBufferWidth / c.clientWidth;
+    return [(e.clientX - r.left) * s, (r.bottom - e.clientY) * s];
   }
 
   /**
@@ -239,7 +256,7 @@ export class Computer {
         const at = this.under(e);
         if (!at) return;
         if (at === 'set') {
-          this.press = { id: e.pointerId, x: e.clientX, y: e.clientY };
+          this.press = { id: e.pointerId, x: e.clientX, y: e.clientY, at: this.toBuffer(e) };
           return;
         }
         e.stopImmediatePropagation();
@@ -254,7 +271,7 @@ export class Computer {
       'pointerup',
       (e) => {
         this.keys.release();
-        if (this.press?.id === e.pointerId && this.isOut()) this.putAway();
+        if (this.press?.id === e.pointerId) this.onSet(...this.press.at);
         this.press = null;
       },
       true,
@@ -319,10 +336,11 @@ export class Computer {
       return [px(Math.min(...bs.map((b) => b[0])), 0) - 2, px(Math.min(...bs.map((b) => b[1])), 1) - 2, px(Math.max(...bs.map((b) => b[2])), 0) + 2, px(Math.max(...bs.map((b) => b[3])), 1) + 2];
     };
     gl.bindVertexArray(this.vao);
-    this.cache.draw({ x: picture[0], y: picture[1], k }, [W, H, ...lit], s, moving, [0, 0, W, top], (pic) => {
+    this.cache.draw({ x: picture[0], y: picture[1], k }, [W, H, ...lit], s, moving, [0, 0, W, top], (pic, rows) => {
       gl.useProgram(this.program.prog);
       const u = this.program.u;
       gl.uniform3f(u.uPic, ...pic);
+      gl.uniform3f(u.uRows, rows[0], rows[1], rows[2]);
       gl.uniform3f(u.uGlow, lit[0], lit[1], lit[2]);
       gl.uniform4fv(u.uKeys, keys);
       gl.activeTexture(gl.TEXTURE0);

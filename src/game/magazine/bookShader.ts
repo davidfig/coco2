@@ -6,7 +6,8 @@ import { BOOK_EDGES } from './bookEdges';
  * (a stack of paper whose thickness differs left and right of the spine, with the pages bowing up away from the gutter),
  * which also finds the white paper edges where the ray runs into the side of the block. A turning leaf is a sheet
  * hinged at the spine and bent into an arc, intersected analytically; whichever is nearer wins. Lying on the table
- * (`uDesk`) it is folded back: the whole block under the page in view, wrapped round a swollen, rounded spine.
+ * (`uDesk`) it is folded back: the whole block under the page in view, wrapped round a swollen, rounded spine; or, open at
+ * a left-hand page with a right-hand one beside it (`uSpread`), it lies open flat, both pages up.
  */
 export const BOOK_FRAG = /* glsl */ `#version 300 es
 precision highp float;
@@ -25,15 +26,19 @@ uniform float uFold;      // 0..1: how much the gutter's fold shades the pages (
 uniform float uBend;      // -1..1: which way the turning leaf bends (positive: its edge further round than its hinge)
 uniform float uL, uR, uF, uB; // layers: left page, right page, leaf front, leaf back (negative: none)
 uniform vec4 uExt;        // x extents (min, max), then the paper's thickness left and right of the spine
-uniform vec2 uWin;        // the part of the book in view (one page): drawn as a clean cut, no paper side shows there
+uniform vec2 uWin;        // the page in view
+uniform vec2 uSee;        // the part of the book drawn (the page in view, and on a left page what fits of the right): a clean cut, no paper side shows there
 uniform float uTexW;
 uniform float uLastPage; // layer of the back cover (the front is 0): the glossy ones
 uniform float uDesk;      // 0..1: lying on the table, folded back on its spine (bookCam.ts's onTable), the fold rounded
+uniform float uSpread;    // 0..1: lying on the table open flat instead, at a left-hand page with the right-hand one beside it
 uniform sampler2DArray uPages;
 out vec4 outColor;
 
 const float BOWL = 0.05;
 const float CURL = 0.035;   // how far the outer corners lift
+const float ARCH_H = 0.018; // open flat on the table: how high the sheets arch over the stack beside the gutter,
+const float ARCH_W = 0.085; // and how far from it the arch is highest
 const float BEND = 2.8;   // radians the leaf's arc turns through when it stands up and bends fully
 const float PI = 3.14159265;
 const vec3 LIGHT = vec3(-0.4, 0.45, 0.8);
@@ -46,7 +51,14 @@ float bowl(float x) { return BOWL * bowlK() * (1.0 - exp(-abs(x) * 4.5)); }
  * doesn't fold flat: the block swells by half again toward the spine and wraps round it in a half round that big.
  */
 float spineS() { return uWin.x + uWin.y >= 0.0 ? 1.0 : -1.0; }
-float spineR() { return uDesk > 0.0 ? 0.75 * (spineS() > 0.0 ? uExt.w : uExt.z) : 0.0; }
+float spineR() { return uDesk > 0.0 ? 0.75 * (1.0 - uSpread) * (spineS() > 0.0 ? uExt.w : uExt.z) : 0.0; }
+/** Lying folded back on its spine, not open flat at a spread. */
+bool folded() { return uDesk > 0.0 && uSpread < 0.5; }
+/** How far it lies open flat on the table. */
+float flatOpen() { return uDesk * uSpread; }
+/** Open flat: how much of the stack's height the sheets lose diving into the fold (1 at it), and the arch beside it. */
+float gutterDip(float x) { float u = x * 14.0; return 0.85 * exp(-u * u); }
+float gutterArch(float x) { float u = abs(x) / ARCH_W; return ARCH_H * u * u * exp(2.0 - 2.0 * u); }
 float foldLift(float x) {
   float u = x * spineS();
   return uDesk > 0.0 ? 0.6667 * spineR() * exp(-u * u * 100.0) : 0.0;
@@ -59,15 +71,24 @@ float heightAt(vec2 q) {
   // weight, hardly at all (the block under a curl is drawn solid, so a bigger one would stand up as a wedge of edges).
   float lift = CURL * yy * yy * smoothstep(0.25, 1.0, abs(q.x)) + 0.012 * yy * smoothstep(0.2, 1.0, abs(q.x));
   lift *= 1.0 - 0.9 * uDesk;
-  return mix(uExt.z, uExt.w, smoothstep(-0.04, 0.04, q.x)) + bowl(q.x) + lift + foldLift(q.x);
+  // A cover open at its inside lies alone, no paper under it: it stays flat, or the bow would stand on a block of edges.
+  float stack = mix(uExt.z, uExt.w, smoothstep(-0.04, 0.04, q.x));
+  // Lying open flat, the sheets don't bow up away from the gutter as they do held: they curve down into the fold and arch
+  // back up over it before settling onto the stack.
+  float sp = flatOpen();
+  return stack * (1.0 - sp * gutterDip(q.x)) + (bowl(q.x) * (1.0 - sp) + sp * gutterArch(q.x) + lift) * smoothstep(0.0, 2e-4, stack) + foldLift(q.x);
 }
+
+/** The surface's slope across the page at q (dh/dx): what lights the arch by the gutter. */
+float slopeAt(vec2 q) { return (heightAt(q + vec2(0.002, 0.0)) - heightAt(q - vec2(0.002, 0.0))) / 0.004; }
 
 /** Height of the top of the book at q, or -1 where there is no book. */
 float topAt(vec2 q) {
   if (uDesk > 0.0) {
-    // Folded back, nothing lies past the spine but the fold itself: the sheets bent round it, a half round.
+    // Folded back, nothing lies past the spine but the fold itself: the sheets bent round it, a half round. Open flat at a
+    // spread, the facing page lies past it.
     float u = q.x * spineS(), R = spineR();
-    if (u < 0.0) return u < -R || abs(q.y) > uH * 0.5 ? -1.0 : R + sqrt(max(R * R - u * u, 0.0));
+    if (u < 0.0 && (u >= -R || folded())) return u < -R || abs(q.y) > uH * 0.5 ? -1.0 : R + sqrt(max(R * R - u * u, 0.0));
   }
   if (q.x < uExt.x || q.x > uExt.y || abs(q.y) > uH * 0.5) return -1.0;
   if (q.x < 0.0 && uL < 0.0) return -1.0;
@@ -80,7 +101,7 @@ bool inBook(vec3 q) {
   float h = topAt(q.xy);
   if (h < 0.0 || q.z > h) return false;
   float u = q.x * spineS(), R = spineR();
-  return uDesk <= 0.0 || u >= 0.0 || q.z >= R - sqrt(max(R * R - u * u, 0.0));
+  return uDesk <= 0.0 || u >= 0.0 || u < -R || q.z >= R - sqrt(max(R * R - u * u, 0.0));
 }
 
 vec3 atHeight(vec3 o, vec3 d, float z) { return o + d * ((z - o.z) / d.z); }
@@ -111,7 +132,7 @@ void main() {
   // How much of this pixel the book covers. The march below only says hit or miss, which leaves its outline stepped, so
   // the outline is also found where the ray meets the paper's top (a few plane hits that settle onto the curled surface)
   // and the table under the near edge: both are smooth from pixel to pixel, hit or miss, so they can be measured in pixels.
-  vec2 xr = vec2(max(uExt.x, uWin.x), min(uExt.y, uWin.y));
+  vec2 xr = vec2(max(uExt.x, uSee.x), min(uExt.y, uSee.y));
   if (uL < 0.0) xr.x = max(xr.x, 0.0);
   if (uR < 0.0) xr.y = min(xr.y, 0.0);
   if (uDesk > 0.0) xr += spineR() * (spineS() > 0.0 ? vec2(-1.0, 0.0) : vec2(0.0, 1.0));
@@ -134,7 +155,9 @@ void main() {
   float tBook = 1e9;
   vec3 P = vec3(0.0);
   float t0 = (0.16 - o.z) / d.z;
-  float t1 = (-o.z) / d.z;
+  // A hair under the table, so a page lying right on it (a cover open at its inside, no paper under it) is always met:
+  // ending at the table, whether the last step was in it came down to rounding, pixel by pixel, and the misses drew the block's side.
+  float t1 = (-1e-4 - o.z) / d.z;
   float prev = t0;
   // A ray whose stretch through the slab passes wide of the book can't meet it (topAt is -1 all along): no march.
   vec3 q0 = o + d * t0, q1 = o + d * t1;
@@ -157,7 +180,7 @@ void main() {
   }
 
   // The fold lies just past the page in view, on the spine's side.
-  vec2 win = uWin + spineR() * (spineS() > 0.0 ? vec2(-1.0, 0.0) : vec2(0.0, 1.0));
+  vec2 win = uSee + spineR() * (spineS() > 0.0 ? vec2(-1.0, 0.0) : vec2(0.0, 1.0));
   if (tBook < 1e8 && (P.x < win.x || P.x > win.y)) tBook = 1e9;
 
   vec3 col = vec3(0.0);
@@ -170,7 +193,7 @@ void main() {
     float side = smoothstep(0.0, 1.5, below);
     float u = P.x * spineS();
     float R = max(spineR(), 1e-5);
-    if (uDesk > 0.0 && u < 0.0 && R - length(vec2(u, P.z - R)) < hh - abs(P.y)) {
+    if (uDesk > 0.0 && u < 0.0 && u > -R && R - length(vec2(u, P.z - R)) < hh - abs(P.y)) {
       // The fold: the page in view bent round it (its sheet is the outermost there), lit by which way it faces.
       vec3 n = normalize(vec3(P.x, 0.0, P.z - R));
       float lit = 0.6 + 0.4 * max(dot(n, normalize(LIGHT)), 0.0) / normalize(LIGHT).z;
@@ -183,8 +206,16 @@ void main() {
       col = samplePage(x >= 0.0 ? uR : uL, uv);
       // Lit flat, the way a leaf is in the hand, so a page looks the same resting as it does turning.
       // The fold at the gutter only shades where a facing page meets it, not at a cover's spine edge.
-      float facing = (x >= 0.0 ? uL : uR) >= 0.0 ? uFold : 0.0;
+      float facing = (x >= 0.0 ? uL : uR) >= 0.0 ? max(uFold, 0.25 * flatOpen()) : 0.0;
       col *= 1.0 - 0.36 * facing * exp(-abs(x) * 15.0);
+      // Open flat on the table, the arch by the gutter is lit by which way it faces: brighter where it turns toward the
+      // lamp (from the left), shaded where it turns away.
+      if (flatOpen() > 0.0) {
+        vec3 n = normalize(vec3(-slopeAt(P.xy), 0.0, 1.0));
+        vec3 Lh = normalize(LIGHT);
+        float lit = mix(1.0, clamp(dot(n, Lh) / Lh.z, 0.75, 1.2), 0.6);
+        col *= mix(1.0, lit, flatOpen());
+      }
       if (uFlipOn > 0.5) {
         // The turning leaf's shadow: the light comes from the left and above, so a point on the page is in shade when the
         // line from it toward the light meets the leaf (at r along the leaf from the hinge, 0 to 1).
@@ -196,7 +227,7 @@ void main() {
       }
     }
     // The block's side: the sheets' edges.
-    else if (uDesk > 0.0 && u < 0.0) side = 1.0;
+    else if (folded() && u < 0.0) side = 1.0;
     if (side > 0.0) col = mix(col, sideColor(vec3(clamp(P.x, uExt.x - spineR(), uExt.y + spineR()), P.yz), pxUnit / tBook * sqrt(max(1.0 - d.z * d.z, 0.0))), side);
     a = 1.0;
   } else if (cover > 0.0) {
@@ -212,8 +243,8 @@ void main() {
   {
     float tt = -o.z / d.z;
     vec3 T = o + d * tt;
-    vec2 ec = vec2(0.5 * (uWin.x + uWin.y), 0.0);
-    vec2 eh = vec2(0.5 * (uWin.y - uWin.x), hh);
+    vec2 ec = vec2(0.5 * (uSee.x + uSee.y), 0.0);
+    vec2 eh = vec2(0.5 * (uSee.y - uSee.x), hh);
     float sh = sdBox(T.xy - ec - vec2(0.035, -0.07), eh);
     float sa = 0.6 * exp(-max(sh, 0.0) * 16.0) * (1.0 - smoothstep(-0.03, 0.0, sh));
     col *= a;

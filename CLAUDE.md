@@ -68,8 +68,9 @@ Say in the wrap-up which docs changed, or why none needed to.
 - `?instant&nosound` is the usual test URL. `?instant` skips the room's lights coming on, the tube warm-up and the
   magazine and notes sliding in, and makes the cassette instant (CLOAD / CSAVE normally take tape time).
 - The view rests on the whole desk and goes in to the set only to read the screen (`story/framing.ts`): real keys typed
-  or the story tampering go in; 10 s at OK with nothing typed, or a tape waiting for the recorder, go back. Clicks never
-  move it (a click on the machine's keys types from across the room). Without `?instant` (or `?book`) the page opens
+  or the story tampering go in, as does a click on the set itself (glass or cabinet, not a knob, the rocker or the smack), and another such click comes back out;
+  10 s at OK with nothing typed, or a tape waiting for the recorder, go back. No other click moves it (a click on the
+  machine's keys types from across the room). Without `?instant` (or `?book`) the page opens
   there, the magazine and notes already on the table (`Computer.startWide`). The guide's calls (the notes until held
   up, then the magazine until opened) show there as a hop (`story/hop.ts`). `?instant` starts in at the set. `keyboard.type` in the console counts as clicked
   keys: it doesn't go in (`coco.framing.wide = false` does, until the next drift back).
@@ -94,6 +95,9 @@ Say in the wrap-up which docs changed, or why none needed to.
 - Pulled back to the whole desk, the view widens to take in the table where the magazine and the
   notes lie (either side of the machine, or both to its right in a narrower window: `DESK_LAYOUTS` in
   `computer/layout.ts`), so long as the set keeps 60% of its size; otherwise they stay where they are (`Computer.table`).
+  Each that lies there gives the desk view back the window edge it keeps put away, and a wide window crops the table's
+  front edge to come in closer (`deskTable.ts`: only the set, the machine and the papers, as drawn square on, must show;
+  spare width goes to the right, where the magazine's facing page fills it or runs off the side).
 - The notebook page wears with each time it is held up and put down (`coco2.notebook`): `coco.notebook.handled = 60`
   shows an old page (a coffee ring at 7, a fold at 12, dog-ear 18; it never loses marks), `= 0` a clean one.
 
@@ -145,7 +149,7 @@ src/game/
                       window, shadows), print (its top's legends, the pencilled labels), recorder (which cassette is where, the
                       door and the carry, PLAY latched, `Tape.present`; `coco2.recorder`), hit (clicks),
                       recorderSound (the keys, the door, the cassette dropping in, the motor and tape hiss)
-  magazine/           the RAINBOW: book (state, slide-in, GPU pass), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn; lying on the table, folded back on a rounded spine) + bookEdges (the block of paper's sides), bookLayout (TV/book split), bookInput
+  magazine/           the RAINBOW: book (state, slide-in, GPU pass), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn; lying on the table, folded back on a rounded spine, or open flat at a left-hand page) + bookEdges (the block of paper's sides), bookLayout (TV/book split), bookInput
                       (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), slips (Kessler's pencilled sticky notes, stuck to a page and drawn over it), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover) + maySky (its spring morning over still water) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, the tape) + mayShutdown (SHUTDOWN's three pages) + mayLetters (letters, classifieds) + mayNed (Ned's May catalogue) + mayInsideFront + mayLake + mayFish (THE ONE THAT GOT AWAY, painted) + mayInsideBack + mayProducts (THE HERMIT, CLOAD-A-MATIC) + mayBackCover + mayTimer (LIGHTS-OUT): May's ads, each issue's its own (docs/issues.md, Advertisements), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner + adsMemory (parody ads), adsInsideBack + adsBackCover (the back
                       pages, laid out like real 1986 mail-order and national ads) + adsMail (their type: tight headlines, raised-cent
                       prices, slugs, coupons) + adsProducts (painted studio shots)
@@ -178,16 +182,21 @@ src/game/
   widened. The CoCo's march is kept (`computer/marchCache.ts`) and marched again only when the glow (held past the
   cursor's blink) or keys change (just round the keys) or the view moves. Its picture is fixed in panel units, so while the
   view moves the kept one is drawn moved and scaled with it and only what comes into view is marched, at CSS-pixel
-  resolution; the next kept one is made a band a frame in a second texture, aimed where the view is going, before the
+  resolution; the next kept one is made a band a frame in a second texture (a band is every eighth block of 16 rows,
+  so the machine's costly pixels are shared out over the frames), aimed where the view is going, before the
   shown one blurs or runs out of margin, and once the view stops the sharp one is made the same way. The magazine's pass
   is kept too (`KeptPass`, engine): marched again only when something it shows changes. `main.ts` draws one dark frame and waits for it before starting
   the clock, so the GPU builds every shader (seconds on a cold cache) before the lights come on: a new pass should draw
-  in that first frame. The TV's pass sets no blend state and expects blending off; leave it off after a pass. To time passes, sync with a 1-pixel `readPixels` and keep
+  in that first frame. The TV's pass sets no blend state and expects blending off; leave it off after a pass. To time passes, sync with a 1-pixel `readPixels` from the framebuffer the pass drew into (one from the window
+  doesn't wait for a kept texture's draws: their cost turns up later, when it is shown) and keep
   blending on: ANGLE/Metal timer queries are meaningless, and Apple GPUs skip opaque draws that a later one covers.
 - The magazine and the notes move between their own place and the table rigidly (`computer/pose.ts`): a sheet is a
   real sheet held before the eye and laid on the table (slerped, its centre straight across the view, receding evenly),
   and the book's camera is split into turn × lens × place (`mixCam`). Never blend corners or camera matrices: the
-  in-between frames shear. A thing's size on the table must match the shape it is drawn, at its real size (`INCH` in `layout.ts`: the magazine 8½ × 11 in, the torn-out notebook page `SHEET_W` × `SHEET_H` at `SHEET_DPI`, about 7¾ × 10½). On the table the one looked at last lies on top (`notesOnTop` in `main.ts`), and takes the click where they overlap.
+  in-between frames shear. Lying on the table each is seen square on (`computer/facing.ts`): by the eye slid sideways
+  till it is straight in front of it, the picture moved back to where it lies, so the desk view's wide angle doesn't
+  lean it toward the middle (its edges stay level with the table's, its sides upright; the notes slide into it as they
+  go down). Only they are; everything else is the room's camera. A thing's size on the table must match the shape it is drawn, at its real size (`INCH` in `layout.ts`: the magazine 8½ × 11 in, the torn-out notebook page `SHEET_W` × `SHEET_H` at `SHEET_DPI`, about 7¾ × 10½). On the table the one looked at last lies on top (`notesOnTop` in `main.ts`), and takes the click where they overlap.
 
 ## Color BASIC
 

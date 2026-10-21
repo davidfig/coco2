@@ -89,6 +89,13 @@ export class Touch {
     else if (this.hover === 'smack') this.canvas.style.cursor = this.sinceSmack < SLAP_SHOW ? SLAP : HAND;
   }
 
+  /** Whether a point in buffer pixels is on the set itself (the cabinet and the glass), not the room round it. */
+  onSet(x: number, y: number): boolean {
+    if (!this.view.covers(x, y)) return false;
+    const [px, py] = this.view.toPanel(x, y);
+    return sdBox(px, py, CAB[0], CAB[1], CAB_R) < 0;
+  }
+
   /** What part of the set a point in buffer pixels is on, with the point in tube coordinates for the glass. */
   at(x: number, y: number): { part: 'on' | 'off' | 'glass' | 'smack'; tx: number; ty: number } | null {
     if (!this.view.covers(x, y)) return null;

@@ -16,16 +16,23 @@ const MARGIN = 0.5;
  */
 const BLUR = 1.35;
 const ALIAS = 1.7;
-/** A new kept picture is marched in this many bands, one a frame, while the old one still shows: when the view stops (sharp), or ahead of need while it moves. */
-const BANDS = 4;
+/**
+ * A new kept picture is marched in this many bands, one a frame, while the old one still shows: when the view stops
+ * (sharp), or ahead of need while it moves. A band is every `BANDS`th block of `BLOCK` rows, not a strip: the machine's
+ * pixels cost far more than the room's, and a strip over it would take most of the work in one frame. (Not every
+ * `BANDS`th row: the GPU shades neighbouring rows together, so a band of single rows costs nearly the whole march.)
+ */
+const BANDS = 8;
+const BLOCK = 16;
 /**
  * While the view moves, the next kept picture is begun once it comes this near the limits (`BLUR`, `ALIAS`, and half the
- * margin left), so it is whole before the shown one gives out.
+ * margin left), or once, going as it goes, it would reach them before the bands are done (a fast zoom), so it is whole
+ * before the shown one gives out.
  */
 const BLUR_SOON = 1.15;
 const ALIAS_SOON = 1.45;
 /** The next kept picture is marched for where the view will be this many frames on, going as it goes, so it lasts longer. */
-const LEAD = 4;
+const LEAD = BANDS;
 
 const BLIT_FRAG = /* glsl */ `#version 300 es
 precision highp float;
@@ -33,6 +40,12 @@ uniform sampler2D uTex;
 uniform vec3 uMap; // window pixel to kept pixel: scale, then offset
 out vec4 outColor;
 void main() { outColor = texture(uTex, (gl_FragCoord.xy * uMap.x + uMap.yz) / vec2(textureSize(uTex, 0))); }`;
+
+/** Which rows a pass marches: every n-th block of h rows, from the i-th. */
+export type Rows = readonly [n: number, i: number, h: number];
+const ALL_ROWS: Rows = [1, 0, 1];
+/** The costly pass: its picture's centre and pixels per unit as it should march them (`pic`), over these `rows` only. */
+export type MarchPass = (pic: [number, number, number], rows: Rows) => void;
 
 const meet = (a: Rect, b: Rect): Rect => [Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.min(a[2], b[2]), Math.min(a[3], b[3])];
 const empty = (r: Rect): boolean => r[2] <= r[0] || r[3] <= r[1];
@@ -106,8 +119,11 @@ class Kept {
     return r[0] >= u(0, a.x, a.ox) && r[1] >= u(0, a.y, a.oy) && r[2] <= u(this.w, a.x, a.ox) && r[3] <= u(this.h, a.y, a.oy);
   }
 
-  /** Run `pass` over each of `rs` (the view's units), into this texture. */
-  march(rs: Rect[], pass: (pic: [number, number, number]) => void): void {
+  /**
+   * Run `pass` over each of `rs` (the view's units), into this texture: all of it, or (`rows`) one band of a fresh
+   * texture, left uncleared so the bands before it stay.
+   */
+  march(rs: Rect[], pass: MarchPass, rows: Rows = ALL_ROWS): void {
     const gl = this.gl;
     const a = this.at!;
     rs = rs.filter((r) => !empty(r));
@@ -120,15 +136,15 @@ class Kept {
     for (const r of rs) {
       const [x0, y0, x1, y1] = this.toTex(r);
       gl.scissor(Math.floor(x0) - 1, Math.floor(y0) - 1, Math.ceil(x1 - x0) + 3, Math.ceil(y1 - y0) + 3);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      pass([(a.x + a.ox) * a.s, (a.y + a.oy) * a.s, a.k * a.s]);
+      if (rows === ALL_ROWS) gl.clear(gl.COLOR_BUFFER_BIT);
+      pass([(a.x + a.ox) * a.s, (a.y + a.oy) * a.s, a.k * a.s], rows);
     }
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 }
 
-/** A kept picture being made a band a frame: what for, the bands still to do, and what it will hold (the view's units). */
-type Building = { ahead: boolean; key: number[]; view: MarchView; s: number; bands: Rect[]; need: Rect };
+/** A kept picture being made a band a frame: what for, the next band, and what it will hold (the view's units). */
+type Building = { ahead: boolean; key: number[]; view: MarchView; s: number; band: number; need: Rect };
 
 /**
  * A full-screen pass that is costly to run but changes only with what it is given (the computer's march): what it drew
@@ -166,11 +182,11 @@ export class MarchCache {
    * Draw the kept picture over the window for `view` (straight-alpha output blended as SRC_ALPHA), running `pass` where
    * it is missing: what came into view while it moves (`moving`, at `scale`; everywhere if `key` changed), the next kept
    * picture a band a frame as the view nears the shown one's limits, and once it stops the sharp one (or one for a new
-   * `key`) a band a frame. `pass(pic)` sets its program and uniforms, with `pic` for the picture's centre and pixels per
-   * unit as it should march them, and draws its full-screen triangle; it runs into a kept texture, blended so that it
-   * comes out premultiplied. `clip` is the scissor (window pixels). `part` is what changes only a small piece of the
-   * picture (the keys): when it alone changed, the pass runs only over `part.clip(was)` (window pixels, given the part's
-   * last key), and the rest of the kept picture stays.
+   * `key`) a band a frame. `pass(pic, rows)` sets its program and uniforms, with `pic` for the picture's centre and pixels
+   * per unit as it should march them and `rows` for which rows to march (the rest it leaves alone), and draws its
+   * full-screen triangle; it runs into a kept texture, blended so that it comes out premultiplied. `clip` is the scissor
+   * (window pixels). `part` is what changes only a small piece of the picture (the keys): when it alone changed, the pass
+   * runs only over `part.clip(was)` (window pixels, given the part's last key), and the rest of the kept picture stays.
    */
   draw(
     view: MarchView,
@@ -178,7 +194,7 @@ export class MarchCache {
     scale: number,
     moving: boolean,
     clip: Rect,
-    pass: (pic: [number, number, number]) => void,
+    pass: MarchPass,
     part?: { key: ArrayLike<number>; clip: (was: readonly number[]) => Rect | null },
   ): void {
     const gl = this.gl;
@@ -195,10 +211,12 @@ export class MarchCache {
     const same = !differ(key, this.key);
     // Stopped where the shown picture covers, but it isn't sharp there or the light changed: it stays up while the new one is made.
     const settle = !moving && !!a && !(there && same) && this.shown.holds(need) && minus(need, this.have).length === 0;
-    const whole = !a || (moving ? !same || q < scale / BLUR || q > ALIAS || !this.shown.holds(need) : !(there && same) && !settle);
+    // Moving, a picture going soft or fine is kept up while the next is made, rather than marched whole in one frame.
+    const givingOut = q < scale / BLUR || q > ALIAS;
+    const whole = !a || (moving ? !same || (givingOut && !this.building) || !this.shown.holds(need) : !(there && same) && !settle);
     // Moving, near enough the limits to begin the next one.
     const pad: Rect = [(-MARGIN * W) / 2 / view.k, (-MARGIN * H) / 2 / view.k, (MARGIN * W) / 2 / view.k, (MARGIN * H) / 2 / view.k];
-    const soon = moving && !!a && (q < scale / BLUR_SOON || q > ALIAS_SOON || !this.shown.holds([need[0] + pad[0], need[1] + pad[1], need[2] + pad[2], need[3] + pad[3]]));
+    const soon = moving && !!a && (q < scale / BLUR_SOON || q > ALIAS_SOON || !this.shown.holds([need[0] + pad[0], need[1] + pad[1], need[2] + pad[2], need[3] + pad[3]]) || this.runsOut(view, scale, clip));
     const b = this.building;
     if (b && (whole || partMoved || differ(b.key, key) || b.ahead !== moving || (!moving && (b.s !== scale || b.view.x !== view.x || b.view.y !== view.y || b.view.k !== view.k))))
       this.building = null;
@@ -234,11 +252,19 @@ export class MarchCache {
     this.show(view);
   }
 
-  /** Where the view will be `LEAD` frames on, going as it went last frame. */
-  private lead(view: MarchView): MarchView {
+  /** Where the view will be `n` frames on, going as it went last frame. */
+  private lead(view: MarchView, n = LEAD): MarchView {
     const l = this.last;
     if (!l) return view;
-    return { x: view.x + (view.x - l.x) * LEAD, y: view.y + (view.y - l.y) * LEAD, k: view.k * Math.pow(view.k / l.k, LEAD) };
+    return { x: view.x + (view.x - l.x) * n, y: view.y + (view.y - l.y) * n, k: view.k * Math.pow(view.k / l.k, n) };
+  }
+
+  /** Whether the shown picture, the view going as it goes, gives out (blurs, shimmers, or runs off its margin) before a new one could be marched. */
+  private runsOut(view: MarchView, scale: number, clip: Rect): boolean {
+    const a = this.shown.at!;
+    const to = this.lead(view, BANDS + 1);
+    const q = (a.s * a.k) / to.k;
+    return q < scale / BLUR || q > ALIAS || !this.shown.holds([(clip[0] - to.x) / to.k, (clip[1] - to.y) / to.k, (clip[2] - to.x) / to.k, (clip[3] - to.y) / to.k]);
   }
 
   /** What a kept picture for `view` is marched for: room round it to move into if it is moving. */
@@ -250,17 +276,15 @@ export class MarchCache {
   /**
    * One band of the next kept picture (begun for `view` if none is under way); when it is whole, it is the one shown. Made ahead, `view` is where the view is going: it is marched over `need` (what shows now and there).
    */
-  private build(view: MarchView, key: number[], scale: number, ahead: boolean, need: Rect, W: number, H: number, pass: (pic: [number, number, number]) => void): void {
+  private build(view: MarchView, key: number[], scale: number, ahead: boolean, need: Rect, W: number, H: number, pass: MarchPass): void {
     if (!this.building) {
       const m = ahead ? MARGIN : 0;
       this.next.reset(this.anchor(view, scale, ahead, W, H), W * (1 + 2 * m), H * (1 + 2 * m));
-      const h = (need[3] - need[1]) / BANDS;
-      const bands = Array.from({ length: BANDS }, (_, i): Rect => [need[0], need[1] + i * h, need[2], i === BANDS - 1 ? need[3] : need[1] + (i + 1) * h]);
-      this.building = { ahead, key, view, s: scale, bands, need };
+      this.building = { ahead, key, view, s: scale, band: 0, need };
     }
     const b = this.building;
-    this.next.march([b.bands.shift()!], pass);
-    if (b.bands.length) return;
+    this.next.march([b.need], pass, [BANDS, b.band++, BLOCK]);
+    if (b.band < BANDS) return;
     this.building = null;
     [this.shown, this.next] = [this.next, this.shown];
     this.key = b.key;

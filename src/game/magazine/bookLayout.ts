@@ -36,6 +36,8 @@ export const PAPER_THICKNESS = 0.004;
  */
 export const TILT = 0.42;
 export const CAM_DIST = 4.5;
+/** The room one page needs across, in page widths: its bottom edge, nearest the tilted camera, shows wider than the middle. */
+export const PAGE_NEAR_W = (PAGE_FIT_W * CAM_DIST) / (CAM_DIST - (PAGE_UNIT_H / 2) * Math.sin(TILT));
 /** With the book put away, the TV sits this far (window fraction) off the bottom: room for the notebook page to peek up over the set without covering the picture. */
 export const NOTE_ROOM = 0.08;
 /** How much of the put-away book shows at the window's edge (window fraction), and how much more under the pointer. */
@@ -76,7 +78,7 @@ export function layouts(aspect: number, peek: number): { closed: Layout; side: L
   if (aspect >= TALL) {
     // Just wide enough for one page at full height, but never more than `SIDE_BOOK`: the set keeps the rest, so a
     // listing can be copied off the page at a readable picture (BIGGER, reading mode, gives the page more).
-    const panel = Math.min(PAGE_FIT_W / (PAGE_UNIT_H * PAGE_FIT_H) / aspect, SIDE_BOOK);
+    const panel = Math.min(PAGE_NEAR_W / (PAGE_UNIT_H * PAGE_FIT_H) / aspect, SIDE_BOOK);
     const side: Layout = { tv: { x: 0, y: 0, w: 1 - panel, h: 1 }, book: { x: 1 - panel, y: 0, w: panel, h: 1 } };
     const read: Layout = { tv: { x: 0, y: 0, w: 0.2, h: 1 }, book: { x: 0.2, y: 0, w: 0.8, h: 1 } };
     return { closed: { tv: closedTv(aspect), book: { ...side.book, x: 1 - peek } }, side, read };
@@ -110,7 +112,8 @@ export function spreadView(phi: number, last: number): { c: number; xmin: number
   const c = 0.5 * (1 - open) - 0.5 * close;
   const xmin = -open;
   const xmax = 1 - close;
-  const frac = clamp(phi / last, 0, 1);
+  // The leaves under the top one: open at the inside covers, the cover lies alone on its side, with no block under it.
+  const frac = clamp((phi - 1) / Math.max(last - 2, 1), 0, 1);
   return {
     c,
     xmin,
@@ -140,6 +143,26 @@ export function layoutAt(aspect: number, hoverT: number, openT: number, readT: n
   };
 }
 
+/** The TV's rectangle and frame at one end of the book's moves (put away or out, side by side or reading), and its share now. */
+export interface TvEnd {
+  tv: Rect;
+  frame: number;
+  open: number;
+  w: number;
+}
+
+/** The ends the arrangement is between now (`layoutAt`'s TV and `Magazine.frame` are these blended, two ways at once), each with its weight. */
+export function tvEnds(aspect: number, openT: number, readT: number): TvEnd[] {
+  const [o, r] = [smooth(openT), smooth(readT)];
+  const ends: TvEnd[] = [];
+  for (const open of [0, 1])
+    for (const read of [0, 1]) {
+      const w = (open ? o : 1 - o) * (read ? r : 1 - r);
+      if (w > 0) ends.push({ tv: layoutAt(aspect, 0, open, read).tv, frame: lerp(CLOSED_FRAME, lerp(SIDE_FRAME, READ_FRAME, read), open), open, w });
+    }
+  return ends;
+}
+
 export interface Flip {
   /** The leaf turning: front page `2 * leaf`, back page `2 * leaf + 1`. */
   leaf: number;
@@ -164,6 +187,8 @@ export interface View {
   c: number;
   ext: [number, number, number, number];
   win: [number, number];
+  /** The part of the book drawn: `win`, and with a left-hand page in view, as much of the right-hand one as fits beside it. */
+  see: [number, number];
   /** The camera's tilt this frame: `TILT` with the book out, 0 put away. */
   tilt: number;
   /** The page's turn on screen (`ROLL` put away, 0 out) about `pivot` (pixels: the page's top-left corner). */
@@ -173,6 +198,13 @@ export interface View {
   clip: [number, number, number, number];
   /** Set while the magazine lies on the table (`Magazine.draw`): the camera it was drawn through, which the pointer then follows. */
   cam?: Cam;
+}
+
+/** View `v` laid in book rect `r` (window fractions) instead, fitted to it at `zoom`. */
+export function viewIn(v: View, r: Rect, zoom: number): View {
+  const rect: View['rect'] = [r.x * v.W, r.y * v.H, (r.x + r.w) * v.W, (r.y + r.h) * v.H];
+  const fit = Math.min((r.w * v.W) / PAGE_NEAR_W, (r.h * v.H) / (PAGE_UNIT_H * PAGE_FIT_H));
+  return { ...v, rect, fit, scale: fit * zoom, clip: rect };
 }
 
 /** Turn pixel point (`x`, `y`) by `a` about the view's pivot. */
@@ -227,7 +259,7 @@ export function bookBounds(v: View, turning: boolean): [number, number, number, 
   const s = Math.sin(v.tilt);
   const c = Math.cos(v.tilt);
   const hh = PAGE_UNIT_H / 2 + 0.3;
-  const xs = turning ? [Math.min(v.win[0], -1.1), Math.max(v.win[1], 1.1)] : [v.win[0] - 0.3, v.win[1] + 0.3];
+  const xs = turning ? [Math.min(v.see[0], -1.1), Math.max(v.see[1], 1.1)] : [v.see[0] - 0.3, v.see[1] + 0.3];
   const b = [Infinity, Infinity, -Infinity, -Infinity];
   for (const bx of xs)
     for (const by of [-hh, hh])
@@ -256,16 +288,18 @@ export function putAway(v: View, open: number): View {
   const tuckX = away * (v.win[0] + (x1 - x0) / 2 / v.scale - v.c);
   const tuckY = away * (PAGE_UNIT_H / 2 - ((0.5 - CORNER_DROP) * (y1 - y0)) / v.scale);
   const clip: View['clip'] = [lerp(0, x0, open), lerp(0, y0, open), lerp(v.W, x1, open), lerp(v.H, y1, open)];
-  const out: View = { ...v, vx: v.vx + tuckX, vy: v.vy + tuckY, tilt: TILT * open, roll: 0, clip };
+  // Only the page in view's corner shows put away: the facing page goes in the first half of the way.
+  const see: View['see'] = [v.win[0], lerp(v.win[1], v.see[1], smooth(clamp(2 * open - 1, 0, 1)))];
+  const out: View = { ...v, vx: v.vx + tuckX, vy: v.vy + tuckY, tilt: TILT * open, roll: 0, clip, see };
   const [px, py] = bookToScreen(out, v.win[0], PAGE_UNIT_H / 2);
   return { ...out, roll: ROLL * away, pivot: [px * v.W, py * v.H] };
 }
 
-/** Whether a screen point (window fractions) is over the page in view `v`, inside the window. */
+/** Whether a screen point (window fractions) is over the book as drawn in `v` (the page in view, and lying open at a spread its facing page), inside the window. */
 export function overPage(v: View, nx: number, ny: number): boolean {
   if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return false;
   const [x, y] = screenToBook(v, nx, ny);
-  return x >= v.win[0] && x <= v.win[1] && Math.abs(y) <= PAGE_UNIT_H / 2;
+  return x >= v.see[0] && x <= v.see[1] && Math.abs(y) <= PAGE_UNIT_H / 2;
 }
 
 /** The page layers in view (left, right, then the turning leaf's front and back; -1 for none) for a spread or a turn. */

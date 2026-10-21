@@ -21,6 +21,7 @@ const f = (n: number): string => n.toFixed(4);
 export const COMPUTER_FRAG = /* glsl */ `#version 300 es
 precision highp float;
 uniform vec3 uPic;        // the TV's picture centre (pixels) and pixels per panel unit (Tv.picture)
+uniform vec3 uRows;       // march only every n-th block of h rows, from the i-th (a band of a kept picture made a frame at a time)
 uniform vec3 uGlow;       // the light the lit screen throws (Tv.glow)
 uniform sampler2D uPrint; // layout.ts drawPrint: the keys' legends (R ink, B red cap) and the badge
 out vec4 outColor;
@@ -169,11 +170,14 @@ vec2 map(vec3 p) {
   vec3 fp = vec3(abs(p.x) - HW + 0.42, p.y - FOOT * 0.5, abs(p.z) - HD + 0.32);
   float foot = max(length(fp.xz) - 0.05, abs(fp.y) - FOOT * 0.5);
   if (foot < r.x) r = vec2(foot, 3.0);
+  // The recorder before the cords: each cord is skipped while its box is further than the nearest thing yet, and over
+  // the recorder, with only the case to go by, none would be (most of the march's cost, from across the room).
+  r = recorder(p, r);
   if (p.z < -HD + 0.05 || abs(p.x) > HW - 0.05) {
     vec2 c = cords(p, r.x);
     if (c.y > 0.0) r = c;
   }
-  return recorder(p, r);
+  return r;
 }
 
 vec3 normalAt(vec3 p) {
@@ -274,6 +278,7 @@ vec2 boxSpan(vec3 ro, vec3 rd, vec3 lo, vec3 hi) {
   return vec2(max(max(tn.x, tn.y), tn.z), min(min(tf.x, tf.y), tf.z));
 }
 void main() {
+  if (int(gl_FragCoord.y) / int(uRows.z) % int(uRows.x) != int(uRows.y)) discard;
   vec2 p = (gl_FragCoord.xy - uPic.xy) / uPic.z + TUBE_C;
   vec3 ro = EYE - AT;
   vec3 rd = normalize(vec3(p, 0.0) - EYE);

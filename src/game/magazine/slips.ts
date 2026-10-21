@@ -27,8 +27,9 @@ const SLIPS: Partial<Record<AnyPageId, Slip>> = {
   cover: {
     paras: ['For the machine in the basement. Be gentle with it, it is older than you.', 'Start at the front of the book. The tape after.', 'Burn this.'],
     signed: '- M.K.',
-    // Over the barcode and the hills at the bottom left, clear of the cover lines and the castle.
-    x: 14,
+    // Over the barcode and the hills at the bottom left, clear of the cover lines and the castle. In from the spine edge
+    // far enough that the bottom-left corner, swung left by the turn, and its shadow stay on the page.
+    x: 42,
     y: 936,
     angle: 0.03,
     size: 18,

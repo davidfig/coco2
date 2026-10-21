@@ -8,7 +8,7 @@ import { Magazine } from './game/magazine/book';
 import { Notebook } from './game/notes';
 import { Recorder, RecorderSound } from './game/recorder';
 import { attachBookInput } from './game/magazine/bookInput';
-import { overPage } from './game/magazine/bookLayout';
+import { overPage, tvEnds } from './game/magazine/bookLayout';
 import { SeenTracker } from './game/magazine/seen';
 import { RoomLights } from './game/room/lights';
 import { smooth } from './game/magazine/bookLayout';
@@ -56,9 +56,17 @@ const computer = new Computer(engine.gl, canvas);
 computer.visible = !params.has('nococo');
 /** The book is drawn over the machine, so a click on it is the book's: its half of the window while open, else the page peeking in. */
 computer.covered = (nx, ny) => (magazine.open ? magazine.inRect(magazine.book, nx, ny) : overPage(magazine.v, nx, ny));
-/** A click on the set pulls back or goes in, unless it is the set's own (a knob, the rocker, the smack) or the book or notebook is out: then it puts that away. */
-computer.isOut = () => magazine.open;
-computer.putAway = () => magazine.close();
+/**
+ * A click on the set that isn't its own (a knob, the rocker, the smack) puts the book away while it is out; otherwise,
+ * a click on the set itself (the glass, the cabinet) goes in to read the screen from across the room, or back out from in.
+ */
+computer.onSet = (x, y) => {
+  if (magazine.open) magazine.close();
+  else if (tv.touch.onSet(x, y)) {
+    if (framing.wide) framing.closer();
+    else framing.back();
+  }
+};
 /** Put away while the view is pulled back to the whole desk, the magazine lies on the table beside the machine if there's room. */
 /** The guide's calls, as they show with the paper lying on the table: a hop. */
 const hops = { magazine: new Hop(), notes: new Hop() };
@@ -183,7 +191,7 @@ engine.lateUpdaters.push((dt) => {
   magazine.update(dt, engine.gl.drawingBufferWidth, engine.gl.drawingBufferHeight);
   seen.update(magazine, dt);
   notebook.update(dt);
-  const view = computer.view(dt, magazine.tv, magazine.frame, magazine.openT);
+  const view = computer.view(dt, magazine.tv, magazine.frame, magazine.openT, tvEnds(engine.gl.drawingBufferWidth / engine.gl.drawingBufferHeight, magazine.openT, magazine.readT));
   tv.draw(dt, engine.time, vdg.border, view.rect, view.frame, notebook.shade());
   computer.draw(tv.picture, tv.glow);
   // On the table the one looked at last lies on top; the notes held up, or peeking from the corner, are always over the book.
