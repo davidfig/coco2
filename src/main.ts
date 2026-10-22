@@ -58,10 +58,11 @@ computer.visible = !params.has('nococo');
 computer.covered = (nx, ny) => (magazine.open ? magazine.inRect(magazine.book, nx, ny) : overPage(magazine.v, nx, ny));
 /**
  * A click on the set itself (the glass, the cabinet; not a knob, the rocker or the smack) goes in to read the screen
- * from across the room, or back out from in. With the book out, it goes between the screen close up and the whole set
- * with the machine, rather than putting the book away.
+ * from across the room, or back out from in. With the book out, only a click on the screen does, between the screen
+ * close up and the whole set with the machine; anywhere else outside the book (the cabinet, the room) puts it away.
  */
 computer.onSet = (x, y) => {
+  if (magazine.open && tv.touch.at(x, y)?.part !== 'glass') return magazine.close();
   if (!tv.touch.onSet(x, y)) return;
   if (framing.wide) framing.closer();
   else framing.back();
@@ -218,7 +219,8 @@ engine.lateUpdaters.push((dt) => {
   lights.draw();
   bookInput.update(lights.css());
   tv.knobs.cursor();
-  tv.touch.cursor();
+  // Over the screen, a click goes in or out (`computer.onSet`); at reading size it would change nothing that shows.
+  tv.touch.cursor(computer.overSet && !magazine.reading ? (framing.wide ? 'zoom-in' : 'zoom-out') : undefined);
   computer.cursor();
   notebook.cursor();
 });

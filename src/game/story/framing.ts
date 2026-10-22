@@ -8,7 +8,7 @@ export const BACK_AFTER = 10;
  * command waiting for a cassette pulls back at once (`back`). A click on the set goes in (`closer`), and another comes
  * back out (`back`); no other click moves it: a click on the machine's keys types without going in, the keyboard being in view.
  * With the magazine out the same goes for the view beside it (main.ts), between the screen close up and the whole set
- * with the machine: opening the book goes in, and it doesn't drift back out while the book is open.
+ * with the machine, on a click on the screen only (anywhere else outside the book puts it away): opening the book goes in, and it doesn't drift back out while the book is open.
  */
 export class Framing {
   private still = 0;

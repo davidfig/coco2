@@ -71,8 +71,8 @@ Say in the wrap-up which docs changed, or why none needed to.
   goes in, as does a click on the set itself (glass or cabinet, not a knob, the rocker or the smack), and another such click comes back out;
   10 s at OK with nothing typed, or a tape waiting for the recorder, go back. Typing never moves it (real keys only hold off the drift back). No other click moves it (a click on the
   machine's keys types from across the room). With the magazine open the same click goes between the screen close up
-  (`NEAR_FRAME`, `bookLayout.ts`; above the book in a tall window) and the whole set with the machine (`SIDE_FRAME`) instead of putting
-  the book away: opening it goes in, it doesn't drift back out while open, putting it away goes back to the view it was opened from
+  (`NEAR_FRAME`, `bookLayout.ts`; above the book in a tall window) and the whole set with the machine (`SIDE_FRAME`), but only on the
+  screen itself (the pointer is a zoom-in or zoom-out glass over the screen wherever a click would go in or out): a click anywhere else outside the book (the cabinet, the room) puts it away. Opening it goes in, it doesn't drift back out while open, putting it away goes back to the view it was opened from
   (the desk or the set), and only the recorder pulls back to the desk (`Framing.desk`).
   Each change of where the view is going is one glide there from where it is (`computer/glide.ts`), never the
   book's, the desk's and the close-up's easings stacked, which would move it twice. The desk and the papers going on or off the table

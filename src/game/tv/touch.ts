@@ -82,9 +82,10 @@ export class Touch {
     this.rock += ((this.power.isOn() ? 1 : -1) - this.rock) * (1 - Math.exp(-ROCK_RATE * dt));
   }
 
-  /** A hand over the rocker, a fingertip over the glass; call after anything else that sets the canvas's cursor. */
-  cursor(): void {
+  /** A hand over the rocker, a fingertip over the glass, or `zoom` there (a click would go in or out); call after anything else that sets the canvas's cursor. */
+  cursor(zoom?: 'zoom-in' | 'zoom-out'): void {
     if (this.wiping) this.canvas.style.cursor = 'grabbing';
+    else if (this.hover === 'glass' && zoom) this.canvas.style.cursor = zoom;
     else if (this.hover === 'switch') this.canvas.style.cursor = 'pointer';
     else if (this.hover === 'smack') this.canvas.style.cursor = this.sinceSmack < SLAP_SHOW ? SLAP : HAND;
   }

@@ -297,6 +297,11 @@ export class Computer {
     );
   }
 
+  /** The pointer is on the TV's part of the window with nothing in front of it (a click there is `onSet`'s). */
+  get overSet(): boolean {
+    return this.visible && this.hover === 'set';
+  }
+
   /** The pointer over the machine: a key or the recorder can be pressed. */
   cursor(): void {
     if (this.press) return;
