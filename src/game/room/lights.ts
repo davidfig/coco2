@@ -75,6 +75,11 @@ export class RoomLights {
     this.onAt = this.switching(STEPS, this.darkAt + NIGHT);
   }
 
+  /** The bulb has gone out during `night` and cooled to nothing: a frame drawn now is dark. */
+  get dark(): boolean {
+    return this.time >= this.darkAt && this.time < this.onAt && this.level < 0.01;
+  }
+
   get on(): boolean {
     return this.level >= 1 && this.time >= this.onAt;
   }

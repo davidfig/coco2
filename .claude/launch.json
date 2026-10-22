@@ -1,8 +1,8 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "dev", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev", "--port", "5196", "--strictPort"], "port": 5196 },
-    { "name": "dev-alt", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev", "--port", "5199", "--strictPort"], "port": 5199 },
-    { "name": "preview", "runtimeExecutable": "pnpm", "runtimeArgs": ["preview", "--port", "5197", "--strictPort"], "port": 5197 }
+    { "name": "dev", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev"], "port": 5196 },
+    { "name": "dev-alt", "runtimeExecutable": "pnpm", "runtimeArgs": ["exec", "vite", "--port", "5199", "--strictPort"], "port": 5199 },
+    { "name": "preview", "runtimeExecutable": "pnpm", "runtimeArgs": ["preview"], "port": 5197 }
   ]
 }

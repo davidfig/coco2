@@ -197,15 +197,15 @@ story.sleep();
 story2.sleep();
 story.wake();
 let setOn = tv.powerTime >= 0;
-/** Seconds until the room is dark at the end of issue 1's evening (`night`); negative when it isn't going dark. */
-let darkIn = -1;
+/** The room is going dark at the end of issue 1's evening (`night`), and the next day hasn't been set out yet. */
+let goingDark = false;
 /**
  * The set switched off at the end of issue 1's evening: the room's lights blink out, the night passes in the dark, and
  * they come on again on the next day, the set and the CoCo with them and the May RAINBOW on the table.
  */
 function night(): void {
   lights.night();
-  darkIn = lights.darkAt;
+  goingDark = true;
   magazine.close();
   if (notebook.open) notebook.putDown();
   framing.back();
@@ -272,8 +272,11 @@ engine.updaters.push((dt) => {
     if (closing && magazine.state.flags.has('issue1-closed')) night();
   }
   setOn = on;
-  // In the dark it is the next day: the CoCo starts afresh and May is on the table, to come in with the lights.
-  if (darkIn >= 0 && (darkIn -= dt) < 0) {
+  // In the dark it is the next day: the CoCo starts afresh and May is on the table, to come in with the lights. Setting
+  // it out holds up a frame (May's pages, the pile), so it waits until a frame has been drawn with the bulb gone cold:
+  // the lights go out first and the stall passes in the dark.
+  if (goingDark && lights.dark) {
+    goingDark = false;
     story.wake();
     litFor = 0;
     magazine.arrive = notebook.arrive = 0;

@@ -5,9 +5,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5196 --strictPort",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview",
+    "preview": "vite preview --port 5197 --strictPort",
     "typecheck": "tsc --noEmit",
     "check:size": "node scripts/check-size.mjs",
     "deploy:site": "node scripts/deploy.mjs",

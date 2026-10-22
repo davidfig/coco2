@@ -5,7 +5,7 @@ the window, with a strip of the tube's black border), showing the CoCo's VDG scr
 shader with curved glass and glare. TypeScript, Vite, no runtime dependencies. Sister project to the *-geometry games
 (`../sword-geometry`, `../space-geometry`, `../astronaut-geometry`); it may never go online, but it follows their rules.
 
-Commands: `pnpm dev` (port 5196, `.claude/launch.json`) · `pnpm typecheck` · `pnpm check:size` · `pnpm test` · `pnpm build` ·
+Commands: `pnpm dev` (port 5196, set in `package.json`) · `pnpm typecheck` · `pnpm check:size` · `pnpm test` · `pnpm build` ·
 `pnpm walkthrough`.
 Run `typecheck`, `check:size` and `test` before finishing any change. Design notes: `docs/design.md`.
 
