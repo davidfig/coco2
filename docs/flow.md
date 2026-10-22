@@ -56,7 +56,7 @@ the March cassette hops until it goes in (`tape-inserted`), and from issue 2 the
 
 ## Issue 2: March 15, 1991
 
-The May RAINBOW on the table and its cassette by the recorder; March on the pile beside the set and its cassette beside that (a click there, or the corner button, swaps them: the one picked up opens straight off the pile, and the other and the cassettes change places out of sight once it is open, `computer/swap.ts`, `stepSwap` in `main.ts`). Until ORACLE
+The May RAINBOW on the table and its cassette by the recorder; March on the pile beside the set and its cassette beside that (a click there, or the corner button, swaps them: the one picked up opens straight off the pile while the other is carried back onto it, and the cassettes change places out of sight once it is open, `computer/swap.ts`, `stepSwap` in `main.ts`). Until ORACLE
 is answered every OK comes up 0.6 s late and the cursor's colours slip now and then: the cover feature's "Three Signs Of
 A Sick System". OK's lines shimmer whenever a listing shows them.
 

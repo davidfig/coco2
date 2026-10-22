@@ -1,7 +1,7 @@
 import { expect, test } from '../../test/check';
 import { DESK_LAYOUTS, PLACE } from './layout';
 import { pileSlot } from './pile';
-import { IssueSwap, PILE_SHADE } from './swap';
+import { IssueSwap, PILE_SHADE, SWAP_SECONDS } from './swap';
 
 const spot = DESK_LAYOUTS[0].magazine!;
 const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
@@ -10,15 +10,25 @@ test('an issue picked up opens from where it lies on the pile, as the room sees 
   const s = new IssueSwap('may', 'march');
   expect(s.waiting).toBe(true);
   const slot = pileSlot(0, 1);
-  s.rise(spot, 1, slot);
+  s.rise(spot, 1, slot, slot);
   expect(s.waiting).toBe(false);
   const p = s.rising!.pile;
   expect(near(p.spot.x, slot.x + PLACE.x) && near(p.spot.z, slot.z + PLACE.z) && near(p.lift, slot.y)).toBe(true);
   expect([p.spot.hw, p.spot.hd, p.face, p.shade]).toEqual([spot.hw, spot.hd, 0, PILE_SHADE]);
 });
 
-test('the one going back lies where it was on the table while the other opens', () => {
+test('the one going back leaves its spot on the table a moment later, lifted on the way, and lands as the pile draws it', () => {
   const s = new IssueSwap('may', 'march', 4);
-  s.rise(spot, 0.5, pileSlot(0, 1));
-  expect([s.rising!.spot, s.rising!.t, s.page]).toEqual([spot, 0.5, 4]);
+  const back = pileSlot(0, 1);
+  s.rise(spot, 1, pileSlot(0, 1), back);
+  const a = s.going();
+  expect(near(a.spot.x, spot.x) && near(a.spot.z, spot.z) && a.lift === 0 && a.face === 1 && a.shade === 1).toBe(true);
+  s.step(SWAP_SECONDS * 0.1);
+  expect(near(s.going().spot.x, spot.x)).toBe(true);
+  expect(s.step(SWAP_SECONDS * 0.5)).toBe(false);
+  expect(s.going().lift > 0).toBe(true);
+  expect(s.step(SWAP_SECONDS)).toBe(true);
+  const b = s.going();
+  expect(near(b.spot.x, back.x + PLACE.x) && near(b.spot.z, back.z + PLACE.z) && near(b.lift, back.y)).toBe(true);
+  expect([b.face, b.shade]).toEqual([0, PILE_SHADE]);
 });

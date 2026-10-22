@@ -114,10 +114,10 @@ for (const [what, paper] of [['magazine', magazine], ['notes', notebook]] as con
     return { ...d, t, picture: tv.picture, lift: hops[what].lift(), ...pile };
   };
 }
-/** The issue going back to the pile lies where it was on the table while the other opens. */
+/** The issue going back to the pile is carried there from the table while the other opens. */
 magazine.where = () => {
   const r = swap?.rising;
-  return r ? { t: r.t, spot: r.spot, picture: tv.picture } : null;
+  return r ? { t: r.t, picture: tv.picture, behind: true, ...swap!.going() } : null;
 };
 /** On the table, whichever of the two was looked at last lies on top (the notes, to begin with). */
 let notesOnTop = true;
@@ -212,25 +212,27 @@ function night(): void {
   tv.switchOn(true, lights.onAt + 0.35);
 }
 /**
- * The swap (`magazine.pickUp`): once the book is put away, the one picked up is opened from the pile; once it is all the
- * way open (or put away again), the swap is over and the desk shows it on the table (`onTable`): the one going back on
- * the pile, the cassettes changed places, all at once and out of sight.
+ * The swap (`magazine.pickUp`): once the book is put away, the one picked up is opened from the pile and the one going
+ * back carried there; once it has landed and the book is all the way open (or put away again), the swap is over and the
+ * desk shows the new one on the table (`onTable`): the pile draws the one gone back, and the cassettes, out of sight,
+ * have changed places.
  */
-function stepSwap(): void {
+function stepSwap(dt: number): void {
   const s = swap;
   if (!s) return;
   if (s.waiting) {
     if (magazine.open || magazine.openT > 0) return;
-    const have = magazine.issues().filter((id) => id !== s.from);
+    const have = magazine.issues();
+    const [before, after] = [have.filter((id) => id !== s.from), have.filter((id) => id !== s.to)];
     const lying = computer.table('magazine');
-    s.rise(lying.spot, lying.t, pileSlot(have.indexOf(s.to), have.length));
+    s.rise(lying.spot, lying.t, pileSlot(before.indexOf(s.to), before.length), pileSlot(after.indexOf(s.from), after.length));
     magazine.letGo();
     magazine.setIssue(s.to, true);
     magazine.show();
     if (s.page !== undefined) magazine.goto(s.page);
     return;
   }
-  if (magazine.open && magazine.openT < 1) return;
+  if (!s.step(dt) || (magazine.open && magazine.openT < 1)) return;
   swap = null;
 }
 let bookWasOpen = magazine.open;
@@ -252,7 +254,7 @@ engine.updaters.push((dt) => {
   bookWasOpen = magazine.open;
   framing.step(dt, typedReal, screen.tampered.takeMarked(), basic.interp.state === 'idle' && !magazine.open);
   if (computer.visible) computer.focused = framing.wide && (!magazine.open || framing.desk);
-  stepSwap();
+  stepSwap(dt);
   // Every issue the player has but the one on the table lies piled beside the set, the oldest at the bottom; one opening
   // from it is the book's to draw.
   computer.pile.have = magazine.issues();

@@ -237,12 +237,13 @@ src/game/
   and one taken out of the recorder is carried back there behind the set (`Recorder.far`: that move marches everything).
   A click on an issue in the pile puts it on the table and opens it (the one there goes on the pile), one on a cassette
   there only swaps them, at once (`Computer.onPile`, main.ts); the book's corner button and a note's page link into the
-  other issue open it too (`Magazine.pickUp`). Nothing is flown across the table: the open book is first put away onto
-  the table (the view pulls back to the desk), then the one picked up opens straight off the pile, shut on its cover
-  and turning to the page it was left at (`computer/swap.ts`, `IssueSwap`; `stepSwap` in main.ts). The one going back
-  stays lying on the table (`Magazine.letGo` keeps its pages in the spare layers, `SPARE`, `pageTextures.ts`) and the
-  cassettes where they were (`onTable` in main.ts is still it) until the book is all the way open, the view in on the
-  set; then, out of sight, it is on the pile and the cassettes have changed places. Opening, the book takes over the
+  other issue open it too (`Magazine.pickUp`). The open book is first put away onto the table (the view pulls back to
+  the desk), then the one picked up opens straight off the pile, shut on its cover and turning to the page it was left
+  at (`computer/swap.ts`, `IssueSwap`; `stepSwap` in main.ts), and the one going back is carried from the table to the
+  pile meanwhile, setting off a moment later, lifted over the table, landing as the pile draws it (`Magazine.letGo`
+  keeps its pages in the spare layers, `SPARE`, `pageTextures.ts`). The cassettes stay where they were (`onTable` in
+  main.ts is still the old issue) until it has landed and the book is all the way open, the view in on the set; then,
+  out of sight, they change places at once. Opening, the book takes over the
   pile's drawing of it (`Pile.hidden`), hidden behind the set only while it still lies there (`behindSet`, `bookCam.ts`)
   and coming out of the pile's shade into the lamp's light. It shows the pile's cover until its own is painted, so it
   is never bare paper. The pile is laid from the top down, each further down pushed out
