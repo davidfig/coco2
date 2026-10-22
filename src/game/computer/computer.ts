@@ -1,6 +1,6 @@
 import { FULLSCREEN_VERT, Program, TypedKey, linkProgram, scissor } from '../../engine';
 import { TUBE, TUBE_C } from '../tv/cabinetShader';
-import { TALL, type TvEnd } from '../magazine/bookLayout';
+import { TALL, type TvEnd, smooth } from '../magazine/bookLayout';
 import { ACTIVE } from '../tv/pictureShader';
 import { COMPUTER_FRAG } from './computerShader';
 import { MarchCache } from './marchCache';
@@ -10,6 +10,10 @@ import { CORDS_BACK } from './cords';
 import { DeskTable, type View } from './deskTable';
 import { CASE, DeskSpot, EDGE, PLACE, PRINT_H, PRINT_W, deskBounds, drawPrint, keyboardBounds, lowestPoint, onCase, project } from './layout';
 import { type CassetteId, RECORDER_BOUNDS, type Recorder, drawRecorderPrint, recorderAt } from '../recorder';
+import { recorderTouched } from '../recorder/hit';
+import { PILE_BOUNDS, pileBox, pileClick, pileExtent } from './pile';
+import { Pile } from './pileCovers';
+import { ISSUE_ORDER, type IssueId } from '../magazine/pages';
 
 interface Rect {
   x: number;
@@ -25,8 +29,6 @@ const GLOW_STEP = 6 / 256;
 /** A press that moves further than this (CSS px) is a drag (wiping the glass), not a click. */
 const CLICK_SLOP = 6;
 
-const smooth = (t: number): number => t * t * (3 - 2 * t);
-
 /**
  * The highest the pass draws anything (panel y): the top of the box the machine and its cords are marched in (as the
  * shader's), or the table's back edge, whichever shows higher. Everything it draws is below this, the full width across.
@@ -35,6 +37,7 @@ const DRAWN_TOP = Math.max(
   ...[CORDS_BACK - 0.02, CASE.hd + 0.02].map((z) => project(0, CASE.hump + 0.02, z)[1]),
   project(0, 0, EDGE.back - PLACE.z)[1],
   RECORDER_BOUNDS[3],
+  ...[pileBox()[0][2], pileBox()[1][2]].map((z) => project(0, pileBox()[1][1], z)[1]),
 );
 
 /**
@@ -58,7 +61,7 @@ export class Computer {
   /** Pulled back to the whole desk (main.ts: `Framing`), and how far along the way there (0..1). */
   focused = false;
   private focusT = 0;
-  private hover: 'case' | 'key' | 'set' | 'recorder' | null = null;
+  private hover: 'case' | 'key' | 'set' | 'recorder' | 'pile' | null = null;
   /** A press in the TV's part of the window that becomes a click (`onSet`) if it is let go without moving; `at` is where (buffer pixels, y up). */
   private press: { id: number; x: number; y: number; at: [number, number] } | null = null;
   /** Where a click on a key goes (main.ts: the keyboard's queue, as if typed). */
@@ -67,6 +70,10 @@ export class Computer {
   /** The cassette recorder beside the set (main.ts), drawn in the same march; a click on it or a cassette is its own. */
   recorder: Recorder | null = null;
   private readonly recPrint: WebGLTexture;
+  /** The issues piled right of the set (main.ts), drawn in the same march. */
+  readonly pile: Pile;
+  /** A click on an issue in the pile (main.ts: it goes on the table), on it or on its cassette lying there. */
+  onPile: (issue: IssueId, cassette: boolean) => void = () => {};
   /** Whether something drawn over the machine (the magazine) is under the pointer, in 0..1 window coordinates (y up). */
   covered: (nx: number, ny: number) => boolean = () => false;
   /** Whether a click at a point (buffer pixels, y up) is something else's: a knob, the rocker, the smack, the notebook out. */
@@ -78,7 +85,8 @@ export class Computer {
   /** What the view fills: `area`, or pulled back to the desk, the desk view's (`DeskTable.area`), which holds it. */
   private shown = this.area;
   private picture: readonly number[] = [0, 0, 1, 1];
-  private readonly desk = deskBounds();
+  /** The desk's bounds, with each number of issues in the pile. */
+  private readonly desks = ISSUE_ORDER.map((_, n) => deskBounds(pileExtent(n)));
   private readonly keyboard = keyboardBounds();
   /**
    * How far the magazine and the notes have gone onto the table (0..1, eased): they go as the view pulls back to the
@@ -109,6 +117,7 @@ export class Computer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.pile = new Pile(gl);
     this.listen();
   }
 
@@ -139,8 +148,9 @@ export class Computer {
     const area = { x0: r.x * W, y0: r.y * H, x1: (r.x + r.w) * W, y1: (r.y + r.h) * H };
     const c = 1 - open;
     const window = { ...area, x1: area.x1 + (W - area.x1) * c, y0: area.y0 * (1 - c) };
-    const b = this.onDesk.whole(area, window, this.desk, a.k);
-    const v = this.glide.step(dt, this.focused ? b : a, `${this.focused} ${ends.map((e) => `${e.open} ${e.frame}`)}`, open);
+    const b = this.onDesk.whole(area, window, this.desks[this.pile.issues.length], a.k);
+    // Keyed on which ends, not their frames: reading size and in close show the same share of the set, and would jump.
+    const v = this.glide.step(dt, this.focused ? b : a, `${this.focused} ${ends.map((e) => `${e.open} ${e.read} ${e.near}`)}`, open, ends.reduce((n, e) => n + e.w * e.read, 0));
     // The desk and the papers on it keep the glide's time, so the book coming out and all of them end together.
     this.focusT = Math.min(1, Math.max(0, this.focusT + (this.focused ? dt : -dt) / this.glide.secs));
     this.onDesk.step(dt, this.focused, b, this.glide.secs);
@@ -221,7 +231,7 @@ export class Computer {
    * What a pointer event is over: a key (row and index), the rest of the machine, the recorder or a cassette, the rest
    * of the TV's part of the window (`set`: the glass, the cabinet, the room), or nothing (outside it, or something else's there).
    */
-  private under(e: PointerEvent): { row: number; i: number } | { rec: CassetteId | 'recorder' } | 'case' | 'set' | null {
+  private under(e: PointerEvent): { row: number; i: number } | { rec: CassetteId | 'recorder' } | { pile: IssueId; cassette: boolean } | 'case' | 'set' | null {
     const c = this.canvas;
     const r = c.getBoundingClientRect();
     const [x, y] = this.toBuffer(e);
@@ -235,6 +245,8 @@ export class Computer {
     const py = (y - p[1]) / k + TUBE_C[1];
     const rec = this.recorder && recorderAt(this.recorder, px, py);
     if (rec) return { rec };
+    const piled = pileClick(this.pile.issues, this.recorder?.cassettes() ?? [], px, py);
+    if (piled) return piled;
     if (!onCase(px, py)) return 'set';
     return keyAt(px, py) ?? 'case';
   }
@@ -268,6 +280,7 @@ export class Computer {
         e.preventDefault();
         if (at === 'case') return;
         if ('rec' in at) this.recorder?.click(at.rec);
+        else if ('pile' in at) this.onPile(at.pile, at.cassette);
         else this.keys.press(at.row, at.i);
       },
       { capture: true },
@@ -291,7 +304,7 @@ export class Computer {
         const p = this.press;
         if (p?.id === e.pointerId && Math.hypot(e.clientX - p.x, e.clientY - p.y) > CLICK_SLOP) this.press = null;
         const at = this.visible ? this.under(e) : null;
-        this.hover = at === null || at === 'case' || at === 'set' ? at : 'rec' in at ? 'recorder' : 'key';
+        this.hover = at === null || at === 'case' || at === 'set' ? at : 'rec' in at ? 'recorder' : 'pile' in at ? 'pile' : 'key';
       },
       true,
     );
@@ -305,7 +318,7 @@ export class Computer {
   /** The pointer over the machine: a key or the recorder can be pressed. */
   cursor(): void {
     if (this.press) return;
-    if (this.hover === 'key' || this.hover === 'recorder') this.canvas.style.cursor = 'pointer';
+    if (this.hover === 'key' || this.hover === 'recorder' || this.hover === 'pile') this.canvas.style.cursor = 'pointer';
   }
 
   /** `picture` and `glow` are the TV's last frame. */
@@ -336,17 +349,22 @@ export class Computer {
     // and cassettes only the recorder: just that is marched again.
     const keys = this.keys.uniform();
     const rec = this.recorder?.uniforms() ?? [];
+    const piled = this.pile.places();
     const n = keys.length;
+    const m = n + rec.length;
     const around = (was: readonly number[]): [number, number, number, number] | null => {
       const px = (x: number, i: number) => picture[i] + (x - TUBE_C[i]) * k;
       const caps = capsBounds(was.slice(0, n), keys);
-      const moved = rec.some((v, i) => v !== was[n + i]);
-      const bs = [...(caps ? [caps] : []), ...(moved ? [RECORDER_BOUNDS] : [])];
+      // What the recorder and its cassettes touched (`recorderTouched`), and the pile if an issue in it came or went.
+      const touched = this.recorder ? recorderTouched(this.recorder, rec, was.slice(n, m)) : [];
+      if (touched === 'all') return [0, 0, W, top];
+      const pileMoved = piled.length !== was.length - m || piled.some((v, i) => v !== was[m + i]);
+      const bs = [...(caps ? [caps] : []), ...touched, ...(pileMoved ? [PILE_BOUNDS] : [])];
       if (!bs.length) return null;
       return [px(Math.min(...bs.map((b) => b[0])), 0) - 2, px(Math.min(...bs.map((b) => b[1])), 1) - 2, px(Math.max(...bs.map((b) => b[2])), 0) + 2, px(Math.max(...bs.map((b) => b[3])), 1) + 2];
     };
     gl.bindVertexArray(this.vao);
-    this.cache.draw({ x: picture[0], y: picture[1], k }, [W, H, ...lit], s, moving, [0, 0, W, top], (pic, rows) => {
+    this.cache.draw({ x: picture[0], y: picture[1], k }, [W, H, ...lit, piled.length], s, moving, [0, 0, W, top], (pic, rows) => {
       gl.useProgram(this.program.prog);
       const u = this.program.u;
       gl.uniform3f(u.uPic, ...pic);
@@ -370,9 +388,11 @@ export class Computer {
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, this.recPrint);
       gl.uniform1i(u.uRecPrint, 1);
+      gl.uniform1f(u.uFar, this.recorder?.far() ? 1 : 0);
+      this.pile.bind(u, piled);
       gl.activeTexture(gl.TEXTURE0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }, { key: [...keys, ...rec], clip: around });
+    }, { key: [...keys, ...rec, ...piled], clip: around });
     gl.disable(gl.SCISSOR_TEST);
   }
 }

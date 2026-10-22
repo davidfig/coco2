@@ -176,20 +176,7 @@ function water(ctx: Ctx): void {
   }
 }
 
-/** The cassette's reflection on the water below it: a soft dark smear, broken by the ripples. */
-export function reflection(ctx: Ctx, cx: number, w: number): void {
-  airbrush(ctx, { x: cx - w, y: HORIZON, w: w * 2, h: 200 }, 4, (sc) => {
-    const r = rng(81);
-    for (let i = 0; i < 24; i++) {
-      const y = HORIZON + 12 + i * 6;
-      const half = w * 0.42 * (1 - i / 30) * (0.85 + r() * 0.3);
-      sc.fillStyle = `rgba(8,12,30,${(0.32 * (1 - i / 24)).toFixed(2)})`;
-      sc.fillRect(cx - half + (r() - 0.5) * 16, y, half * 2, 4);
-    }
-  });
-}
-
-/** The whole background, before the cassette goes on. */
+/** The whole background, before the bottle goes on. */
 export function drawMaySky(ctx: Ctx): void {
   sky(ctx);
   cumulus(ctx, 830, 570, 380, 3);

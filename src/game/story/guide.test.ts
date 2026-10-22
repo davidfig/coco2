@@ -49,3 +49,23 @@ test('the magazine opened first still leaves the notes to call to, and nothing a
   run(1, true, true);
   expect(run(GUIDE_AGAIN * 3)).toEqual([]);
 });
+
+test('after the magazine, a cassette waiting to go in is called to on the same times, its clock running only on the desk', () => {
+  const flags = new Set<string>(['opened-notes', 'opened-magazine']);
+  let waiting = true;
+  const guide = new Guide((f) => flags.has(f), (f) => flags.add(f), () => waiting);
+  const run = (secs: number, desk: boolean): Beckon[] => {
+    const calls: Beckon[] = [];
+    for (let i = 0; i < Math.round(secs * 60); i++) {
+      const b = guide.step(1 / 60, true, false, false, desk);
+      if (b) calls.push(b);
+    }
+    return calls;
+  };
+  expect(run(1 / 60, true)).toEqual(['cassette']);
+  expect(run(GUIDE_AGAIN / 2, true)).toEqual([]);
+  expect(run(GUIDE_AGAIN * 2, false)).toEqual([]);
+  expect(run(GUIDE_AGAIN / 2 + 0.1, true)).toEqual(['cassette']);
+  waiting = false;
+  expect(run(GUIDE_AGAIN * 2, true)).toEqual([]);
+});

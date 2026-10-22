@@ -4,7 +4,7 @@ import { expect, test } from '../../test/check';
 
 /** ADVENT loaded, its typo (line 30's PRNT) fixed, and running at its first prompt. */
 function advent(): HeadlessCoco {
-  return new HeadlessCoco().type('CLOAD "ADVENT"\n30 PRINT "THE TAPE CRACKLES."\nRUN\n');
+  return new HeadlessCoco().type('CLOAD "ADVENT"\n30 PRINT "SOMEONE HAS BEEN HERE BEFORE."\nRUN\n');
 }
 
 /** Type each command in turn; returns what the last one printed. */

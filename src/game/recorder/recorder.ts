@@ -14,6 +14,8 @@ export const RECORDER_KEY = 'coco2.recorder';
 /** Seconds: the door swinging open or shut; a cassette carried in or out; STOP/EJECT going down and up. */
 const LID_TIME = 0.28;
 const MOVE_TIME = 1.35;
+/** A cassette carried between the recorder and the pile of old issues, behind the set, takes this much longer. */
+const FAR_TIME = 1.8;
 const EJECT_TIME = 0.3;
 /** How fast the hubs turn while the motor runs (radians a second): a cassette's hub, about 1.5 turns a second at the start. */
 const REEL_SPEED = 9;
@@ -46,10 +48,10 @@ function topEdge(yaw: number, tilt: number): [number, number, number] {
   return [tz * Math.sin(yaw), ty, tz * Math.cos(yaw)];
 }
 
-/** A cassette carried from one place to another: into the recorder (`'deck'`) or onto a spot on the table. */
+/** A cassette carried from one place to another: into the recorder (`'deck'`), onto a spot on the table, or onto the pile of old issues. */
 interface Move {
   id: CassetteId;
-  to: 'deck' | number;
+  to: 'deck' | number | 'pile';
   t: number;
 }
 
@@ -73,7 +75,9 @@ function readSaved(): { deck: CassetteId | null; spots: Partial<Record<CassetteI
  * latches down), and a click on the recorder with one in takes it out again (STOP/EJECT) onto the table. Only a
  * cassette seated with the door shut is in for BASIC (`Tape.present`): CLOAD, SKIPF and CSAVE wait for one. The May
  * cassette lies on the table once May has come (`issue2-waiting`); putting it in loads the May tape into BASIC's
- * cassette (`Tape.insert`), March's the March one. Drawn by the computer's march (`recorderGlsl.ts`, `uniforms`).
+ * cassette (`Tape.insert`), March's the March one. Only the cassette of the issue on the table lies by the recorder
+ * (`current`); the others lie on the pile of old issues beside the set (`piled`), and one taken out of the recorder goes
+ * back there. Drawn by the computer's march (`recorderGlsl.ts`, `uniforms`).
  */
 export class Recorder {
   /** The cassette in the recorder (seated, or on its way in or out). */
@@ -93,6 +97,12 @@ export class Recorder {
   private beckon = false;
   /** Seconds until PLAY latches down after the door shuts on a cassette (-1: not waiting to). */
   private latchIn = -1;
+  /** How high the cassette the story waits on (`wanted`) is off the table now: the guide's hop (main.ts). */
+  lift = 0;
+  /** The cassette of the issue on the table (main.ts: `Magazine.issue`): the one that lies by the recorder. */
+  current: () => CassetteId = () => 'march';
+  /** Where a cassette lies on the pile of old issues, if its issue is there (main.ts, `pileCassette`). */
+  piled: (id: CassetteId) => Pose | null = () => null;
   /** The recorder's sounds (main.ts; none in tests or with `?nosound`). */
   sound: RecorderSound | null = null;
   /** Seconds a move takes: none with `?instant`. */
@@ -117,6 +127,17 @@ export class Recorder {
     return id === 'march' || this.has('issue2-waiting');
   }
 
+  /**
+   * The cassette the story waits on to be put in, lying on the table: March's once the magazine has been opened, until
+   * it has gone in (`tape-inserted`); May's once it has come, until something has been loaded from it (`may-loaded`).
+   */
+  wanted(): CassetteId | null {
+    const id: CassetteId | null = this.has('issue2-waiting')
+      ? this.has('may-loaded') ? null : 'may'
+      : this.has('opened-magazine') && !this.has('tape-inserted') ? 'march' : null;
+    return id && this.deck !== id && !this.moves.some((m) => m.id === id) ? id : null;
+  }
+
   /** Whether the recorder is busy: a cassette moving, or the motor running (taking one out then would spoil the load). */
   private busy(): boolean {
     return this.moves.length > 0 || this.interp.deck.running;
@@ -128,13 +149,28 @@ export class Recorder {
     if (what === 'recorder') {
       if (!this.deck) return;
       this.open();
-      this.moves.push({ id: this.deck, to: this.spots[this.deck], t: 0 });
+      this.moves.push({ id: this.deck, to: this.home(this.deck), t: 0 });
       return;
     }
-    if (what === this.deck || !this.available(what)) return;
+    if (what === this.deck || !this.available(what) || what !== this.current()) return;
     this.open();
-    if (this.deck) this.moves.push({ id: this.deck, to: this.freeSpot(what), t: 0 });
+    if (this.deck) this.moves.push({ id: this.deck, to: this.home(this.deck), t: 0 });
     this.moves.push({ id: what, to: 'deck', t: 0 });
+  }
+
+  /** Where a cassette goes when it comes out: its spot by the recorder if its issue is on the table, else the pile. */
+  private home(id: CassetteId): number | 'pile' {
+    return id !== this.current() && this.piled(id) ? 'pile' : this.spots[id];
+  }
+
+  /** Whether a cassette is going between the recorder and the pile (the march looks for it in all the space between them). */
+  far(): boolean {
+    return this.carrying();
+  }
+
+  /** Whether a cassette is being carried between the recorder and the pile, behind the set (all the march between them is redrawn). */
+  carrying(): boolean {
+    return this.moves.some((m) => m.to === 'pile' && m.t > 0);
   }
 
   /** STOP/EJECT pressed: PLAY lets go and the door springs up. */
@@ -143,13 +179,7 @@ export class Recorder {
     this.sound?.eject();
   }
 
-  /** The spot left for the cassette coming out when `coming` goes in: the one it lay on, or the other. */
-  private freeSpot(coming: CassetteId): number {
-    const other = CASSETTES.find((c) => c !== coming)!;
-    return this.spots[other] === this.spots[coming] ? 1 - this.spots[coming] : this.spots[other];
-  }
-
-  /** Playtesting (the debug menu's checkpoints): this cassette in the recorder at once, the other on the table. */
+  /** Playtesting (`coco.recorder.put` in the console): this cassette in the recorder at once, the other on the table. */
   put(id: CassetteId): void {
     this.moves.length = 0;
     this.deck = id;
@@ -182,10 +212,10 @@ export class Recorder {
     if (move && this.lid === 1) {
       if (move.t === 0 && move.to !== 'deck') this.deck = null;
       if (move.t === 0 && move.to === 'deck') this.deck = move.id;
-      move.t = clamp01(move.t + (dt * this.speed) / MOVE_TIME);
+      move.t = clamp01(move.t + (dt * this.speed) / (move.to === 'pile' ? MOVE_TIME * FAR_TIME : MOVE_TIME));
       if (move.t === 1) {
         this.moves.shift();
-        if (move.to !== 'deck') this.spots[move.id] = move.to;
+        if (typeof move.to === 'number') this.spots[move.id] = move.to;
         else {
           this.sound?.drop();
           if (move.id === 'march') this.set('tape-inserted');
@@ -238,8 +268,12 @@ export class Recorder {
   pose(id: CassetteId): Pose | null {
     if (!this.available(id)) return null;
     const move = this.moves.find((m) => m.id === id && m.t > 0);
-    if (!move) return this.deck === id ? seatPose() : spotPose(this.spots[id]);
-    const spot = spotPose(move.to === 'deck' ? this.spots[id] : move.to);
+    if (!move && this.deck === id) return seatPose();
+    if (!move) {
+      const p = this.lying(id);
+      return this.lift > 0 && this.wanted() === id ? { ...p, y: p.y + this.lift } : p;
+    }
+    const spot = move.to === 'deck' ? this.lying(id) : move.to === 'pile' ? (this.piled(id) ?? spotPose(this.spots[id])) : spotPose(move.to);
     const seat = seatPose();
     const u = move.to === 'deck' ? move.t : 1 - move.t;
     // The top edge's place when seated: the cassette turns about it as its tape edge goes down.
@@ -263,6 +297,11 @@ export class Recorder {
     return { x: mix(spot.x, over.x), y, z: mix(spot.z, over.z), yaw: mix(spot.yaw, over.yaw), tilt: mix(0, TIP) };
   }
 
+  /** Where a cassette lies out of the recorder: by it if its issue is on the table, else on the pile (the issues changing places, it is there at once). */
+  private lying(id: CassetteId): Pose {
+    return (id !== this.current() && this.piled(id)) || spotPose(this.spots[id]);
+  }
+
   /**
    * The shader's uniforms, in order: the door (radians), the keys (RECORD, PLAY, STOP/EJECT down, the record lamp), each
    * cassette's centre and turn (one not there is put under the table), their tilts, the hubs' turn and the tape wound.
@@ -279,11 +318,13 @@ export class Recorder {
     return out;
   }
 
-  /** What lies where for a click: each cassette's pose (null when not there), and whether one is in the recorder. */
-  cassettes(): { id: CassetteId; pose: Pose; out: boolean }[] {
+  /** What lies where for a click: each cassette's pose (null when not there), whether it lies by the recorder to be put in (`out`) or on the pile. */
+  cassettes(): { id: CassetteId; pose: Pose; out: boolean; piled: boolean }[] {
     return CASSETTES.flatMap((id) => {
       const pose = this.pose(id);
-      return pose ? [{ id, pose, out: this.deck !== id }] : [];
+      const lying = this.deck !== id && !this.moves.some((m) => m.id === id);
+      const piled = lying && id !== this.current() && !!this.piled(id);
+      return pose ? [{ id, pose, out: lying && !piled, piled }] : [];
     });
   }
 }

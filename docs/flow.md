@@ -10,7 +10,7 @@ The why is in [beats.md](beats.md) and [flags.md](flags.md), the puzzles in [puz
 2. Change it where the tables below say.
 3. `pnpm walkthrough` and read the diff (`git diff docs/walkthrough.md`). `pnpm test walkthrough` checks that every
    route still reaches the end of issue 2 and that between them they earn every story flag.
-4. Only then play it, from the debug menu's checkpoint (F2) or `?issue=N`, for what text cannot show: timing, the
+4. Only then play it, from a checkpoint's URL (`?at=<id>`, `CHECKPOINTS` in `checkpoints.ts`) or `?issue=N`, for what text cannot show: timing, the
    shimmer, sound, the page.
 
 The route is the list of `Part`s in `src/game/debug/walkthroughRoute.ts` (what is typed, what is looked at, how long the player
@@ -27,12 +27,14 @@ leaving the plug) are played in full but written out only where they differ.
 | What the story does by itself, and its timers | `src/game/story/issue1.ts`, `issue2.ts` (constants at the top) |
 | The notebook's lines, what earns each, what crosses it out | `src/game/notes/notes.ts` (`NOTES`) |
 | A page of the magazine | `src/game/magazine/issue.ts`'s table → the page's draw function; page order in `pages.ts` |
-| Flag order (debug menu, checkpoints) | `src/game/debug/checkpoints.ts` |
+| Flag order, checkpoints (`?at=`, `src/startAt.ts`) | `src/game/debug/checkpoints.ts` |
 
 ## Issue 1: March 14, 1991
 
 The desk: the set, the CoCo, the recorder with the March cassette beside it, the RAINBOW and the notes on the table.
-The guide bounces the notes, then nudges the magazine, until each has been opened.
+The guide bounces the notes, then nudges the magazine, until each has been opened; then, while the view is on the desk,
+the March cassette hops until it goes in (`tape-inserted`), and from issue 2 the May one until it is loaded from
+(`may-loaded`): `Guide` (`story/guide.ts`), `Recorder.wanted` (`recorder/recorder.ts`).
 
 | Beat | The player | The game | Flags |
 |------|------------|----------|-------|
@@ -50,11 +52,11 @@ The guide bounces the notes, then nudges the magazine, until each has been opene
 | The choice: kept | Does nothing (12 s; 8 s once they run GUESS or load something) | The line becomes `... THANK YOU`, and THANK YOU over the last OK | `ok-thanks`, `saw-thanks` |
 | The choice: deleted | Types `125` | 5 s later the line is back with `, PLEASE`, and the screen says so | `deleted-extra-line`, `ok-pleads`, `saw-pleads` |
 | The evening ends | | Notes: "Shut it all down" | `issue1-done` |
-| The night | Switches the set off (a reload counts) and on | The CoCo boots empty; the May box arrives; the date heads the notes | `issue1-closed`, `issue2-waiting` |
+| The night | Switches the set off (a reload counts as the night passed) | The room's lights blink out (`RoomLights.night`, `night()` in `main.ts`); in the dark the CoCo boots empty, the May box arrives and the date heads the notes; a second later the lights flicker on, the set with them, and May slides onto the table; March lies on the table right of the set, its cassette beside it, the start of a pile of the issues not on the table (`computer/pile.ts`, `Computer.pile`, `Recorder.piled`) | `issue1-closed`, `issue2-waiting` |
 
 ## Issue 2: March 15, 1991
 
-The May RAINBOW on the table (the corner button switches back to March), the May cassette beside March's. Until ORACLE
+The May RAINBOW on the table and its cassette by the recorder; March on the pile beside the set and its cassette beside that (a click there, or the corner button, swaps them: the one picked up opens straight off the pile, and the other and the cassettes change places out of sight once it is open, `computer/swap.ts`, `stepSwap` in `main.ts`). Until ORACLE
 is answered every OK comes up 0.6 s late and the cursor's colours slip now and then: the cover feature's "Three Signs Of
 A Sick System". OK's lines shimmer whenever a listing shows them.
 

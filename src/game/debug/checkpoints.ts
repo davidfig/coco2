@@ -2,8 +2,8 @@ import { ADVENT, FIRST_PROGRAM, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../pu
 import { DECODER, MESSAGE_LINE, PLUG_HELD, SHUTDOWN_REM_LINE } from '../puzzles/listingsMay';
 
 /**
- * Playtesting only: every story flag in the order a player usually earns it, with a word on what earns it. The debug
- * menu lists them in this order and a checkpoint sets them in this order (the notebook writes notes in flag order).
+ * Playtesting only: every story flag in the order a player usually earns it, with a word on what earns it. A checkpoint
+ * sets its flags in this order (the notebook writes notes in flag order).
  */
 export const STORY_FLAGS: readonly [flag: string, label: string][] = [
   ['booted', 'switched on'],
@@ -75,16 +75,18 @@ export const STORY_FLAGS: readonly [flag: string, label: string][] = [
 ];
 
 /** ADVENT's line 30 as the magazine prints it (the tape's copy misspells PRINT). */
-const FIX_30 = `${ADVENT.typo} PRINT "THE TAPE CRACKLES."\n`;
+const FIX_30 = `${ADVENT.typo} PRINT "SOMEONE HAS BEEN HERE BEFORE."\n`;
 
-/**
- * A place in the story to jump to: exactly these flags (in this order), whether the first program's name is kept,
- * and what is typed at the CoCo afterwards to put the right program in memory (left for the player to RUN).
- */
 /** The name a checkpoint keeps when none has been typed in yet. */
 export const DEFAULT_NAME = 'TESTER';
 
+/**
+ * A place in the story to start at with `?at=<id>` (`src/startAt.ts`): exactly these flags (in this order), whether the
+ * first program's name is kept, and what is typed at the CoCo once it has booted to put the right program in memory
+ * (left for the player to RUN).
+ */
 export interface Checkpoint {
+  id: string;
   label: string;
   flags: readonly string[];
   named?: boolean;
@@ -119,36 +121,36 @@ const SHUTDOWN = 'CLOAD "SHUTDOWN"\n';
 const DECODING = `${SHUTDOWN}${DECODER.join('\n')}\n`;
 const ORACLE = 'CLOAD "ORACLE"\n';
 
-const FRESH: Checkpoint = { label: 'Fresh start', flags: START };
-const MAY_CAME: Checkpoint = { label: 'May came (issue 2)', flags: MAY, named: true };
+const FRESH: Checkpoint = { id: 'fresh', label: 'Fresh start', flags: START };
+const MAY_CAME: Checkpoint = { id: 'may', label: 'May came (issue 2)', flags: MAY, named: true };
 
 export const CHECKPOINTS: readonly Checkpoint[] = [
   FRESH,
-  { label: 'Found the notes and magazine', flags: GUIDED },
-  { label: 'Said hello', flags: [...GUIDED, 'printed'] },
-  { label: 'Typed in the name program', flags: [...GUIDED, 'printed', 'program-typed'], typed: `${FIRST_PROGRAM.join('\n')}\n` },
-  { label: 'Ran the name program', flags: HELLO, named: true },
-  { label: 'ADVENT loaded, ?SN', flags: BROKEN, named: true, typed: 'CLOAD "ADVENT"\n' },
-  { label: 'ADVENT fixed, before LOOK', flags: FIXED, named: true, typed: ADVENT_FIXED },
-  { label: 'Lamp in hand', flags: LAMP, named: true, typed: ADVENT_FIXED },
-  { label: 'Mapped, at the door', flags: AT_DOOR, named: true, typed: ADVENT_FIXED },
-  { label: 'All four clues found', flags: CLUES, named: true, typed: ADVENT_FIXED },
-  { label: 'Door open (name tamper next)', flags: OPEN, named: true, typed: ADVENT_FIXED },
-  { label: 'Adventure won', flags: WON, named: true, typed: GUESS },
-  { label: 'Found the extra line (kept)', flags: FOUND, named: true, typed: GUESS },
-  { label: 'Deleted it (PLEASE next)', flags: DELETED, named: true, typed: `${GUESS}${GUESS_EXTRA_LINE}\n` },
-  { label: 'Saw PLEASE', flags: [...DELETED, 'ok-pleads', 'saw-pleads'], named: true, typed: `${GUESS}${GUESS_EXTRA_LINE} REM ${GUESS_EXTRA_TEXT}, PLEASE\n` },
-  { label: 'Saw THANK YOU', flags: THANKS, named: true, typed: `${GUESS}${GUESS_EXTRA_LINE} REM ${GUESS_EXTRA_TEXT}. THANK YOU\n` },
+  { id: 'guided', label: 'Found the notes and magazine', flags: GUIDED },
+  { id: 'printed', label: 'Said hello', flags: [...GUIDED, 'printed'] },
+  { id: 'program-typed', label: 'Typed in the name program', flags: [...GUIDED, 'printed', 'program-typed'], typed: `${FIRST_PROGRAM.join('\n')}\n` },
+  { id: 'named', label: 'Ran the name program', flags: HELLO, named: true },
+  { id: 'advent-sn', label: 'ADVENT loaded, ?SN', flags: BROKEN, named: true, typed: 'CLOAD "ADVENT"\n' },
+  { id: 'advent-fixed', label: 'ADVENT fixed, before LOOK', flags: FIXED, named: true, typed: ADVENT_FIXED },
+  { id: 'lamp', label: 'Lamp in hand', flags: LAMP, named: true, typed: ADVENT_FIXED },
+  { id: 'door', label: 'Mapped, at the door', flags: AT_DOOR, named: true, typed: ADVENT_FIXED },
+  { id: 'clues', label: 'All four clues found', flags: CLUES, named: true, typed: ADVENT_FIXED },
+  { id: 'door-open', label: 'Door open (name tamper next)', flags: OPEN, named: true, typed: ADVENT_FIXED },
+  { id: 'advent-won', label: 'Adventure won', flags: WON, named: true, typed: GUESS },
+  { id: 'extra-line', label: 'Found the extra line (kept)', flags: FOUND, named: true, typed: GUESS },
+  { id: 'deleted', label: 'Deleted it (PLEASE next)', flags: DELETED, named: true, typed: `${GUESS}${GUESS_EXTRA_LINE}\n` },
+  { id: 'pleads', label: 'Saw PLEASE (switch off next: the night)', flags: [...DELETED, 'ok-pleads', 'saw-pleads'], named: true, typed: `${GUESS}${GUESS_EXTRA_LINE} REM ${GUESS_EXTRA_TEXT}, PLEASE\n` },
+  { id: 'thanks', label: 'Saw THANK YOU (switch off next: the night)', flags: THANKS, named: true, typed: `${GUESS}${GUESS_EXTRA_LINE} REM ${GUESS_EXTRA_TEXT}. THANK YOU\n` },
   MAY_CAME,
-  { label: `SHUTDOWN, saw line ${MESSAGE_LINE}`, flags: SEEN_990, named: true, typed: SHUTDOWN },
-  { label: 'Decoder typed in (RUN next)', flags: SEEN_990, named: true, typed: DECODING },
-  { label: 'Decoded: ORACLE next', flags: DECODED, named: true, typed: ORACLE },
-  { label: 'ORACLE asked (answer next)', flags: ASKED, named: true, typed: 'NEW\n10 DATA 1,0,6,18,9,5,14,4,-1\n' },
-  { label: 'Answered ORACLE', flags: ANSWERED, named: true },
-  { label: 'Answered, SHUTDOWN loaded', flags: ANSWERED, named: true, typed: SHUTDOWN },
-  { label: 'Won SHUTDOWN (OK changes 710)', flags: WON_MAY, named: true, typed: SHUTDOWN },
-  { label: 'Plug held (restore or leave)', flags: HELD, named: true, typed: `${SHUTDOWN}${PLUG_HELD}\n` },
+  { id: 'shutdown', label: `SHUTDOWN, saw line ${MESSAGE_LINE}`, flags: SEEN_990, named: true, typed: SHUTDOWN },
+  { id: 'decoder', label: 'Decoder typed in (RUN next)', flags: SEEN_990, named: true, typed: DECODING },
+  { id: 'decoded', label: 'Decoded: ORACLE next', flags: DECODED, named: true, typed: ORACLE },
+  { id: 'oracle-asked', label: 'ORACLE asked (answer next)', flags: ASKED, named: true, typed: 'NEW\n10 DATA 1,0,6,18,9,5,14,4,-1\n' },
+  { id: 'answered', label: 'Answered ORACLE', flags: ANSWERED, named: true },
+  { id: 'answered-shutdown', label: 'Answered, SHUTDOWN loaded', flags: ANSWERED, named: true, typed: SHUTDOWN },
+  { id: 'shutdown-won', label: 'Won SHUTDOWN (OK changes 710)', flags: WON_MAY, named: true, typed: SHUTDOWN },
+  { id: 'plug-held', label: 'Plug held (restore or leave)', flags: HELD, named: true, typed: `${SHUTDOWN}${PLUG_HELD}\n` },
 ];
 
-/** `?issue=N` (`src/startIssue.ts`): the start of issue N, every issue before it played through. Index 0 is issue 1. */
+/** `?issue=N` (`src/startAt.ts`): the start of issue N, every issue before it played through. Index 0 is issue 1. */
 export const ISSUE_STARTS: readonly Checkpoint[] = [FRESH, MAY_CAME];

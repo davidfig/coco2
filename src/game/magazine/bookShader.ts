@@ -32,6 +32,10 @@ uniform float uTexW;
 uniform float uLastPage; // layer of the back cover (the front is 0): the glossy ones
 uniform float uDesk;      // 0..1: lying on the table, folded back on its spine (bookCam.ts's onTable), the fold rounded
 uniform float uSpread;    // 0..1: lying on the table open flat instead, at a left-hand page with the right-hand one beside it
+uniform float uDrop;      // how far over the table it is held (book units: lifted off it, flown to or from the pile), where its shadow falls
+uniform float uFade;      // 0..1: how much of it shows (one flown to or from the pile fades into the pile's own drawing of it)
+uniform vec4 uSetRect;    // the set's face on screen (pixels: x0 y0 x1 y1), and the plane of that face in book space:
+uniform vec4 uSetPlane;   // behind it (dot(xyz, p) + w < 0), what lies there is hidden by the set (an empty rect: never)
 uniform sampler2DArray uPages;
 out vec4 outColor;
 
@@ -239,14 +243,15 @@ void main() {
   }
   a *= cover;
 
-  // Its shadow on the table, under whatever of the pixel the book leaves.
+  // Its shadow on the table, under whatever of the pixel the book leaves: held over it, further off away from the
+  // lamp (up and to the left), softer and fainter.
+  vec3 T = o + d * ((-uDrop - o.z) / d.z);
   {
-    float tt = -o.z / d.z;
-    vec3 T = o + d * tt;
     vec2 ec = vec2(0.5 * (uSee.x + uSee.y), 0.0);
     vec2 eh = vec2(0.5 * (uSee.y - uSee.x), hh);
-    float sh = sdBox(T.xy - ec - vec2(0.035, -0.07), eh);
-    float sa = 0.6 * exp(-max(sh, 0.0) * 16.0) * (1.0 - smoothstep(-0.03, 0.0, sh));
+    float sh = sdBox(T.xy - ec - vec2(0.035, -0.07) - uDrop * vec2(0.5, -0.56), eh);
+    float soft = 1.0 + 6.0 * uDrop;
+    float sa = 0.6 / soft * exp(-max(sh, 0.0) * 16.0 / soft) * (1.0 - smoothstep(-0.03 * soft, 0.0, sh));
     col *= a;
     a += sa * (1.0 - a);
   }
@@ -318,5 +323,8 @@ void main() {
       a += lc * (1.0 - a);
     }
   }
-  outColor = vec4(col * uLight, a);
+  // Flown to or from the pile beside the set, what of it is behind the set's face is hidden by the set.
+  vec3 at = tBook < 1e8 ? P : cover > 0.0 ? E : T;
+  if (g.x > uSetRect.x && g.x < uSetRect.z && g.y > uSetRect.y && g.y < uSetRect.w && dot(uSetPlane.xyz, at) + uSetPlane.w < 0.0) a = 0.0, col = vec3(0.0);
+  outColor = vec4(col * uLight, a) * uFade;
 }`;

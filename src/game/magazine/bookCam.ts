@@ -1,4 +1,5 @@
 import { facing } from '../computer/facing';
+import { CAB, TUBE_C } from '../tv/cabinetShader';
 import { EYE, type DeskSpot, TABLE, onSpot, pictureView, spotAxes } from '../computer/layout';
 import { type Quat, axesOf, quatFromAxes, slerp } from '../computer/pose';
 import { CAM_DIST, PAGE_UNIT_H, PAPER_THICKNESS, type View, clamp, lerp, smooth } from './bookLayout';
@@ -36,14 +37,15 @@ export function viewCam(v: View): Cam {
 /**
  * The room's camera (the eye before the set, `Tv.picture` placing it on screen) with the magazine lying on the table at
  * `spot`, the part of it in view (`win`, book x) centred there, seen square on (`facing`) so that lying off to the side
- * of the desk view it isn't stretched. A book unit (the page's width) is the spot's width.
+ * of the desk view it isn't stretched (`face` of the way: flown to or from the pile, which the room's camera draws, it
+ * is seen as the pile is there). A book unit (the page's width) is the spot's width; it lies `lift` over the table.
  */
-export function deskCam(spot: DeskSpot, picture: readonly number[], win: readonly [number, number], lift = 0): Cam {
+export function deskCam(spot: DeskSpot, picture: readonly number[], win: readonly [number, number], lift = 0, face = 1): Cam {
   const S = 2 * spot.hw;
   const view = pictureView(picture);
   const centre = onSpot(spot, 0, 0);
   centre[1] += lift;
-  const seen = facing(view, centre, 1);
+  const seen = facing(view, centre, face);
   const A = seen.rays;
   const { ux, uy } = spotAxes(spot);
   const R = [ux, uy, [0, 1, 0]];
@@ -125,14 +127,14 @@ export function camToScreen(cam: Cam, p: readonly number[]): [number, number] | 
   return w > 1e-6 ? [x / w, y / w] : null;
 }
 
-/** Where the book can draw (pixels: x0, y0, x1, y1) through camera `cam`, as `bookBounds` for the book's own. */
-export function camBounds(cam: Cam, v: View, turning: boolean): [number, number, number, number] {
+/** Where the book can draw (pixels: x0, y0, x1, y1) through camera `cam`, as `bookBounds` for the book's own; `drop` (book units) is how far under it its shadow falls. */
+export function camBounds(cam: Cam, v: View, turning: boolean, drop = 0): [number, number, number, number] {
   const hh = PAGE_UNIT_H / 2 + 0.3;
   const xs = turning ? [Math.min(v.see[0], -1.1), Math.max(v.see[1], 1.1)] : [v.see[0] - 0.3, v.see[1] + 0.3];
   const b = [Infinity, Infinity, -Infinity, -Infinity];
   for (const bx of xs)
     for (const by of [-hh, hh])
-      for (const bz of [0, turning ? 1.3 : 0.25]) {
+      for (const bz of [-drop, turning ? 1.3 : 0.25]) {
         const q = camToScreen(cam, [bx, by, bz]);
         if (!q) return v.clip;
         b[0] = Math.min(b[0], q[0]);
@@ -156,12 +158,12 @@ const DESK_PAPER_THICKNESS = 0.022;
  * point with (its `cam` set while on the table), the camera, the light, how far it lies (`uDesk`) and how far open flat
  * at a spread rather than folded back (`uSpread`).
  */
-export function onTable(v: View, out: View, d: number, open: number, spot: DeskSpot, picture: readonly number[], lift = 0): { view: View; cam: Cam; light: number; desk: number; spread: number } {
+export function onTable(v: View, out: View, d: number, open: number, spot: DeskSpot, picture: readonly number[], lift = 0, face = 1): { view: View; cam: Cam; light: number; desk: number; spread: number } {
   const own = viewCam(v);
   const t = d * (1 - open);
   if (t <= 0) return { view: v, cam: own, light: 1, desk: 0, spread: 0 };
   const at = [0.5 * (v.win[0] + v.win[1]), 0, 0];
-  const table = deskCam(spot, picture, v.win, lift);
+  const table = deskCam(spot, picture, v.win, lift, face);
   const rise = open > 0 ? mixCam(table, viewCam(out), open, at) : table;
   const cam = d < 1 ? mixCam(own, rise, d, at) : rise;
   const c = v.clip;
@@ -181,6 +183,22 @@ export function onTable(v: View, out: View, d: number, open: number, spot: DeskS
   const flat = lerp(v.see[1], v.ext[1], smooth(clamp(t * 2, 0, 1)));
   const see: View['see'] = [v.see[0], lerp(folded, flat, spread)];
   return { view: { ...v, cam, clip, ext, see }, cam, light: lerp(1, DESK_LIGHT, t), desk: t, spread };
+}
+
+/**
+ * The set's face on screen (pixels: x0, y0, x1, y1) and its plane (world z = 0) in the book space of a magazine lying at
+ * `spot`, `lift` over the table, with `win` in view (as `deskCam`): what of it is behind that plane and inside the
+ * rectangle is behind the set (`uSetRect`, `uSetPlane`). Only true where it is seen as the room's camera sees it.
+ */
+export function behindSet(spot: DeskSpot, picture: readonly number[], win: readonly [number, number]): { rect: number[]; plane: number[] } {
+  const view = pictureView(picture);
+  const [x0, y0] = [view.cx + (-CAB[0] - TUBE_C[0]) * view.k, view.cy + (-CAB[1] - TUBE_C[1]) * view.k];
+  const [x1, y1] = [view.cx + (CAB[0] - TUBE_C[0]) * view.k, view.cy + (CAB[1] - TUBE_C[1]) * view.k];
+  const S = 2 * spot.hw;
+  const { ux, uy } = spotAxes(spot);
+  const wc = 0.5 * (win[0] + win[1]);
+  // World z of book point b: the spot's (moved to the middle of the page in view), plus b across and up it.
+  return { rect: [x0, y0, x1, y1], plane: [S * ux[2], S * uy[2], 0, spot.z - S * wc * ux[2]] };
 }
 
 /** Hand camera `cam` and the room's `light` to the book shader (`uRayO`, `uRayM`, `uScale`, `uFocal`, `uLight`). */

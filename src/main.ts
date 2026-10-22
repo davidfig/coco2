@@ -1,8 +1,12 @@
 import './clear';
-import './startIssue';
+import { startAt } from './startAt';
 import { Engine, Sound } from './engine';
 import { ColorBasic } from './game/coco/basic';
 import { Computer } from './game/computer/computer';
+import { pileCassette, pileSlot } from './game/computer/pile';
+import { IssueSwap } from './game/computer/swap';
+import type { IssueId } from './game/magazine/pages';
+import { drawPage } from './game/magazine/issue';
 import { TextScreen } from './game/coco/screen';
 import { Magazine } from './game/magazine/book';
 import { Notebook } from './game/notes';
@@ -54,6 +58,36 @@ const notebook = new Notebook(
 /** The CoCo 2 on the table in front of the set: a trial, `?nococo` leaves it out. Made after the notebook, so a click on the paper is the paper's. */
 const computer = new Computer(engine.gl, canvas);
 computer.visible = !params.has('nococo');
+/** The covers of the issues piled beside the set are the book's own; until the book has painted its own, it shows the pile's. */
+computer.pile.cover = (issue, ctx) => drawPage(issue, 0, ctx, magazine.state);
+magazine.coverStandIn = (issue, ctx) => computer.pile.coverOf(issue, ctx);
+/** A click on an issue in the pile puts it on the table (the one there goes on the pile) and opens it; one on its cassette only swaps them. */
+computer.onPile = (issue, cassette) => magazine.pickUp(issue, !cassette);
+/**
+ * Another issue picked up (the pile, the book's corner, a note's page link into it): it opens from where it lies on the
+ * pile, the open book first put away (`IssueSwap`, `stepSwap`); the one on the table and the cassettes change places
+ * only once it is open, out of sight. A click on a cassette on the pile, which doesn't open it, and no table (`?nococo`)
+ * change them at once.
+ */
+let swap: IssueSwap | null = null;
+/** The issue the desk shows on the table (and its cassette by the recorder): the one going back, while the other opens from the pile. */
+const onTable = (): IssueId => (swap?.rising ? swap.from : magazine.issue);
+/** The issues the player has but the one on the table, the oldest at the bottom: the pile beside the set. */
+const pileOrder = (): IssueId[] => magazine.issues().filter((id) => id !== onTable());
+magazine.pickUp = (issue, open, page) => {
+  if (swap) return;
+  if (issue === magazine.issue || !computer.visible || (!open && !magazine.open)) {
+    magazine.setIssue(issue);
+    if (open) magazine.show();
+    if (page !== undefined) magazine.goto(page);
+    return;
+  }
+  swap = new IssueSwap(magazine.issue, issue, page);
+  if (notebook.open) notebook.putDown();
+  if (!magazine.open) return;
+  magazine.close();
+  framing.back(true);
+};
 /** The book is drawn over the machine, so a click on it is the book's: its half of the window while open, else the page peeking in. */
 computer.covered = (nx, ny) => (magazine.open ? magazine.inRect(magazine.book, nx, ny) : overPage(magazine.v, nx, ny));
 /**
@@ -69,15 +103,22 @@ computer.onSet = (x, y) => {
 };
 /** Put away while the view is pulled back to the whole desk, the magazine lies on the table beside the machine if there's room. */
 /** The guide's calls, as they show with the paper lying on the table: a hop. */
-const hops = { magazine: new Hop(), notes: new Hop() };
+const hops = { magazine: new Hop(), notes: new Hop(), cassette: new Hop() };
 for (const [what, paper] of [['magazine', magazine], ['notes', notebook]] as const) {
   paper.desk = () => {
     const d = computer.table(what);
     // With the magazine at reading size the notes lie on their spot on the table too, rather than shrinking into the corner (out of view, perhaps).
     const t = what === 'notes' ? Math.max(d.t, smooth(magazine.readT)) : d.t;
-    return { ...d, t, picture: tv.picture, lift: hops[what].lift(d.spot.hd) };
+    // An issue picked up from the pile opens from its place on it.
+    const pile = what === 'magazine' && swap?.rising ? { ...swap.rising.pile, behind: true } : {};
+    return { ...d, t, picture: tv.picture, lift: hops[what].lift(), ...pile };
   };
 }
+/** The issue going back to the pile lies where it was on the table while the other opens. */
+magazine.where = () => {
+  const r = swap?.rising;
+  return r ? { t: r.t, spot: r.spot, picture: tv.picture } : null;
+};
 /** On the table, whichever of the two was looked at last lies on top (the notes, to begin with). */
 let notesOnTop = true;
 notebook.covered = (x, y) => !notesOnTop && overPage(magazine.v, x / engine.gl.drawingBufferWidth, y / engine.gl.drawingBufferHeight);
@@ -102,16 +143,24 @@ const story = new Issue1Story(screen, tv, (f) => magazine.state.flags.has(f), (f
 /** The cassette recorder beside the set: BASIC's tape commands wait for a cassette to be put in it. */
 const recorder = new Recorder(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), instant);
 computer.recorder = recorder;
+/** By the recorder lies the cassette of the issue on the table; the others lie in a pile beside the magazines' pile, in the same order. */
+recorder.current = onTable;
+recorder.piled = (id) => {
+  const i = pileOrder().indexOf(id);
+  return i < 0 ? null : pileCassette(i);
+};
 recorder.sound = new RecorderSound(sound);
 const story2 = new Issue2Story(screen, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), basic.interp, () => tv.flinch());
 /** A new player is drawn to the notes, and then to the magazine, until each has been opened once. */
-const guide = new Guide((f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f));
+const guide = new Guide((f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), () => !!recorder.wanted());
 const puzzles = new PuzzleWatcher(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), [...ISSUE_1_RULES, ...story.rules, ...ISSUE_2_RULES, ...story2.rules]);
 /** `?tamper=ghost|scan|both` overrides how a tampered cell shows (for comparing; the story sets it per issue). */
 const tamperStyle = params.get('tamper') as TamperStyle;
 if (TAMPER_STYLES.includes(tamperStyle)) tv.tamperStyle = tamperStyle;
 
 basic.boot();
+/** `?at=` (`startAt.ts`): the checkpoint's program goes into memory once the CoCo is up. */
+if (startAt?.typed) engine.keyboard.type(startAt.typed);
 /** The room is dark as the page opens; its lights flicker on, and then the set comes on. */
 const lights = new RoomLights(engine.gl, instant);
 /** Seconds since the lights came on for good: the magazine slides in from the right, then the notes come up (`ARRIVE`). */
@@ -148,6 +197,42 @@ story.sleep();
 story2.sleep();
 story.wake();
 let setOn = tv.powerTime >= 0;
+/** Seconds until the room is dark at the end of issue 1's evening (`night`); negative when it isn't going dark. */
+let darkIn = -1;
+/**
+ * The set switched off at the end of issue 1's evening: the room's lights blink out, the night passes in the dark, and
+ * they come on again on the next day, the set and the CoCo with them and the May RAINBOW on the table.
+ */
+function night(): void {
+  lights.night();
+  darkIn = lights.darkAt;
+  magazine.close();
+  if (notebook.open) notebook.putDown();
+  framing.back();
+  tv.switchOn(true, lights.onAt + 0.35);
+}
+/**
+ * The swap (`magazine.pickUp`): once the book is put away, the one picked up is opened from the pile; once it is all the
+ * way open (or put away again), the swap is over and the desk shows it on the table (`onTable`): the one going back on
+ * the pile, the cassettes changed places, all at once and out of sight.
+ */
+function stepSwap(): void {
+  const s = swap;
+  if (!s) return;
+  if (s.waiting) {
+    if (magazine.open || magazine.openT > 0) return;
+    const have = magazine.issues().filter((id) => id !== s.from);
+    const lying = computer.table('magazine');
+    s.rise(lying.spot, lying.t, pileSlot(have.indexOf(s.to), have.length));
+    magazine.letGo();
+    magazine.setIssue(s.to, true);
+    magazine.show();
+    if (s.page !== undefined) magazine.goto(s.page);
+    return;
+  }
+  if (magazine.open && magazine.openT < 1) return;
+  swap = null;
+}
 let bookWasOpen = magazine.open;
 let wideBeforeBook = false;
 engine.updaters.push((dt) => {
@@ -167,16 +252,30 @@ engine.updaters.push((dt) => {
   bookWasOpen = magazine.open;
   framing.step(dt, typedReal, screen.tampered.takeMarked(), basic.interp.state === 'idle' && !magazine.open);
   if (computer.visible) computer.focused = framing.wide && (!magazine.open || framing.desk);
+  stepSwap();
+  // Every issue the player has but the one on the table lies piled beside the set, the oldest at the bottom; one opening
+  // from it is the book's to draw.
+  computer.pile.have = magazine.issues();
+  computer.pile.issues = pileOrder();
+  computer.pile.hidden = swap?.rising ? swap.to : null;
   typedReal = false;
   story.step(dt);
   story2.step(dt);
   const on = tv.powerTime >= 0;
   if (on && !setOn) story.wake();
   if (!on && setOn) {
+    const closing = !magazine.state.flags.has('issue1-closed');
     story.sleep();
     story2.sleep();
+    if (closing && magazine.state.flags.has('issue1-closed')) night();
   }
   setOn = on;
+  // In the dark it is the next day: the CoCo starts afresh and May is on the table, to come in with the lights.
+  if (darkIn >= 0 && (darkIn -= dt) < 0) {
+    story.wake();
+    litFor = 0;
+    magazine.arrive = notebook.arrive = 0;
+  }
 });
 engine.lateUpdaters.push((dt) => {
   if (screen.takeDirty()) {
@@ -195,10 +294,11 @@ engine.lateUpdaters.push((dt) => {
     if (magazine.arrive === 1 && notebook.arrive === 1) litFor = Infinity;
   }
   // The paper is in once it has come in at the window's edge, or, lying on the table, as soon as the lights are up.
-  const call = guide.step(dt, litFor === Infinity || (lights.on && framing.wide), notebook.open, magazine.open);
+  const call = guide.step(dt, litFor === Infinity || (lights.on && framing.wide), notebook.open, magazine.open, framing.wide && computer.visible);
   if (call === 'notes') notebook.bounce();
   if (call) hops[call].start();
   for (const h of Object.values(hops)) h.step(dt);
+  recorder.lift = hops.cassette.lift();
   magazine.beckoned = guide.magazineOut;
   magazine.update(dt, engine.gl.drawingBufferWidth, engine.gl.drawingBufferHeight);
   seen.update(magazine, dt);
@@ -251,11 +351,3 @@ function stationTest(channel = 9): void {
   tv.broadcast(channel, v, 0.6);
 }
 Object.assign(window, { coco: { engine, lights, computer, framing, recorder, screen, basic, interp: basic.interp, tv, vdg, magazine, touchKeys, puzzles, story, story2, notebook, tamperTest, stationTest } });
-
-/** Playtesting: F2 opens the debug menu (checkpoints, flags, name, TV hooks) in dev builds; `?debug` opens it at start, in any build. */
-if (import.meta.env.DEV || params.has('debug')) {
-  void import('./game/debug').then(({ DebugMenu }) => {
-    const menu = new DebugMenu({ magazine, notebook, basic, keyboard: engine.keyboard, tv, recorder, tamperTest, stationTest });
-    if (params.has('debug')) menu.toggle(true);
-  });
-}

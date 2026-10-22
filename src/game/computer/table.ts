@@ -7,7 +7,7 @@ const f = (n: number): string => n.toFixed(4);
  * back under the set's long back) to its front edge, a little in front of the keyboard, as a desk's is. Its veneer, the room's
  * light falling away toward the viewer, the lamp's pool, the shadows of the set, the case and the cords, the crease
  * where it meets the wall; then its rounded front edge, and the dark under it. Needs the computer shader's AT, CAB,
- * HW, HD, wood, fbm, noise, cords, recShadow and behindSet. It covers the room's flat-drawn table.
+ * HW, HD, wood, fbm, noise, cords, recShadow, pileShadow and behindSet. It covers the room's flat-drawn table.
  */
 export const TABLE_GLSL = /* glsl */ `
 const vec2 POOL = vec2(-0.5, 0.1); // the lamp's pool of light on the table, model frame
@@ -33,6 +33,7 @@ vec3 table(vec3 ro, vec3 rd, vec2 p, out float ta) {
     float s = 0.6 * exp(-max(sd, 0.0) * 14.0); // falling back and right, away from the lamp
     s = max(s, 0.65 * exp(-max(cords(tp, 1.0).x, 0.0) * 30.0)); // the cords on the table
     s = max(s, recShadow(tp.xz)); // the recorder, and the cassettes lying in front of it
+    if (uPile > 0.5) s = max(s, pileShadow(tp.xz)); // the old magazines
     vec2 sb = abs(w.xz - vec2(0.15, -0.5 * SET_D - 0.1)) - vec2(CAB.x, 0.5 * SET_D);
     float ss = length(max(sb, 0.0)) + min(max(sb.x, sb.y), 0.0);
     s = max(s, 0.8 * exp(-max(ss, 0.0) * 5.0)); // the set's, falling back and right, darkest at its foot

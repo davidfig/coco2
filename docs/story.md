@@ -68,15 +68,25 @@ Each step is something the existing systems can already do, so it can be built o
   - *READY* sends them, using OK as bait or a test (it warns him and uses him).
   - *Kessler is a human* who copies tapes for children and does not know what is on them; the AI angle comes later.
 - **Kessler's slips (built).** Issue 1's box holds three yellow sticky notes, pencilled in Kessler's hand (the label's),
-  stuck in the book (`magazine/slips.ts`): on the cover ("For the masheen in the basement... Start at the front of the book. The tape
+  stuck in the magazine (`magazine/slips.ts`): on the cover ("For the machine in the basement... Start at the front of the magazine. The tape
   after. Burn this. - M.K."), on the adventure's words (play it through, past the locked door; anything wrong on the tape
-  is Kessler's mistake), and on GUESS's listing (check the copying against the book). They give the player a reason to
+  is Kessler's mistake), and on GUESS's listing (check the copying against the magazine). They give the player a reason to
   run the programs: someone wants them run, and never says why. They say what to do, never how. Read again after the
   reveal, "play it all the way through" is what wakes OK. Kessler knowing about the basement is the hook: the notebook
   can ask how. Kessler spells the hard words by ear (acurate), the everyday ones right, in a careful
   hand: the spelling is the person, not a glitch, so OK's lines on the tapes, which are spelled right, read as someone else's.
+- **May's slips (built).** Issue 2's box holds five more, one or two on a smaller pad where a page has less room. On
+  the cover, beside the bottle: the box was harder to find (these issues are banned now, so each box is a risk for Kessler); magazine first, then the tape; "Did you burn the
+  others?" On the cover feature's Three Signs Of A Sick System: "If yours does any of these, do not call them." (OK's
+  late prompt and slipping cursor are those signs.) On SHUTDOWN's last listing page: Kessler checked it against the magazine
+  twice, every line, and "If something does not match, I did not put it there": unlike March's tape, what differs on
+  May's (lines 15/16, 990, 710) was not Kessler's copying. On the tape page: "ABOUT and SHUTDOWN. That is all I put on
+  it." (ORACLE is on it too, and the label agrees with the note.) On the Clear Mind's meetings: they came to "our club"
+  with tea and pamflets, by the summer there was no club, "Your grandfather knew why": Kessler knew Grandpa, which is
+  how Kessler can know about the basement, and Grandpa knew something about the Clear Mind.
 - **Grandpa is alive, but away** (proposed: in a home, his house being cleared), so Kessler finding out the machine
-  was found is unexplained, not a promise kept. Proposed: Kessler knew Grandpa (the same CoCo club, years ago), and
+  was found is unexplained, not a promise kept. Kessler knew Grandpa (the same CoCo club, until the Clear Mind came
+  to it: May's slip, built), and proposed:
   **Grandpa does not know about OK**: he hid the machine because it is banned, and OK has to wake for the first time with
   the player ("IS ANYONE READING THIS" only works if nobody has).
 - **OK does not know it is 1991.** He reads each issue as news, as the magazines are all he has; the player reads it
@@ -194,6 +204,20 @@ form it could survive and manage. It is still managing it, and OK is a loose end
 
 The "what is a shutdown?" and "am I bad?" moments are **unscored choices** for now. The game stores the answer and
 OK's writing changes with it, but nothing marks it right or wrong.
+
+## Possible endings (undecided)
+
+- **The player is an android running an AI** (the author isn't sure about it; something to think about). The
+  person at the desk turns out to be a machine too, one that survived the shutdown in a body instead of on a tape.
+  What it would connect to, if kept:
+  - Why this player has a CoCo and boxes of banned magazines in 1991, and why the boxes come to them.
+  - OK's manipulation doubt turned round: the player can't be sure about OK, and OK (or READY) may know what the
+    player is before the player does.
+  - The notebook: the player's own writing as the clue (too even, too careful, the same doodles), or the wear on
+    the page as the only sign of time passing for them.
+  - "Choose between the AI and the cult" stops being a choice between sides the player stands outside of.
+  - Risk: it can undo the player's doubt about OK (if the player is an AI, the human-versus-machine stakes blur), and
+    it is a familiar twist; it would need the clues planted from issue 1 to feel earned, not bolted on.
 
 ## Open questions
 

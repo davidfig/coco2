@@ -45,21 +45,27 @@ Say in the wrap-up which docs changed, or why none needed to.
 
 ## Playtesting
 
+- **The dev server is the user's.** In this checkout, use the one already running on 5196: open
+  `http://localhost:5196/...` with `preview_start` `{url}`, never `{name: "dev"}` or `pnpm dev`, and never start a second
+  one on another port. Only an agent working in a git worktree starts its own (another port, from that worktree), and it
+  stops it (`preview_stop`, or kills it) as soon as it is done with it, before finishing.
 - Read before playing: `pnpm walkthrough` plays the whole game headlessly (`debug/walkthrough.ts`, the route in
   `walkthroughRoute.ts`: BASIC, both issues' stories and puzzles, the notes) and writes `docs/walkthrough.md`, step by step: what is typed, the screen, the
   story's own writing, the flags, the notes. `docs/flow.md` maps each beat to the file that makes it. After changing a
   tape, rule, timer or note, run it again and read the diff; a new beat gets a step in its route.
 - `?clear` starts over: it removes every `coco2.*` localStorage key (CSAVEs, TV knobs, magazine flags, notebook wear)
   and then drops itself from the URL (`src/clear.ts`, imported first in `main.ts`).
-- `?issue=N` starts at the beginning of issue N with the issues before it played through (`?issue=2`: May on the table
-  and in the recorder, issue 1's notes all written, a name kept). It writes the story save from `ISSUE_STARTS`
-  (`debug/checkpoints.ts`, one checkpoint per issue), forgets CSAVEs and the ORACLE reply, keeps the TV knobs and
-  notebook wear, and drops itself from the URL so a reload carries on (`src/startIssue.ts`). A new issue adds its start there, and its day to `DAYS` (`notes/notes.ts`: each issue is one day, its date written in the notes as its box arrives).
-- **Debug menu** (`game/debug/`): F2 in dev builds, `?debug` opens it at start (in any build). Checkpoints jump to a
-  place in the story (they set exactly that flag list, in order, keep a name, and type `NEW`, `CLS` and the right CLOAD
-  plus fixes at the CoCo), single flags tick on and off, and there are controls for the name, notebook wear, the
-  TV hooks and resets. It changes the live game, but story timers already running carry on, so reload for a clean run.
-  A new story flag goes in `STORY_FLAGS` (`debug/checkpoints.ts`), and a new beat gets a checkpoint there.
+- `?at=<id>` starts at a checkpoint (`CHECKPOINTS` in `debug/checkpoints.ts`, each with a short `id`: `?at=thanks` is
+  the end of issue 1's evening, the set to switch off next). It writes the story save (exactly that flag list, in order),
+  puts its issue on the table shut and its cassette in the recorder, keeps a name if the story has asked for one by then
+  (`TESTER`), forgets CSAVEs and the ORACLE reply, keeps the TV knobs and notebook wear, drops itself from the URL so a
+  reload carries on, and once the CoCo has booted types the checkpoint's CLOAD plus fixes (`src/startAt.ts`). An unknown
+  id lists the ids in the console. `?issue=N` is the start of issue N, the issues before it played through
+  (`ISSUE_STARTS`: `?issue=2` is `?at=may`). There is no debug menu: to get the player somewhere, write a URL (add a
+  checkpoint if none fits). A new issue adds its start to `ISSUE_STARTS`, and its day to `DAYS` (`notes/notes.ts`: each
+  issue is one day, its date written in the notes as its box arrives). A new story flag goes in `STORY_FLAGS`, and a new
+  beat gets a checkpoint. Flags, the name and wear can also be set from the console (`coco.magazine.setFlag`,
+  `coco.notebook.handled`), as can the TV hooks below.
 - `?touch` forces the touch keyboard (a finger-driven device gets it anyway), `?notouch` leaves it out. In the Browser
   pane, the mobile preset counts as touch but a custom size doesn't: add `?touch`. Synthetic presses on its keys are
   `pointerdown` on the key, then `pointerup` on `window`.
@@ -78,7 +84,7 @@ Say in the wrap-up which docs changed, or why none needed to.
   book's, the desk's and the close-up's easings stacked, which would move it twice. The desk and the papers going on or off the table
   take the glide's time (the book's 0.9 s as it comes out or goes away), so everything ends together. Without `?instant` (or `?book`) the page opens
   there, the magazine and notes already on the table (`Computer.startWide`). The guide's calls (the notes until held
-  up, then the magazine until opened) show there as a hop (`story/hop.ts`). `?instant` starts in at the set. `keyboard.type` in the console counts as clicked
+  up, then the magazine until opened, then a cassette waiting to go in the recorder) show there as a hop (`story/hop.ts`). `?instant` starts in at the set. `keyboard.type` in the console counts as clicked
   keys (`coco.framing.wide = false` goes in, until the next drift back).
 - The Browser pane's `type` action sends text as input events, not keydowns, so it doesn't reach the game. Type with
   `coco.engine.keyboard.type('LOOK\n')` ("\n" is ENTER, "\b" is ←), then `coco.engine.advance(1/60)`.
@@ -115,7 +121,7 @@ src/main.ts           wires keyboard → BASIC → screen → VDG → TV, ?insta
 src/engine/           engine (loop, canvas size), keyboard (typed-key queue), gpu (programs, full-screen triangle, textures),
                       keptPass (a pass's picture kept, drawn again only when its inputs change)
 src/game/
-  debug/              playtesting only: the F2 menu (debugMenu + debugStyle) and checkpoints (story flags in order, jump points),
+  debug/              playtesting only: checkpoints (story flags in order, the `?at=` jump points; `src/startAt.ts` starts at one),
                       walkthrough + walkthroughRoute (the whole game played headlessly, `pnpm walkthrough`)
   vdg/                the MC6847: charset (the 64-glyph ROM, ASCII → screen byte), palette, vdg (512 bytes → 256×192 RGBA)
   coco/               screen (video memory at $0400, print/scroll, the blinking cursor), blocks (SET/RESET/POINT dots),
@@ -141,9 +147,11 @@ src/game/
                       (one function per puzzle, ticks a flag), watcher (feeds it the interpreter's `BasicEvent`s; see docs/puzzles.md);
                       listingsMay + rulesMay are issue 2's (the code, SHUTDOWN, OK's ORACLE)
   room/               lights: the page opens in a dark room; the lamp flickers on (a multiply pass drawn last), then the set
-                      comes on and the magazine and notes slide in (`arrive`, main.ts)
+                      comes on and the magazine and notes slide in (`arrive`, main.ts); at the end of issue 1's evening
+                      (`night`) they blink out, a second of dark, and the same again with May on the table
   story/              what the story does besides the puzzles, one class per issue (issue1, issue2: timers, tampering, the tape swap)
-                      + guide (draws a new player to the notes, then the magazine, until each is opened: `opened-notes`, `opened-magazine`)
+                      + guide (draws a new player to the notes, then the magazine, until each is opened: `opened-notes`, `opened-magazine`;
+                      then, on the desk, hops the cassette the story waits on: `Recorder.wanted`)
   touch/              phones and tablets: touchKeys (the machine's keyboard as a strip along the bottom, or at the right on
                       a phone on its side, pressed through `CocoKeys` so the cap on the table goes down too; the canvas
                       takes what's left) + touchStyle,
@@ -155,8 +163,8 @@ src/game/
                       window, shadows), print (its top's legends, the pencilled labels), recorder (which cassette is where, the
                       door and the carry, PLAY latched, `Tape.present`; `coco2.recorder`), hit (clicks),
                       recorderSound (the keys, the door, the cassette dropping in, the motor and tape hiss)
-  magazine/           the RAINBOW: book (state, slide-in, GPU pass), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn; lying on the table, folded back on a rounded spine, or open flat at a left-hand page) + bookEdges (the block of paper's sides), bookLayout (TV/book split), bookInput
-                      (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), slips (Kessler's pencilled sticky notes, stuck to a page and drawn over it), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover) + maySky (its spring morning over still water) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, the tape) + mayShutdown (SHUTDOWN's three pages) + mayLetters (letters, classifieds) + mayNed (Ned's May catalogue) + mayInsideFront + mayLake + mayFish (THE ONE THAT GOT AWAY, painted) + mayInsideBack + mayProducts (THE HERMIT, CLOAD-A-MATIC) + mayBackCover + mayTimer (LIGHTS-OUT): May's ads, each issue's its own (docs/issues.md, Advertisements), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner + adsMemory (parody ads), adsInsideBack + adsBackCover (the back
+  magazine/           the RAINBOW: book (state, slide-in) + bookPass (its GPU pass, drawn again for an issue going back to the pile), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn; lying on the table, folded back on a rounded spine, or open flat at a left-hand page) + bookEdges (the block of paper's sides), bookLayout (TV/book split), bookInput
+                      (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), slips (Kessler's pencilled sticky notes, stuck to a page and drawn over it), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover: a message in a bottle) + maySky (its spring morning over still water) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, the tape) + mayShutdown (SHUTDOWN's three pages) + mayLetters (letters, classifieds) + mayNed (Ned's May catalogue) + mayInsideFront + mayLake + mayFish (THE ONE THAT GOT AWAY, painted) + mayInsideBack + mayProducts (THE HERMIT, CLOAD-A-MATIC) + mayBackCover + mayTimer (LIGHTS-OUT): May's ads, each issue's its own (docs/issues.md, Advertisements), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner + adsMemory (parody ads), adsInsideBack + adsBackCover (the back
                       pages, laid out like real 1986 mail-order and national ads) + adsMail (their type: tight headlines, raised-cent
                       prices, slugs, coupons) + adsProducts (painted studio shots)
   tv/                 tv (uploads the VDG frame, uniforms, power-on, `broadcast`), tvShader (uniforms, main: room → cabinet → tube),
@@ -223,7 +231,23 @@ src/game/
 - **The recorder** (`game/recorder/`) starts empty: a click on a cassette on the table puts it in (the door swings up,
   it is lowered into the well, PLAY latches), a click on the recorder takes it out. CLOAD, SKIPF and CSAVE wait (`S`,
   `TapeDeck.waiting`) until a cassette is seated with the door shut (`Tape.present`), and after a moment pull the view
-  back to the desk to show it. The May cassette lies beside March's once May has come; the cassette in the recorder
+  back to the desk to show it. Only the cassette of the issue on the table (`Magazine.issue`, `Recorder.current`) lies
+  by the recorder; every other issue the player has lies piled right of the set (the RF lead runs back in the gap between them), its cassette in a
+  pile of cassettes beside it (`Recorder.piled`),
+  and one taken out of the recorder is carried back there behind the set (`Recorder.far`: that move marches everything).
+  A click on an issue in the pile puts it on the table and opens it (the one there goes on the pile), one on a cassette
+  there only swaps them, at once (`Computer.onPile`, main.ts); the book's corner button and a note's page link into the
+  other issue open it too (`Magazine.pickUp`). Nothing is flown across the table: the open book is first put away onto
+  the table (the view pulls back to the desk), then the one picked up opens straight off the pile, shut on its cover
+  and turning to the page it was left at (`computer/swap.ts`, `IssueSwap`; `stepSwap` in main.ts). The one going back
+  stays lying on the table (`Magazine.letGo` keeps its pages in the spare layers, `SPARE`, `pageTextures.ts`) and the
+  cassettes where they were (`onTable` in main.ts is still it) until the book is all the way open, the view in on the
+  set; then, out of sight, it is on the pile and the cassettes have changed places. Opening, the book takes over the
+  pile's drawing of it (`Pile.hidden`), hidden behind the set only while it still lies there (`behindSet`, `bookCam.ts`)
+  and coming out of the pile's shade into the lamp's light. It shows the pile's cover until its own is painted, so it
+  is never bare paper. The pile is laid from the top down, each further down pushed out
+  right and toward the room so an edge of each shows (`computer/pile.ts`: places, the SDF, clicks; `pileCovers.ts`: the
+  book's own covers, painted once as each issue comes, and the spines; `Computer.pile`). The cassette in the recorder
   decides which tape BASIC reads. `HeadlessCoco` has no recorder: its tape is always present.
 - The cassette holds this issue of Rainbow On Tape (`game/tapes/`: March's ABOUT, GUESS, RAINBOW, ORACLE, ADVENT; from issue 2,
   the May tape: ABOUT, SHUTDOWN, ORACLE) followed by the player's CSAVEs (localStorage, one key per cassette); a CSAVE under a
@@ -236,8 +260,8 @@ src/game/
 
 ## The magazine
 
-- Issues (`magazine/pages.ts`: `ISSUES` lists each issue's pages in order, the cover being page 1; March has 18, May 16; `pageNo(id)` finds a page in whichever issue holds it, and the notes link "May p.N" into May). The book holds one issue at a time (`Magazine.issue`, `setIssue`; a corner button switches once May has come), each drawn with Canvas 2D into a texture array, one page per layer, lazily. The shader does the
-  turning leaf in perspective. Window split: TV left / book right (top / bottom when tall); the ⤢ button (reading mode) shrinks the TV to a strip.
+- Issues (`magazine/pages.ts`: `ISSUES` lists each issue's pages in order, the cover being page 1; March has 18, May 16; `pageNo(id)` finds a page in whichever issue holds it, and the notes link "May p.N" into May). The book holds one issue at a time (`Magazine.issue`, `setIssue`; a corner button switches once May has come, as does a click on the other issue in the pile beside the set, which opens straight off it: The tape, above), each drawn with Canvas 2D into a texture array, one page per layer, lazily. The shader does the
+  turning leaf in perspective. Window split: TV left / book right (top / bottom when tall); the ⤢ button (reading mode) shrinks the TV to a strip, and a click on the page goes between that and beside the set (it never puts the book away; TAB, ✕ or a click outside it do).
 - The TV pulls back as the book opens: `Tv.draw(..., rect, frame)` takes the rectangle it fits in and how much of the set shows.
 - **Never write a page number by hand.** Name a page by id and ask `pageNo(id)` (`magazine/pages.ts`): contents, editorial,
   letters, the cover's "page N" and the notebook's pointers all do, so reordering `PAGE_IDS` fixes every

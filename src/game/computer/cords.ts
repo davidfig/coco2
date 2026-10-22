@@ -53,7 +53,7 @@ const overEdge = (x: number): Pt[] => [[x, ZIP * 0.8, TABLE_BACK + 0.01], [x - 0
  * the case's back-left corner and runs back between the set and the recorder and off the table's back edge, down to the wall
  * outlet. The recorder's AC cord, the same zip cord, goes the same way from its left side. The RF lead is thin black coax with a moulded
  * RCA plug at each end: from the TO TV jack, just right of centre, it droops to the table, runs straight back and comes out
- * from behind the case's back-right corner, runs back along the set's right side, the whole depth of the cabinet, round to the Antenna Switchbox taped to the TV's back (whose
+ * from behind the case's back-right corner, runs back close along the set's right side, the whole depth of the cabinet, round to the Antenna Switchbox taped to the TV's back (whose
  * twin-lead goes on the VHF screws), out of sight. The table right behind the case is hidden from the viewer: only the runs out show.
  */
 export const CORDS: readonly Cord[] = [
@@ -74,9 +74,10 @@ export const CORDS: readonly Cord[] = [
     pts: [[TO_TV[0], TO_TV[1], TO_TV[2] - RCA.len - 0.04], [0.24, 0.17, -1.26], [0.28, COAX + 0.01, -1.38],
       // Straight back first, out of sight behind the hump, then out past the back-right corner along the set's foot (its
       // face is at z -2.185: any further back and the set hides it), so it shows coming from behind the case.
-      [0.34, COAX, -1.62], [0.7, COAX, -1.86], [1.3, COAX, -1.96], [1.9, COAX, -1.95], [2.45, COAX, -1.99], [2.85, COAX, -2.18], [3.08, COAX, -2.55],
-      // Slack, out beside the set's right side (its cabinet ends at model x 2.51) back to near its rear, then in behind it to the switchbox.
-      [3.22, COAX, -3.0], [3.3, COAX, -3.6], [3.4, COAX, -4.2], [3.3, COAX, -4.7], [3.0, COAX, -5.08], [2.5, COAX, -5.2], [2.1, COAX, -5.22]],
+      [0.34, COAX, -1.62], [0.7, COAX, -1.86], [1.3, COAX, -1.96], [1.9, COAX, -1.95], [2.4, COAX, -1.99], [2.6, COAX, -2.14],
+      // Back close along the set's right side (its cabinet ends at model x 2.51), in the gap left of the old magazines
+      // piled there (`pile.ts`: their left edge is at x 2.75 or more), to near its rear, then in behind it to the switchbox.
+      [2.65, COAX, -2.5], [2.65, COAX, -3.2], [2.64, COAX, -3.9], [2.62, COAX, -4.5], [2.55, COAX, -4.95], [2.35, COAX, -5.17], [2.1, COAX, -5.22]],
     fittings: [
       // The plug's shell against the panel, then its boot tapering to the cable.
       { a: [TO_TV[0], TO_TV[1], TO_TV[2] + 0.02], b: [TO_TV[0], TO_TV[1], TO_TV[2] - RCA.len], ra: RCA.r, rb: RCA.r },

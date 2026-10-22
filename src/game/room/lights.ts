@@ -20,6 +20,15 @@ const STEPS: readonly (readonly [number, number])[] = [
   [0.95, 0],
   [1.05, 1],
 ];
+/** The lights going out at the end of the evening, a bulb's last stutter: [seconds, level] steps, then dark for `NIGHT`. */
+const OUT: readonly (readonly [number, number])[] = [
+  [0, 1],
+  [0.06, 0.25],
+  [0.11, 0.9],
+  [0.16, 0],
+];
+/** Seconds the room stays dark between the lights going out and coming on again (the night passing). */
+const NIGHT = 1;
 /** Seconds for the filament to heat up and to cool (first-order). */
 const HEAT = 0.025;
 const COOL = 0.06;
@@ -34,8 +43,10 @@ export class RoomLights {
   private time = 0;
   /** This load's switching: each gap between steps a little longer or shorter, so they keep their order. */
   private readonly steps: [number, number][] = [];
-  /** When the lights are on for good, this load (seconds from the first frame): the set comes on after it. */
-  readonly onAt: number;
+  /** When the lights are on for good (seconds from the first frame, or from `night`): the set comes on after it. */
+  onAt: number;
+  /** When the room is fully dark during `night` (seconds from its start); 0 when the lights only come on. */
+  darkAt = 0;
   private program: Program | null = null;
   /** The same tint for what the page lays over the canvas (the magazine's stickers): an SVG filter, made on first use. */
   private matrix: SVGFEColorMatrixElement | null = null;
@@ -43,16 +54,29 @@ export class RoomLights {
   constructor(private readonly gl: WebGL2RenderingContext, on = false) {
     this.level = on ? 1 : 0;
     this.time = on ? Infinity : 0;
-    let t = 0;
-    STEPS.forEach(([at, l], i) => {
-      if (i > 0) t += (at - STEPS[i - 1][0]) * (1 + (Math.random() - 0.5) * 0.3);
+    this.onAt = this.switching(STEPS, 0);
+  }
+
+  /** Adds `steps` from `start` seconds, each gap a little longer or shorter; returns when the last one is. */
+  private switching(steps: readonly (readonly [number, number])[], start: number): number {
+    let t = start;
+    steps.forEach(([at, l], i) => {
+      if (i > 0) t += (at - steps[i - 1][0]) * (1 + (Math.random() - 0.5) * 0.3);
       this.steps.push([t, l]);
     });
-    this.onAt = t;
+    return t;
+  }
+
+  /** The end of the evening: the lights blink out, the room stays dark a moment, and they come on again (`darkAt`, `onAt`). */
+  night(): void {
+    this.steps.length = 0;
+    this.time = 0;
+    this.darkAt = this.switching(OUT, 0);
+    this.onAt = this.switching(STEPS, this.darkAt + NIGHT);
   }
 
   get on(): boolean {
-    return this.level >= 1;
+    return this.level >= 1 && this.time >= this.onAt;
   }
 
   update(dt: number): void {

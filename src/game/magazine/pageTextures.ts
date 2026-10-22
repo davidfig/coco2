@@ -1,6 +1,9 @@
 import { MAX_PAGES } from './issue';
 import { PAGE_H, PAGE_W } from './paper';
 
+/** The two layers past the issue's pages: the pages in view of an issue going back to the pile while the next is painted (`copy`). */
+export const SPARE = MAX_PAGES;
+
 /** `PAPER` (#f7f5ee), the stock a page is painted on. */
 const PAPER_RGBA = [0xf7 / 255, 0xf5 / 255, 0xee / 255, 1];
 
@@ -19,7 +22,7 @@ export class PageTextures {
   constructor(private readonly gl: WebGL2RenderingContext) {
     this.tex = gl.createTexture()!;
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tex);
-    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, this.levels, gl.RGBA8, PAGE_W, PAGE_H, MAX_PAGES);
+    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, this.levels, gl.RGBA8, PAGE_W, PAGE_H, SPARE + 2);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -48,7 +51,25 @@ export class PageTextures {
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
   }
 
-  /** Bare paper in every layer, every level: what shows of a page not painted yet (not black, nor another issue's page). */
+  /** Layer `from` copied into layer `to`, every level (the spare layers keep an issue's pages while its own layers are painted over). */
+  copy(from: number, to: number): void {
+    const gl = this.gl;
+    this.version++;
+    const scissor = gl.isEnabled(gl.SCISSOR_TEST);
+    gl.disable(gl.SCISSOR_TEST);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, fb);
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tex);
+    for (let l = 0; l < this.levels; l++) {
+      gl.framebufferTextureLayer(gl.READ_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.tex, l, from);
+      gl.copyTexSubImage3D(gl.TEXTURE_2D_ARRAY, l, 0, 0, to, 0, 0, Math.max(1, PAGE_W >> l), Math.max(1, PAGE_H >> l));
+    }
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+    gl.deleteFramebuffer(fb);
+    if (scissor) gl.enable(gl.SCISSOR_TEST);
+  }
+
+  /** Bare paper in every page's layer (not the spares), every level: what shows of a page not painted yet (not black, nor another issue's page). */
   blank(): void {
     const gl = this.gl;
     this.version++;

@@ -88,7 +88,7 @@ export interface DeskSpot {
 /** An inch in world units (the case is 37.1 cm across). */
 const INCH = (2 * CASE.hw) / (37.1 / 2.54);
 /** The RAINBOW: a letter-size page, 8½ × 11 in, in the shape its pages are drawn (1024 × 1325). */
-const MAG = { hw: 4.25 * INCH, hd: 4.25 * INCH * (1325 / 1024) };
+export const MAG = { hw: 4.25 * INCH, hd: 4.25 * INCH * (1325 / 1024) };
 /** The notebook's torn-out sheet, as drawn (`SHEET_W` × `SHEET_H` at `SHEET_DPI`): about 7¾ × 10½ in, a little smaller than the magazine. */
 const NOTE = { hw: (SHEET_W / SHEET_DPI / 2) * INCH, hd: (SHEET_H / SHEET_DPI / 2) * INCH };
 /** Where each lies, if anywhere: one arrangement of the desk. */
@@ -178,9 +178,9 @@ export function inHull(o: readonly (readonly [number, number])[], x: number, y: 
   return true;
 }
 
-/** Everything on the desk, on screen (panel units: x0, y0, x1, y1): the set, the case, its cords, the recorder, the table's edge and under it. */
-export function deskBounds(): [number, number, number, number] {
-  const pts = [...CASE_OUTLINE, ...CORDS.flatMap((c) => c.pts.map((p) => project(p[0], 0, p[2]))), ...recorderExtent().map((p) => project(...p))];
+/** Everything on the desk, on screen (panel units: x0, y0, x1, y1): the set, the case, its cords, the recorder, the table's edge and under it, and `more` (model points: the old magazines' pile). */
+export function deskBounds(more: readonly (readonly [number, number, number])[] = []): [number, number, number, number] {
+  const pts = [...CASE_OUTLINE, ...CORDS.flatMap((c) => c.pts.map((p) => project(p[0], 0, p[2]))), ...[...recorderExtent(), ...more].map((p) => project(p[0], p[1], p[2]))];
   return [
     Math.min(-CAB[0], ...pts.map((p) => p[0])),
     Math.min(-CAB[1], ...pts.map((p) => p[1]), project(0, -EDGE.thick, CASE.hd + EDGE.gap)[1] - UNDER),

@@ -50,7 +50,7 @@ export function drawContents(ctx: Ctx): void {
   y += 24;
   const box = rowsFor(
     ctx,
-    [{ text: 'Leave this magazine open beside the set while you play. Click the edge of a page, or press PAGE DOWN and PAGE UP, to turn it. Scroll to zoom in on small print, and drag to move about the page. Press TAB to put it away.', before: 0 }],
+    [{ text: 'Leave this magazine open beside the set while you play. Drag a page across, or press PAGE DOWN and PAGE UP, to turn it. Click a page to read it bigger, and again to bring it back beside the set. Scroll to zoom in on small print, and drag to move about the page. Press TAB to put it away.', before: 0 }],
     lw - 40,
   );
   ctx.strokeStyle = INK;

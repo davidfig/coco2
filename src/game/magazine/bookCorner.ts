@@ -175,7 +175,7 @@ export function attachCorner(mag: Magazine, canvas: HTMLCanvasElement, covers: (
     const have = mag.issues();
     return have[(have.indexOf(mag.issue) + 1) % have.length];
   };
-  const swap = burstButton('#2c68b8', -7, '', () => mag.setIssue(nextIssue()));
+  const swap = burstButton('#2c68b8', -7, '', () => mag.pickUp(nextIssue(), mag.open));
   const read = burstButton('#f08a24', 5, 'Bigger / smaller magazine', () => mag.setReading(!mag.reading));
   const shut = burstButton('#e8312a', -4, 'Put the magazine away (Tab)', () => mag.close());
   shut.say.textContent = 'Put away';

@@ -5,6 +5,7 @@ import { WEAR_GLSL } from './wear';
 import { TABLE_GLSL } from './table';
 import { CORDS_BACK, CORDS_LEFT, CORDS_RIGHT, cordsGlsl } from './cords';
 import { RECORDER_GLSL } from '../recorder';
+import { PILE_GLSL, pileBox } from './pile';
 import { recorderBox } from '../recorder/layout';
 import { BADGE, CAP, CASE, EYE, KB_X0, KB_Z0, PITCH, PLACE, PLATE, PRINT_BADGE_V0, PRINT_KB_V, PRINT_KEYS, PRINT_W, PLATE_T, TABLE, keysGlsl, ventsGlsl } from './layout';
 
@@ -14,7 +15,8 @@ const f = (n: number): string => n.toFixed(4);
  * The CoCo 2 on the table, raymarched: the case (the keyboard deck in front, a sloped face up to the rear hump), the
  * black plate the keys come up through and 53 sculpted caps, the vent slots cut through the hump, the badge plate
  * stuck on it, the cartridge slot in the right side, the seam round the case, the feet; and its shadow on the table.
- * Beside it, the cassette recorder and the cassettes (`recorderGlsl.ts`).
+ * Beside it, the cassette recorder and the cassettes (`recorderGlsl.ts`); right of the set, once May has come, the old
+ * magazines piled up (`pile.ts`).
  * A camera at `EYE` whose rays cross the TV's front plane (z = 0) at the panel point under each pixel, so the model
  * sits in the same picture as the flat-drawn set. Lit by the room's light from the upper left and the screen's glow.
  */
@@ -24,6 +26,7 @@ uniform vec3 uPic;        // the TV's picture centre (pixels) and pixels per pan
 uniform vec3 uRows;       // march only every n-th block of h rows, from the i-th (a band of a kept picture made a frame at a time)
 uniform vec3 uGlow;       // the light the lit screen throws (Tv.glow)
 uniform sampler2D uPrint; // layout.ts drawPrint: the keys' legends (R ink, B red cap) and the badge
+uniform float uFar;       // 1 while a cassette is carried between the recorder and the pile, behind the set
 out vec4 outColor;
 
 const vec2 CAB = vec2(${f(CAB[0])}, ${f(CAB[1])});
@@ -135,6 +138,7 @@ ${keysGlsl()}
 ${ventsGlsl()}
 ${cordsGlsl()}
 ${RECORDER_GLSL}
+${PILE_GLSL}
 
 /** The top shell's outer box, from the seam up. */
 float shell(vec3 p) { return sdBox(p - vec3(0.0, 0.5 * (HUMP + SEAM_Y), 0.0), vec3(HW, 0.5 * (HUMP - SEAM_Y), HD), 0.045); }
@@ -143,7 +147,7 @@ float base(vec3 p) {
   return sdBox(p - vec3(0.0, 0.5 * (SEAM_Y + FOOT) + 0.01, 0.0), vec3(HW - BASE_IN, 0.5 * (SEAM_Y - FOOT) + 0.01, HD - BASE_IN), 0.02);
 }
 
-/** Distance and material: 0 case, 1 cap, 3 feet, 4 the badge, 5 the power cord, 6 the RF lead, 7–10 the cassette cable; 20 and up the recorder. */
+/** Distance and material: 0 case, 1 cap, 3 feet, 4 the badge, 5 the power cord, 6 the RF lead, 7–10 the cassette cable; 20 and up the recorder; 30 and up the pile. */
 vec2 map(vec3 p) {
   float body = shell(p);
   vec3 q = deck(p);
@@ -173,9 +177,10 @@ vec2 map(vec3 p) {
   // The recorder before the cords: each cord is skipped while its box is further than the nearest thing yet, and over
   // the recorder, with only the case to go by, none would be (most of the march's cost, from across the room).
   r = recorder(p, r);
+  if (uPile > 0.5) r = pile(p, r);
   if (p.z < -HD + 0.05 || abs(p.x) > HW - 0.05) {
     vec2 c = cords(p, r.x);
-    if (c.y > 0.0) r = c;
+    if (c.y > 0.0 && c.x < r.x) r = c;
   }
   return r;
 }
@@ -232,6 +237,8 @@ vec3 shade(vec3 p, vec3 rd, float id, float fp) {
   } else if (id == 3.0) {
     alb = vec3(0.02);
     bump = 0.0;
+  } else if (id >= 30.0) {
+    pileMaterial(p, n, id, fp, alb, gloss, bump);
   } else if (id >= 20.0) {
     recMaterial(p, n, rd, id, fp, st, alb, gloss, bump);
   } else if (id >= 5.0) {
@@ -257,6 +264,7 @@ vec3 shade(vec3 p, vec3 rd, float id, float fp) {
   vec3 sn = bump > 0.0 ? stippled(p, n, fp, GRAIN, bump) : n;
   // Turned away from the lamp, the surface is its own shadow (the march would only run into the body): skip it.
   float sh = dot(n, LIGHT) > -0.1 ? softShadow(p + n * 0.006, LIGHT) : 0.0;
+  if (id >= 30.0) sh *= setShade(p); // the pile stands where the set is between it and the lamp
   vec3 col = alb * (vec3(0.1, 0.095, 0.09) * (0.6 + 0.4 * n.y) * ao);           // the dark room
   col += alb * vec3(0.15, 0.15, 0.16) * max(dot(sn, FILL), 0.0) * ao;           // the room's soft fill, front right: no side goes black
   col += alb * vec3(0.6, 0.57, 0.52) * max(dot(sn, LIGHT), 0.0) * sh * (0.4 + 0.6 * ao); // the lamp, upper left
@@ -282,10 +290,19 @@ void main() {
   vec2 p = (gl_FragCoord.xy - uPic.xy) / uPic.z + TUBE_C;
   vec3 ro = EYE - AT;
   vec3 rd = normalize(vec3(p, 0.0) - EYE);
-  // The boxes it lies in: the machine and its cords, and the recorder (the door open, a cassette carried in).
+  // The boxes it lies in: the machine and its cords, the recorder (the door open, a cassette carried in), the pile.
   vec2 b = boxSpan(ro, rd, vec3(${f(CORDS_LEFT)}, 0.0, ${f(CORDS_BACK)}) - 0.02, vec3(${f(CORDS_RIGHT)}, HUMP, HD) + 0.02);
   vec2 rb = boxSpan(ro, rd, vec3(${recorderBox()[0].map(f).join(', ')}), vec3(${recorderBox()[1].map(f).join(', ')}));
   if (rb.x < rb.y) b = b.x < b.y ? vec2(min(b.x, rb.x), max(b.y, rb.y)) : rb;
+  if (uPile > 0.5) {
+    vec2 pb = boxSpan(ro, rd, PILE_LO, PILE_HI);
+    if (pb.x < pb.y) b = b.x < b.y ? vec2(min(b.x, pb.x), max(b.y, pb.y)) : pb;
+  }
+  // A cassette carried between them goes through the space between the recorder's box and the pile's: all of it.
+  if (uFar > 0.5) {
+    vec2 fb = boxSpan(ro, rd, vec3(${f(Math.min(recorderBox()[0][0], pileBox()[0][0]))}, 0.0, ${f(Math.min(recorderBox()[0][2], pileBox()[0][2]))}), vec3(${f(Math.max(recorderBox()[1][0], pileBox()[1][0]))}, ${f(Math.max(recorderBox()[1][1], pileBox()[1][1]))}, ${f(Math.max(recorderBox()[1][2], pileBox()[1][2]))}));
+    if (fb.x < fb.y) b = b.x < b.y ? vec2(min(b.x, fb.x), max(b.y, fb.y)) : fb;
+  }
   float near = b.x, far = b.y;
   // Over the set, whatever lies behind its face is hidden (behindSet): the march stops there.
   vec2 cq = abs(p) - CAB + CAB_R;

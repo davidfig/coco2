@@ -1,174 +1,278 @@
-/** The May issue's cover: a painted cassette floating over still water on a spring morning, and the month's cover lines. */
-import { BAND, Ctx, SANS, SCRIPT, rng, text } from './paper';
+/** The May issue's cover: a message in a bottle afloat on still water on a spring morning, and the month's cover lines. */
+import { Ctx, PAGE_H, SANS, SCRIPT, rng, text } from './paper';
 import { pageNo } from './pages';
 import { STRIP } from './coverArt';
 import { paintify } from './coverPaint';
+import { airbrush, glint } from './adsDetail';
 import { drawMasthead, sparkle } from './cover';
-import { drawMaySky, reflection } from './maySky';
+import { drawMaySky } from './maySky';
 
-/** Where the cassette floats, its size and tilt. The light comes from the sun up-left (`SUN_X` in maySky.ts). */
-const CX = 540;
-const CY = 790;
-const W = 640;
-const H = 400;
-const TILT = -0.13;
+/**
+ * Where the bottle crosses the water (on its axis) and how it lies: neck up and toward the sun (up-left, `SUN_X` in
+ * maySky.ts), the base under the water toward the reader. Everything below is drawn in the bottle's own frame: x across
+ * it, y along it, 0 at the waterline, the neck at negative y.
+ */
+const OX = 790;
+const OY = 1085;
+const TILT = -0.55;
+const SCALE = 1.3;
+/** Half the body's width, its base, the top of its straight side, the neck's half-width and top, the lip, the cork's top. */
+const R = 95;
+const BASE = 175;
+const SHOULDER = -215;
+const NR = 34;
+const NECK = -345;
+const LIP = 17;
+const CORK = -405;
 
-/** One of the cassette's five screws: a dark recess, a lit dome, a slot at its own angle. */
-function screw(ctx: Ctx, x: number, y: number, seed: number): void {
-  const r = rng(seed);
-  ctx.fillStyle = '#0b0b10';
-  ctx.beginPath();
-  ctx.arc(x, y, 13, 0, Math.PI * 2);
-  ctx.fill();
-  const g = ctx.createRadialGradient(x - 4, y - 4, 1, x, y, 10);
-  g.addColorStop(0, '#d8dae4');
-  g.addColorStop(0.5, '#868896');
-  g.addColorStop(1, '#3a3b46');
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(x, y, 10, 0, Math.PI * 2);
-  ctx.fill();
-  const a = r() * Math.PI;
-  ctx.strokeStyle = '#26262e';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(x - Math.cos(a) * 8, y - Math.sin(a) * 8);
-  ctx.lineTo(x + Math.cos(a) * 8, y + Math.sin(a) * 8);
-  ctx.stroke();
+/** A point in the bottle's frame, on the page. */
+function toPage(x: number, y: number): [number, number] {
+  const c = Math.cos(TILT);
+  const s = Math.sin(TILT);
+  return [OX + (x * c - y * s) * SCALE, OY + (x * s + y * c) * SCALE];
 }
 
-/** A tape reel seen through the window: wound tape (a brown disc, a lit rim) round a white hub with six teeth. */
-function reel(ctx: Ctx, x: number, y: number, wound: number, seed: number): void {
-  const r = rng(seed);
-  const t = ctx.createRadialGradient(x - wound * 0.3, y - wound * 0.3, wound * 0.2, x, y, wound);
-  t.addColorStop(0, '#6a3e22');
-  t.addColorStop(0.8, '#4a2a16');
-  t.addColorStop(1, '#2c180c');
-  ctx.fillStyle = t;
+/** The glass's outline, in the bottle's frame. */
+function outline(ctx: Ctx): void {
   ctx.beginPath();
-  ctx.arc(x, y, wound, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(255,200,150,0.35)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(x, y, wound - 2, Math.PI * 1.05, Math.PI * 1.6);
-  ctx.stroke();
-  const hub = ctx.createRadialGradient(x - 6, y - 6, 2, x, y, 30);
-  hub.addColorStop(0, '#ffffff');
-  hub.addColorStop(1, '#bfc2cc');
-  ctx.fillStyle = hub;
-  ctx.beginPath();
-  ctx.arc(x, y, 30, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#1a1a22';
-  ctx.beginPath();
-  ctx.arc(x, y, 17, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#e8eaf0';
-  const turn = r() * Math.PI;
-  for (let i = 0; i < 6; i++) {
-    const a = turn + (i * Math.PI) / 3;
-    ctx.save();
-    ctx.translate(x + Math.cos(a) * 14, y + Math.sin(a) * 14);
-    ctx.rotate(a);
-    ctx.fillRect(-4, -3, 8, 6);
-    ctx.restore();
+  ctx.moveTo(-R, BASE - 24);
+  ctx.quadraticCurveTo(-R, BASE, -R + 24, BASE);
+  ctx.lineTo(R - 24, BASE);
+  ctx.quadraticCurveTo(R, BASE, R, BASE - 24);
+  ctx.lineTo(R, SHOULDER);
+  ctx.bezierCurveTo(R, SHOULDER - 70, NR, SHOULDER - 60, NR, SHOULDER - 110);
+  ctx.lineTo(NR, NECK);
+  ctx.lineTo(-NR, NECK);
+  ctx.lineTo(-NR, SHOULDER - 110);
+  ctx.bezierCurveTo(-NR, SHOULDER - 60, -R, SHOULDER - 70, -R, SHOULDER);
+  ctx.closePath();
+}
+
+/** The bottle's reflection: the part above the water mirrored down-left, a dark smear broken by the ripples. */
+function reflection(ctx: Ctx): void {
+  const lean = Math.tan(TILT);
+  airbrush(ctx, { x: OX - 400, y: OY, w: 620, h: PAGE_H - OY }, 4, (sc) => {
+    const r = rng(81);
+    for (let d = 6; d < PAGE_H - OY; d += 6) {
+      const half = 108 * SCALE * (0.8 + r() * 0.35);
+      const x = OX + d * lean + (r() - 0.5) * 18;
+      sc.fillStyle = `rgba(10,40,40,${Math.max(0, 0.38 * (1 - d / 300)).toFixed(2)})`;
+      sc.fillRect(x - half, OY + d, half * 2, 4);
+    }
+  });
+}
+
+/** Ripple rings where the bottle sits in the water: `front` the near half, drawn over the glass, else the far half. */
+function rings(ctx: Ctx, front: boolean): void {
+  const r = rng(front ? 91 : 92);
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 4; i++) {
+    const rx = (150 + i * 70 + r() * 20) * SCALE;
+    ctx.strokeStyle = `rgba(235,244,255,${(0.45 - i * 0.09).toFixed(2)})`;
+    ctx.lineWidth = 2.2 - i * 0.3;
+    ctx.beginPath();
+    ctx.ellipse(OX + 30 + i * 6, OY + 4, rx, rx * 0.16, 0, front ? 0.15 : Math.PI + 0.1, front ? Math.PI - 0.2 : Math.PI * 2 - 0.15);
+    ctx.stroke();
   }
 }
 
-/** The label: cream card, the six bands across it, the series name typed and the month written in by hand. */
-function label(ctx: Ctx, x: number, y: number, w: number, h: number): void {
-  const g = ctx.createLinearGradient(x, y, x + w, y + h);
-  g.addColorStop(0, '#fbf3dc');
-  g.addColorStop(1, '#d9ccab');
+/** The message: a sheet rolled up and tied with red string, a few lines of ink showing on it. */
+function scroll(ctx: Ctx): void {
+  ctx.save();
+  ctx.translate(6, -10);
+  ctx.rotate(0.05);
+  const w = 38;
+  const top = -165;
+  const bottom = 140;
+  const g = ctx.createLinearGradient(-w, 0, w, 0);
+  g.addColorStop(0, '#fff7e0');
+  g.addColorStop(0.35, '#efe2bf');
+  g.addColorStop(1, '#a8916a');
   ctx.fillStyle = g;
+  ctx.fillRect(-w, top, w * 2, bottom - top);
+  // The rolled end: the sheet's edge spiralling in.
+  ctx.fillStyle = '#e9dbb6';
   ctx.beginPath();
-  ctx.roundRect(x, y, w, h, 10);
+  ctx.ellipse(0, top, w, 9, 0, 0, Math.PI * 2);
   ctx.fill();
-  const band = 11;
-  BAND.forEach((c, i) => {
-    ctx.fillStyle = c;
-    ctx.fillRect(x, y + h - 80 + i * band, w, band);
-  });
-  text(ctx, 'RAINBOW ON TAPE', x + 28, y + 50, `bold 34px ${SANS}`, '#2c2925');
-  text(ctx, 'A', x + w - 40, y + 50, `bold 40px ${SANS}`, '#2c2925', 'right');
-  text(ctx, 'May 1986', x + 30, y + 110, `italic 40px ${SCRIPT}`, '#2c3a8c');
+  ctx.strokeStyle = 'rgba(120,96,60,0.7)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let a = 0; a < Math.PI * 6; a += 0.2) {
+    const k = 1 - a / (Math.PI * 6.5);
+    ctx.lineTo(Math.cos(a) * w * k, top + Math.sin(a) * 9 * k);
+  }
+  ctx.stroke();
+  // Ink, faint through the paper's curve.
+  const r = rng(33);
+  ctx.strokeStyle = 'rgba(44,41,37,0.4)';
+  ctx.lineWidth = 1.6;
+  for (let i = 0; i < 5; i++) {
+    const x = -24 + i * 9;
+    let y = top + 30 + r() * 20;
+    while (y < bottom - 30) {
+      const len = 12 + r() * 30;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(x + (r() - 0.5) * 3, y + len / 2, x, y + len);
+      ctx.stroke();
+      y += len + 6 + r() * 10;
+    }
+  }
+  // The string, round the middle twice.
+  for (const y of [-12, 2]) {
+    ctx.fillStyle = '#b0261c';
+    ctx.fillRect(-w, y, w * 2, 5);
+    ctx.fillStyle = 'rgba(255,190,170,0.6)';
+    ctx.fillRect(-w + 6, y, w * 0.6, 1.5);
+  }
+  ctx.restore();
 }
 
-/** The cassette, floating over the water: lit from the sun up-left, a cool rim along its lower right from the sky. */
-function cassette(ctx: Ctx): void {
-  reflection(ctx, CX, W);
-  ctx.save();
-  ctx.translate(CX, CY);
-  ctx.rotate(TILT);
-  const x = -W / 2;
-  const y = -H / 2;
-  // Shell: smoky black plastic, lit up-left.
-  const body = ctx.createLinearGradient(x, y, x + W * 0.6, y + H * 1.2);
-  body.addColorStop(0, '#4a4b58');
-  body.addColorStop(0.45, '#26262f');
-  body.addColorStop(1, '#121218');
-  ctx.fillStyle = body;
+/** The cork: speckled and brown, its cut top lit by the sun. */
+function cork(ctx: Ctx): void {
+  const top = CORK;
+  const bottom = NECK - LIP;
+  const g = ctx.createLinearGradient(-33, 0, 33, 0);
+  g.addColorStop(0, '#d8a870');
+  g.addColorStop(0.4, '#a87443');
+  g.addColorStop(1, '#5a3a1e');
+  ctx.fillStyle = g;
   ctx.beginPath();
-  ctx.roundRect(x, y, W, H, 22);
-  ctx.fill();
-  // Highlight along the top edge, rim light along the bottom right.
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = 'rgba(235,238,255,0.55)';
-  ctx.beginPath();
-  ctx.moveTo(x + 24, y + 3);
-  ctx.lineTo(x + W - 30, y + 3);
-  ctx.stroke();
-  ctx.strokeStyle = 'rgba(190,220,255,0.55)';
-  ctx.beginPath();
-  ctx.moveTo(x + W - 3, y + 40);
-  ctx.lineTo(x + W - 3, y + H - 24);
-  ctx.quadraticCurveTo(x + W - 3, y + H - 3, x + W - 24, y + H - 3);
-  ctx.lineTo(x + 60, y + H - 3);
-  ctx.stroke();
-
-  label(ctx, x + 34, y + 30, W - 68, H - 130);
-  // The window: a dark slot cut through the label, two reels, the tape running between them.
-  const wx = x + 150;
-  const wy = y + 150;
-  ctx.fillStyle = '#0e0d14';
-  ctx.beginPath();
-  ctx.roundRect(wx, wy, W - 300, 90, 45);
-  ctx.fill();
-  reel(ctx, wx + 45, wy + 45, 42, 7);
-  reel(ctx, wx + W - 345, wy + 45, 30, 8);
-  ctx.fillStyle = 'rgba(255,255,255,0.1)';
-  ctx.beginPath();
-  ctx.roundRect(wx + 8, wy + 6, W - 316, 18, 9);
-  ctx.fill();
-
-  // The lip along the bottom, with its holes for the capstan and the guides.
-  ctx.fillStyle = '#1b1b23';
-  ctx.beginPath();
-  ctx.moveTo(x + 100, y + H);
-  ctx.lineTo(x + 130, y + H - 72);
-  ctx.lineTo(x + W - 130, y + H - 72);
-  ctx.lineTo(x + W - 100, y + H);
+  ctx.moveTo(-33, bottom);
+  ctx.lineTo(-30, top);
+  ctx.lineTo(30, top);
+  ctx.lineTo(33, bottom);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = 'rgba(220,224,255,0.35)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(x + 130, y + H - 72);
-  ctx.lineTo(x + W - 130, y + H - 72);
-  ctx.stroke();
-  ctx.fillStyle = '#050508';
-  for (const [hx, r] of [[-180, 11], [-90, 14], [0, 16], [90, 14], [180, 11]] as const) {
+  const r = rng(44);
+  for (let i = 0; i < 60; i++) {
+    ctx.fillStyle = r() < 0.6 ? 'rgba(60,34,14,0.55)' : 'rgba(240,200,150,0.5)';
     ctx.beginPath();
-    ctx.arc(hx, y + H - 34, r, 0, Math.PI * 2);
+    ctx.arc(-28 + r() * 56, top + 4 + r() * (bottom - top - 6), 0.8 + r() * 1.8, 0, Math.PI * 2);
     ctx.fill();
   }
-  screw(ctx, x + 22, y + 22, 21);
-  screw(ctx, x + W - 22, y + 22, 22);
-  screw(ctx, x + 22, y + H - 22, 23);
-  screw(ctx, x + W - 22, y + H - 22, 24);
-  screw(ctx, 0, y + H - 82, 25);
+  ctx.fillStyle = '#e4bd88';
+  ctx.beginPath();
+  ctx.ellipse(0, top, 30, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(120,80,40,0.5)';
+  for (let i = 0; i < 12; i++) {
+    ctx.beginPath();
+    ctx.arc((r() - 0.5) * 44, top + (r() - 0.5) * 10, 1 + r() * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/** The glass: a green tint, thicker and darker toward every edge, the heavy base, the lip round the neck. */
+function glass(ctx: Ctx): void {
+  ctx.fillStyle = 'rgba(70,150,115,0.3)';
+  outline(ctx);
+  ctx.fill();
+  ctx.save();
+  outline(ctx);
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(15,60,45,0.45)';
+  ctx.lineWidth = 26;
+  outline(ctx);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(8,40,30,0.6)';
+  ctx.lineWidth = 8;
+  outline(ctx);
+  ctx.stroke();
+  const base = ctx.createLinearGradient(0, BASE - 40, 0, BASE);
+  base.addColorStop(0, 'rgba(20,70,50,0)');
+  base.addColorStop(1, 'rgba(20,70,50,0.7)');
+  ctx.fillStyle = base;
+  ctx.fillRect(-R, BASE - 40, R * 2, 40);
   ctx.restore();
+  const lip = ctx.createLinearGradient(-40, 0, 40, 0);
+  lip.addColorStop(0, 'rgba(170,225,195,0.9)');
+  lip.addColorStop(0.5, 'rgba(60,130,100,0.8)');
+  lip.addColorStop(1, 'rgba(15,55,40,0.9)');
+  ctx.fillStyle = lip;
+  ctx.beginPath();
+  ctx.roundRect(-40, NECK - LIP, 80, LIP + 2, 6);
+  ctx.fill();
+}
+
+/** Light on the glass: a long streak down the sunny side, a glint on the shoulder, the sky's rim down the far side. */
+function shine(ctx: Ctx): void {
+  const streak = ctx.createLinearGradient(0, SHOULDER, 0, BASE - 30);
+  streak.addColorStop(0, 'rgba(255,255,245,0.85)');
+  streak.addColorStop(1, 'rgba(255,255,245,0.05)');
+  ctx.fillStyle = streak;
+  ctx.beginPath();
+  ctx.roundRect(-R + 16, SHOULDER + 6, 14, BASE - SHOULDER - 40, 7);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,245,0.7)';
+  ctx.beginPath();
+  ctx.roundRect(-NR + 9, NECK + 8, 7, SHOULDER - 110 - NECK, 4);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(220,240,255,0.18)';
+  ctx.fillRect(R - 34, SHOULDER + 20, 9, BASE - SHOULDER - 70);
+  ctx.strokeStyle = 'rgba(200,230,255,0.6)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(R - 3, SHOULDER - 10);
+  ctx.lineTo(R - 3, BASE - 26);
+  ctx.stroke();
+  glint(ctx, -55, SHOULDER - 32, 26, 10, -0.9, 0.9);
+}
+
+/** Below the waterline the bottle is seen through the water: bluer and darker with depth, the ripples across it. */
+function underwater(ctx: Ctx): void {
+  ctx.save();
+  outline(ctx);
+  ctx.clip();
+  ctx.rotate(-TILT);
+  const deep = ctx.createLinearGradient(0, 0, 0, 260);
+  deep.addColorStop(0, 'rgba(40,90,150,0.35)');
+  deep.addColorStop(1, 'rgba(15,40,95,0.8)');
+  ctx.fillStyle = deep;
+  ctx.fillRect(-400, 0, 800, 400);
+  const r = rng(55);
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 24; i++) {
+    const y = 8 + r() * 220;
+    const x = -220 + r() * 400;
+    ctx.strokeStyle = r() < 0.5 ? 'rgba(10,30,80,0.3)' : 'rgba(230,240,255,0.22)';
+    ctx.lineWidth = 1.5 + r() * 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 30 + r() * 70, y);
+    ctx.stroke();
+  }
+  // The meniscus: a bright line where the water meets the glass, a dark one just under it.
+  ctx.fillStyle = 'rgba(245,250,255,0.85)';
+  ctx.fillRect(-400, -2, 800, 3);
+  ctx.fillStyle = 'rgba(10,30,60,0.4)';
+  ctx.fillRect(-400, 2, 800, 3);
+  ctx.restore();
+}
+
+/** The bottle in the water, back to front: reflection, far ripples, what is inside, the glass, the water over it. */
+function bottle(ctx: Ctx): void {
+  reflection(ctx);
+  rings(ctx, false);
+  ctx.save();
+  ctx.translate(OX, OY);
+  ctx.rotate(TILT);
+  ctx.scale(SCALE, SCALE);
+  ctx.save();
+  outline(ctx);
+  ctx.clip();
+  scroll(ctx);
+  // The cork's end, pushed down inside the neck.
+  ctx.fillStyle = '#8a5a30';
+  ctx.fillRect(-30, NECK, 60, 40);
+  ctx.restore();
+  glass(ctx);
+  cork(ctx);
+  shine(ctx);
+  underwater(ctx);
+  ctx.restore();
+  rings(ctx, true);
 }
 
 function line(ctx: Ctx, s: string, x: number, y: number, color: string, size: number): void {
@@ -176,12 +280,13 @@ function line(ctx: Ctx, s: string, x: number, y: number, color: string, size: nu
   text(ctx, s, x, y, `bold ${size}px ${SANS}`, color);
 }
 
-/** The May cover: the masthead over a painted cassette, and what is inside. */
+/** The May cover: the masthead over a painted message in a bottle, and what is inside. */
 export function drawMayCover(ctx: Ctx): void {
   drawMaySky(ctx);
-  cassette(ctx);
-  // The sun catching the shell's corner and the water.
-  sparkle(ctx, CX - 300, CY - 160, 34, 4);
+  bottle(ctx);
+  // The sun catching the bottle's shoulder and the water.
+  const [gx, gy] = toPage(-55, SHOULDER - 32);
+  sparkle(ctx, gx, gy, 30, 4);
   sparkle(ctx, 200, 1058, 22, 5);
   paintify(ctx);
   drawMasthead(ctx, 'May 1986');

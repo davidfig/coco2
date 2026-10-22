@@ -14,7 +14,8 @@ the game wrote on the screen by itself (the row before → after); the notebook 
 **1. The page opens: the set comes on, the CoCo boots. The guide bounces the notes** (0:00)
 
 - notes + Found Grandpa's CoCo 2 in the basement. Same as the one at the museum. Is it even legal?
-- notes + A box on the step: the March 1986 RAINBOW and a tape. No name on it
+- notes + A box on the step: the March 1986 RAINBOW and a tape, with sticky notes in it. No name, just M.K.
+- notes + How does M.K. know about the basement? ❓
 - notes + PRINT "HELLO" first. p.6 ❓
 
 **2. Holds up the notes** (0:00)
@@ -67,7 +68,7 @@ OK
 - flag `first-program` (0:05)
 - notes ~~Type in the program, p.7~~
 - notes ~~Typed it in. Now RUN it and see what it does~~
-- notes + Adventure is on the tape. CLOAD it, RUN. p.8 ❓
+- notes + Adventure is on the cassette tape. Put it in the recorder, CLOAD, RUN. p.8 ❓
 
 ### Issue 1: ADVENT
 
@@ -85,20 +86,22 @@ OK
 - flag `tape-inserted` (0:06)
 - flag `adventure-loaded` (0:06)
 - flag `adventure-sn` (0:06)
-- notes ~~Adventure is on the tape. CLOAD it, RUN. p.8~~
-- notes + Label on the tape, in pencil: "Copied by hand, for you. Mistakes are mine. - M. Kessler"
+- notes ~~Adventure is on the cassette tape. Put it in the recorder, CLOAD, RUN. p.8~~
+- notes + M. Kessler on the tape's label. Same pencil as the stickies
 - notes + ?SN ERROR IN 30. LIST 30, fix it. p.7 ❓
 
 **9. Lists the broken line and types it as the magazine prints it** (0:07)
 
 ```
 LIST 30
-30 PRNT "THE TAPE CRACKLES."
+30 PRNT "SOMEONE HAS BEEN HERE B
+EFORE."
 OK
-30 PRINT "THE TAPE CRACKLES."
+30 PRINT "SOMEONE HAS BEEN HERE
+BEFORE."
 RUN
 
-THE TAPE CRACKLES.
+SOMEONE HAS BEEN HERE BEFORE.
 TYPE LOOK TO BEGIN.
 
 
@@ -211,7 +214,7 @@ DUST ON THE GLASS:
 ```
 
 - flag `mirror-read` (0:14)
-- notes + In the dust on the mirror: NEVES
+- notes + NEVES?
 
 **15. North to the tower: the clock** (0:15)
 
@@ -411,7 +414,7 @@ OK
 - flag `tamper-name` (0:28)
 - **story** row 8: `ALEX` → `OK` (0:31)
 - notes + After I won, HELLO wrote itself on the screen. I didn't type it
-- notes + "Mistakes are mine." GUESS is printed, p.13. CHECK it ❓
+- notes + Do what M.K.'s sticky says. GUESS is printed, p.13. CHECK it ❓
 - notes + The prompt said my name instead of OK. Just for a second
 
 **23. CHECKs it** (0:31)
@@ -443,7 +446,7 @@ OK
 LIST
 10 REM GUESS MY NUMBER
 20 CLS:X=RND(-TIMER)
-30 PRINT "GUESS MY NUMBER"
+30 PRINT "GUESS MY NUBMER"
 40 PRINT
 50 PRINT "I AM THINKING OF A NUM
 BER"
@@ -453,10 +456,10 @@ BER"
 90 T=T+1
 100 IF G<N THEN PRINT "TOO LOW."
 :GOTO 80
-110 IF G>N THEN PRINT "TOO HIGH.
+110 IF G>N THEN PRINT "TOO HIHG.
 ":GOTO 80
 120 PRINT:PRINT "YOU GOT IT IN";
-T;"TRIES!"
+T;"TIRES!"
 125 REM IS ANYONE READING THIS
 130 PRINT:INPUT "PLAY AGAIN (Y/N
 )";A$
@@ -471,7 +474,7 @@ OK
 **25. Turns to GUESS on p.13** (0:33)
 
 - flag `seen-guess` (0:33)
-- notes ~~"Mistakes are mine." GUESS is printed, p.13. CHECK it~~
+- notes ~~Do what M.K.'s sticky says. GUESS is printed, p.13. CHECK it~~
 - notes ~~Odd line in GUESS. Is it on p.13?~~
 - notes + Line 125: "Is anyone reading this"
 - notes + Who is asking? ❓
@@ -501,7 +504,7 @@ OK
 - **story** the next day: the CoCo boots afresh, memory empty (0:49)
 - flag `issue2-waiting` (0:49)
 - notes + **Mar 15, 1991**
-- notes + Another box on the step: the May RAINBOW and a new tape
+- notes + Another box on the step: the May RAINBOW and a new tape. More of M.K.'s stickies
 - notes + What's on the new tape? May p.11 ❓
 
 **29. Puts the May cassette in the recorder** (0:50)

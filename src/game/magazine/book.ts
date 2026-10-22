@@ -1,18 +1,16 @@
-import { FULLSCREEN_VERT, KeptPass, Program, linkProgram } from '../../engine';
-import type { DeskSpot } from '../computer/layout';
-import { camBounds, onTable, setCam } from './bookCam';
-import { BOOK_FRAG } from './bookShader';
-import { Flip, PAGE_FIT_H, PAGE_NEAR_W, PAGE_UNIT_H, Rect, TILT, View, bookBounds, clamp, layoutAt, leafLayers, lerp, putAway, screenToBook, smooth, spreadView, tvFrame, viewIn } from './bookLayout';
+import { KeptPass } from '../../engine';
+import { BookPass, type Lying } from './bookPass';
+import { Flip, PAGE_FIT_H, advanceFlip, PAGE_NEAR_W, PAGE_UNIT_H, Rect, TILT, View, clamp, layoutAt, leafLayers, lerp, putAway, screenToBook, smooth, spreadView, tvFrame, viewIn } from './bookLayout';
 import { IssueState, newState } from './data';
 import { PagePainter } from './pagePainter';
-import { PageTextures } from './pageTextures';
+import { PageTextures, SPARE } from './pageTextures';
 import { linkAt } from './pageLinks';
 import { ISSUES, ISSUE_ORDER, pageIndex, type AnyPageId, type IssueId } from './pages';
 import { readSave, writeSave } from './bookSave';
 import { loadFonts } from './fonts';
 import { PAGE_H, PAGE_W } from './paper';
 
-const FLIP_SECONDS = 0.8;
+
 const MAX_ZOOM = 4;
 /** Pages are readied only after this long (seconds), when the set has warmed up. */
 const PRELOAD_AFTER = 2.5;
@@ -68,11 +66,33 @@ export class Magazine {
    * Put away, how far it lies on the table instead (0..1: main.ts, from `Computer.tableT`, as the view pulls back to the
    * desk) and where the set's picture is (`Tv.picture`), which places the room's camera on screen.
    */
-  desk: () => { t: number; spot?: DeskSpot; picture: readonly number[]; lift?: number } = () => ({ t: 0, picture: [] });
+  desk: () => Lying = () => ({ t: 0, picture: [] });
+  /**
+   * Pick up another issue (`open`: and open it, at `page` if given): main.ts opens it from the pile and puts the one on
+   * the table there once it is open (`IssueSwap`); without that, it is simply put on the table.
+   */
+  pickUp: (id: IssueId, open: boolean, page?: number) => void = (id, open, page) => {
+    this.setIssue(id);
+    if (open) this.show();
+    if (page !== undefined) this.goto(page);
+  };
+  /** The issue's cover as the pile has it painted (main.ts), for its layer until the book's own is painted: false if it has none yet. */
+  coverStandIn: (id: IssueId, ctx: CanvasRenderingContext2D) => boolean = () => false;
+  /**
+   * The issue going back to the pile while the next opens from it (`letGo`): how it lay, the pages it showed (copied to
+   * the spare layers), and where it lies (`where`, main.ts); drawn under the one opening.
+   */
+  private loose: { v: View; out: View; layers: [number, number, number, number]; count: number } | null = null;
+  where: () => Lying | null = () => null;
+  /** The page to turn to when it is next opened: picked up from the pile, it lies shut on its cover until then. */
+  private reopen: number | null = null;
 
-  private readonly program: Program;
-  private readonly vao: WebGLVertexArrayObject;
+  private readonly pass: BookPass;
   private readonly kept: KeptPass;
+  private readonly keptLoose: KeptPass;
+  /** The view as `update` made it, before it is laid on the table (`draw`). */
+  private bare: View = this.v;
+  private standIn: CanvasRenderingContext2D | null = null;
   private readonly pages: PageTextures;
   /** Paints the pages (in a worker) and puts them on the GPU. */
   private readonly painter: PagePainter;
@@ -81,12 +101,12 @@ export class Magazine {
   private fontsReady = false;
   private savedView = ''; // `viewKey()` (issue, page) as last saved; `update` saves when it changes
 
-  constructor(private readonly gl: WebGL2RenderingContext) {
+  constructor(gl: WebGL2RenderingContext) {
     this.load();
-    this.program = linkProgram(gl, FULLSCREEN_VERT, BOOK_FRAG);
-    this.vao = gl.createVertexArray()!;
     this.kept = new KeptPass(gl);
+    this.keptLoose = new KeptPass(gl);
     this.pages = new PageTextures(gl);
+    this.pass = new BookPass(gl, this.pages);
     this.painter = new PagePainter(this.pages, this.state);
     // Pages are painted once the typefaces are in (any painted before then, again), then all of them are readied.
     void loadFonts().then(() => {
@@ -106,15 +126,40 @@ export class Magazine {
     return ISSUE_ORDER.filter((id) => id === 'march' || this.state.flags.has('issue2-waiting'));
   }
 
-  /** Put another issue on the table, open at the page it was left on. No page-turn: it is a different magazine. */
-  setIssue(id: IssueId): void {
+  /**
+   * Put another issue on the table, open at the page it was left on, or (`shut`: picked up from the pile) shut on its
+   * cover, to turn to that page when it is opened. No page-turn: it is a different magazine. Its cover goes up at once
+   * (the pile's, till its own is painted), so it is never bare paper.
+   */
+  setIssue(id: IssueId, shut = false): void {
     if (id === this.issue) return;
-    this.pagesAt[this.issue] = this.pageId(this.pageGoal);
+    this.pagesAt[this.issue] = this.pageId(this.reopen ?? this.pageGoal);
     [this.issue, this.flip, this.zoomGoal] = [id, null, 1];
     this.painter.forget();
+    if (!this.standIn) {
+      const c = document.createElement('canvas');
+      [c.width, c.height] = [PAGE_W, PAGE_H];
+      this.standIn = c.getContext('2d')!;
+    }
+    if (this.coverStandIn(id, this.standIn)) this.pages.upload(0, this.standIn.canvas);
     const at = this.pagesAt[id];
-    this.place(at ? (ISSUES[id] as readonly AnyPageId[]).indexOf(at) : 0);
+    const page = at ? (ISSUES[id] as readonly AnyPageId[]).indexOf(at) : 0;
+    this.place(shut ? 0 : page);
+    this.reopen = shut && page > 0 ? page : null;
+    this.painter.ensure(id, 0, true);
+    if (page > 0) for (const p of [page, page % 2 ? page + 1 : page - 1]) if (p < this.count) this.painter.ensure(id, p);
     this.save();
+  }
+
+  /**
+   * The issue on the table is going back to the pile (main.ts, before `setIssue` puts the next there): its pages in view
+   * go to the spare layers, and it is drawn as it lies, wherever `where` says, until `where` gives null.
+   */
+  letGo(): void {
+    const [L, R] = leafLayers(null, this.spread, this.count);
+    if (L >= 0) this.pages.copy(L, SPARE);
+    if (R >= 0) this.pages.copy(R, SPARE + 1);
+    this.loose = { v: this.bare, out: this.out, layers: [L >= 0 ? SPARE : -1, R >= 0 ? SPARE + 1 : -1, -1, -1], count: this.count };
   }
 
   /** Rest the book open at page `page` at once. */
@@ -131,6 +176,7 @@ export class Magazine {
 
   show(): void {
     this.open = true;
+    if (this.reopen !== null) this.goto(this.reopen);
   }
 
   close(): void {
@@ -147,6 +193,7 @@ export class Magazine {
 
   /** Turn to a page (0-based), one leaf at a time. */
   goto(page: number): void {
+    this.reopen = null;
     this.pageGoal = clamp(Math.round(page), 0, this.count - 1);
     this.goal = Math.ceil(this.pageGoal / 2);
     this.zoomGoal = 1;
@@ -188,8 +235,8 @@ export class Magazine {
 
   /** Jump to page `index` (0-based) of an issue (the notebook's pointers are all into March). */
   showPage(index: number, issue: IssueId = 'march'): void {
+    if (issue !== this.issue) return this.pickUp(issue, true, index);
     this.show();
-    this.setIssue(issue);
     this.goto(index);
   }
 
@@ -251,7 +298,7 @@ export class Magazine {
     this.openT = step(this.openT, this.open ? 1 : 0, 0.9);
     this.readT = step(this.readT, this.reading ? 1 : 0, 0.7);
     this.hoverT = step(this.hoverT, (this.hover || this.beckoned) && !this.open ? 1 : 0, 0.2);
-    this.advanceFlip(dt);
+    advanceFlip(this, dt);
     if (this.viewKey() !== this.savedView) this.save();
     // Every page is readied before it is needed, so turning rarely waits: one asked for a frame once the fonts are in, none
     // while the set warms up or the book moves (painting is the worker's, but each page still goes up to the GPU here).
@@ -296,76 +343,24 @@ export class Magazine {
     // On a left-hand page the right-hand one shows at the edge as far as the rect lets it, opening out as the view slides there.
     const v: View = { W, H, rect, scale, fit, vx: this.camX + this.pan.x, vy: this.pan.y, c: this.camX, ext: [sv.xmin, sv.xmax, sv.stackL, sv.stackR], win, see: [win[0], lerp(win[1], sv.xmax, smooth(clamp(-2 * this.camX, 0, 1)))], tilt: TILT, roll: 0, pivot: [0, 0], clip: rect };
     this.out = putAway(viewIn(v, layoutAt(W / H, this.hoverT, 1, this.readT, this.arrive).book, this.zoom), 1);
-    this.v = putAway(v, open);
+    this.v = this.bare = putAway(v, open);
   }
 
-  private advanceFlip(dt: number): void {
-    if (!this.flip && this.goal !== this.spread) {
-      const dir = this.goal > this.spread ? 1 : -1;
-      this.flip = { leaf: dir > 0 ? this.spread : this.spread - 1, dir, t: 0, to: 1, held: false };
-    }
-    const f = this.flip;
-    // Held, the edge goes first; let go, the air holds it back behind the way the leaf is moving. Paper takes a moment to flex over.
-    const bendGoal = !f ? 0 : f.held ? f.dir : -f.dir * (f.to ? 1 : -1);
-    this.bend += Math.sign(bendGoal - this.bend) * Math.min(Math.abs(bendGoal - this.bend), dt / 0.25);
-    if (!f || f.held) return;
-    const far = Math.abs(this.goal - this.spread) > 1;
-    const step = dt / (far ? FLIP_SECONDS * 0.4 : FLIP_SECONDS);
-    f.t = f.to ? f.t + step : f.t - step;
-    if (f.t >= 1) {
-      this.spread += f.dir;
-      this.flip = null;
-    } else if (f.t <= 0) {
-      this.flip = null;
-    }
-  }
+
 
   draw(): void {
-    const gl = this.gl;
     const desk = this.desk();
-    const { view: v, cam, light, desk: lying, spread } = onTable(this.v, this.out, desk.spot ? desk.t : 0, smooth(this.openT), desk.spot!, desk.picture, desk.lift);
-    this.v = v;
-    if (v.clip[0] >= v.W || v.clip[1] >= v.H || v.clip[2] <= 0 || v.clip[3] <= 0) return;
-    const f = this.flip;
-    const [L, R, F, B] = leafLayers(f, this.spread, this.count);
-    for (const i of [L, R, F, B]) if (i >= 0) this.ensure(i);
-    const bounds = v.cam ? camBounds(cam, v, !!f) : bookBounds(v, !!f);
-    const angle = f ? Math.PI * (f.dir > 0 ? smooth(f.t) : 1 - smooth(f.t)) : 0;
-    const vals = { res: [v.W, v.H], clip: v.clip, theta: angle, flipOn: f ? 1 : 0, bend: this.bend, fold: smooth(this.openT), layers: [L, R, F, B], ext: v.ext, win: v.win, see: v.see };
-    // The book lies still more often than not while the rest moves: its picture is kept, and marched again only when
-    // something it shows changes (the view, the leaf, a page painted).
-    const key = [...Object.values(vals).flat(), ...cam.o, ...cam.m, cam.scale, cam.focal, light, lying, spread, ...bounds, this.count, this.pages.version];
-    gl.bindVertexArray(this.vao);
-    this.kept.draw(key, bounds, () => {
-      gl.useProgram(this.program.prog);
-      const u = this.program.u;
-      gl.uniform2f(u.uRes, v.W, v.H);
-      gl.uniform4f(u.uClip, ...v.clip);
-      setCam(gl, u, cam, light);
-      gl.uniform1f(u.uH, PAGE_UNIT_H);
-      gl.uniform1f(u.uTheta, angle);
-      gl.uniform1f(u.uFlipOn, vals.flipOn);
-      gl.uniform1f(u.uBend, this.bend);
-      gl.uniform1f(u.uFold, vals.fold);
-      [u.uL, u.uR, u.uF, u.uB].forEach((loc, i) => gl.uniform1f(loc, vals.layers[i]));
-      gl.uniform4f(u.uExt, ...v.ext);
-      gl.uniform2f(u.uWin, ...v.win);
-      gl.uniform2f(u.uSee, ...v.see);
-      for (const [loc, x] of [[u.uDesk, lying], [u.uSpread, spread], [u.uTexW, PAGE_W], [u.uLastPage, this.count - 1]] as const) gl.uniform1f(loc, x);
-      gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.pages.tex);
-      gl.uniform1i(u.uPages, 1);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-      gl.activeTexture(gl.TEXTURE0);
-    });
+    const where = this.loose && this.where();
+    if (!where) this.loose = null;
+    // The issue going back to the pile, lying shut where it was while the one from the pile opens.
+    if (this.loose && where) this.pass.draw(this.keptLoose, { ...this.loose, desk: where, open: 0, flip: null, bend: 0 });
+    const open = smooth(this.openT);
+    const layers = leafLayers(this.flip, this.spread, this.count);
+    for (const i of layers) if (i >= 0) this.ensure(i);
+    this.v = this.pass.draw(this.kept, { v: this.v, out: this.out, desk, open, flip: this.flip, bend: this.bend, layers, count: this.count });
   }
 
   // ---- pages ----
-
-  /** Paint every page again (the story flags changed under them: the debug menu). */
-  repaint(): void {
-    this.painter.forget(false);
-  }
 
   /** Page `i` is in view: get it painted and onto the GPU first, unless it already is (until then it is bare paper). */
   private ensure(i: number): void {
@@ -373,13 +368,13 @@ export class Magazine {
   }
 
   private viewKey(): string {
-    return `${this.issue} ${this.pageGoal}`;
+    return `${this.issue} ${this.reopen ?? this.pageGoal}`;
   }
 
   save(): void {
     this.savedView = this.viewKey();
     const { flags } = this.state;
-    const page = this.pageId(this.pageGoal) ?? ISSUES[this.issue][0];
+    const page = this.pageId(this.reopen ?? this.pageGoal) ?? ISSUES[this.issue][0];
     this.pagesAt[this.issue] = page;
     writeSave({ flags: [...flags], issue: this.issue, pages: { ...this.pagesAt }, page });
   }

@@ -152,6 +152,7 @@ export interface TvEnd {
   tv: Rect;
   frame: number;
   open: number;
+  read: number;
   near: number;
   w: number;
 }
@@ -174,7 +175,7 @@ export function tvEnds(aspect: number, openT: number, readT: number, nearT: numb
         // In close in a tall window, the set fits above the book, which otherwise comes up over its bottom.
         const top = L.book.y + L.book.h;
         const tv = near && open && aspect < TALL ? { ...L.tv, y: top, h: L.tv.y + L.tv.h - top } : L.tv;
-        ends.push({ tv, frame: tvFrame(open, read, near), open, near: open * near, w });
+        ends.push({ tv, frame: tvFrame(open, read, near), open, read: open * read, near: open * near, w });
       }
   return ends;
 }
@@ -323,4 +324,29 @@ export function leafLayers(f: Flip | null, spread: number, count: number): [numb
   const layer = (i: number) => (i >= 0 && i < count ? i : -1);
   if (f) return [layer(2 * f.leaf - 1), layer(2 * f.leaf + 2), layer(2 * f.leaf), layer(2 * f.leaf + 1)];
   return [layer(2 * spread - 1), layer(2 * spread), -1, -1];
+}
+
+/** Seconds a leaf takes to turn (a far turn, several leaves on, goes faster). */
+const FLIP_SECONDS = 0.8;
+
+/** One frame of the book's turning leaf: a turn started toward the spread it is heading for (`goal`), carried on, or ended; and its bend. */
+export function advanceFlip(b: { flip: Flip | null; goal: number; spread: number; bend: number }, dt: number): void {
+  if (!b.flip && b.goal !== b.spread) {
+    const dir = b.goal > b.spread ? 1 : -1;
+    b.flip = { leaf: dir > 0 ? b.spread : b.spread - 1, dir, t: 0, to: 1, held: false };
+  }
+  const f = b.flip;
+  // Held, the edge goes first; let go, the air holds it back behind the way the leaf is moving. Paper takes a moment to flex over.
+  const bendGoal = !f ? 0 : f.held ? f.dir : -f.dir * (f.to ? 1 : -1);
+  b.bend += Math.sign(bendGoal - b.bend) * Math.min(Math.abs(bendGoal - b.bend), dt / 0.25);
+  if (!f || f.held) return;
+  const far = Math.abs(b.goal - b.spread) > 1;
+  const step = dt / (far ? FLIP_SECONDS * 0.4 : FLIP_SECONDS);
+  f.t = f.to ? f.t + step : f.t - step;
+  if (f.t >= 1) {
+    b.spread += f.dir;
+    b.flip = null;
+  } else if (f.t <= 0) {
+    b.flip = null;
+  }
 }

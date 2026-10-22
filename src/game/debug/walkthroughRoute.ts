@@ -33,7 +33,7 @@ export const MARCH: readonly Part[] = [
     title: 'Issue 1: ADVENT',
     steps: [
       { say: `Loads the adventure (p.${pageNo('tape')}) and runs it`, type: ['CLOAD "ADVENT"', 'RUN'] },
-      { say: 'Lists the broken line and types it as the magazine prints it', type: ['LIST 30', '30 PRINT "THE TAPE CRACKLES."', 'RUN'] },
+      { say: 'Lists the broken line and types it as the magazine prints it', type: ['LIST 30', '30 PRINT "SOMEONE HAS BEEN HERE BEFORE."', 'RUN'] },
       { say: 'Looks, in the dark, and reads it', type: ['LOOK'], wait: 3 },
       { say: 'Takes the lamp and looks again', type: ['TAKE LAMP', 'LOOK'] },
       { say: 'West to the cellar: the box', type: ['W', 'EXAMINE BOX'] },

@@ -12,7 +12,7 @@ const HINT_KEY = 'coco2.rainbow.hint';
 
 /**
  * Everything the reader does to the magazine, handled like paper rather than a document viewer: drag a page across
- * the spine to turn it (let go early and it falls back), click a page to put it away (at reading size, to turn it), double-click to lean in on it (drag
+ * the spine to turn it (let go early and it falls back), click a page to go between beside the set and reading size, double-click to lean in on it (drag
  * to move about, double-click to lean back), scroll or swipe to flip, pinch to zoom. TAB puts it
  * away, PAGE UP/DOWN turn. A few starbursts on the page corner remain (bookCorner). Typing is left alone so the CoCo keeps listening
  * while the magazine is open.
@@ -175,20 +175,10 @@ export function attachBookInput(mag: Magazine, canvas: HTMLCanvasElement, covers
       mag.follow(to);
       return heardTurn();
     }
-    const [px, py] = mag.toBook(nx, ny);
     if (mag.zoom > 1.05) return;
     // Wait a moment: a second click is a double-click, which leans in instead.
-    // Beside the set, a click puts the magazine away; at reading size it turns the page.
-    if (!mag.reading) {
-      clickTimer = window.setTimeout(() => mag.close(), DOUBLE_MS);
-      return;
-    }
-    const dir = Math.abs(px - mag.camX) > 0.55 ? 0 : px > mag.camX ? 1 : -1;
-    if (!dir || Math.abs(py) >= 0.7) return;
-    clickTimer = window.setTimeout(() => {
-      mag.turn(dir);
-      heardTurn();
-    }, DOUBLE_MS);
+    // A click on the page goes between beside the set and reading size.
+    clickTimer = window.setTimeout(() => mag.setReading(!mag.reading), DOUBLE_MS);
   }
 
   canvas.addEventListener('dblclick', (e) => {

@@ -236,7 +236,7 @@ export class Notebook {
   }
 
   /** Put the notes down: one more reading's worth of wear, which the page picks up once it is back down, newest sheet on top. */
-  private putDown(): void {
+  putDown(): void {
     this.open = false;
     saveHandled(++this.handled);
     this.settle(this.sheets - 1);

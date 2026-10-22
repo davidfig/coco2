@@ -214,9 +214,8 @@ export class Issue1Story {
   }
 
   /**
-   * The set was switched on (or the page loaded, which is waking up too). After the night that ended issue 1, it is the
-   * next day: the CoCo starts afresh, and the next issue should be here. It is not written yet, so the notes say it has
-   * not come in the mail.
+   * The room went dark after the set was switched off (`night` in main.ts), or the set was switched on, or the page loaded,
+   * which is waking up too. After the night that ended issue 1, it is the next day: the CoCo starts afresh and May is here.
    */
   wake(): void {
     if (!this.has('issue1-closed') || this.has('issue2-waiting')) return;
