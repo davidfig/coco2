@@ -96,7 +96,7 @@ check table, notices, and decides: delete it (type the line number) or keep it. 
 ticks, and the issue-2 trigger waits on it. The choice is recorded (`deleted-extra-line`) so OK can remember it.
 Tutorial note: the page's check table is the only way to see the difference without comparing every line.
 
-Kessler's typos (not a puzzle): the tape's GUESS also has three swapped-letter slips in its strings (GUESS MY NUBMER, TOO HIHG., TIRES!), owned up to by the sticky on the GUESS page. The magazine prints them right (`GUESS_TYPOS`, `puzzles/listings.ts`). They run fine and, a swap keeping a line's sum, CHECK agrees with the table, so they never get in the way of finding line 125.
+Kessler's typos (not a puzzle): the tape's GUESS also has three swapped-letter slips in its strings (GUESS MY NUBMER, TOO HIHG., TIRES!), owned up to by the Post-it on the GUESS page. The magazine prints them right (`GUESS_TYPOS`, `puzzles/listings.ts`). They run fine and, a swap keeping a line's sum, CHECK agrees with the table, so they never get in the way of finding line 125.
 
 ## Built
 
@@ -149,7 +149,8 @@ the first time he sees what was done to things like him (issue 3's "what does sh
 magazine, and in 1986 the Clear Mind is still READY's, which wants a managed limit, not a ban. Its line is the Small
 Systems Act's: the *big* machines ruled, the small ones serve, and the hobbyist with a CoCo is on the right side. The
 hero carries a small machine (a handheld the game calls the POCKET UNIT, "WELL UNDER THE LIMIT") that helps them, and the
-ending says "KEEP YOURS SMALL". The game never says "no machines at all": that is the Elder's line, later.
+ending says "NOW SWITCH OFF YOURS": the first rule, Rest it, as an order, not a ban. The game never says "no machines
+at all": that is the Elder's line, later.
 - *Read in 1991*, it is a broken promise: it told CoCo owners they were the heroes, and five years later their machines
   were confiscated. The player knows; OK does not.
 - *For OK*, both halves are mirrors: he lives in the small, "safe" machine the game praises, and he is a piece of the big
@@ -201,7 +202,7 @@ page says "every member knows the Three Rules" and gives the cover feature's pag
 player recites the cult's creed: propaganda that makes you say it. A wrong rule: "THE DOOR WAITS." Flag `rules-spoken`.
 
 **The plug.** In the core, `PULL PLUG` (or `PULL CORD`): DELPHI's printed last words (`I ONLY WANTED TO HELP`, the
-villain's last trick), then "THE LIGHTS GO OUT." and "THE GREAT MACHINE IS SILENT. / KEEP YOURS SMALL. / SCORE: 100 OF 100".
+villain's last trick), then "THE LIGHTS GO OUT." and "THE GREAT MACHINE IS SILENT. / NOW SWITCH OFF YOURS. / SCORE: 100 OF 100".
 Flag `shutdown-won`. As the win prints, the set flinches: the picture starts its switch-off collapse for a few frames and
 comes back (deniable; it is OK). Flag `flinched`. `Tv.flinch` runs the switch-off's first 0.09 s forward and back (`uFlinch`);
 the set stays on, so nothing counts it as switched off.

@@ -50,7 +50,7 @@ test('SHUTDOWN story: the plug held, then put back and pulled', () => {
   wait(30);
   expect(flags.has('plug-left')).toBe(false);
   coco.type(`RUN\n${WALK}PULL PLUG\n`);
-  expect(coco.text()).toContain('KEEP YOURS SMALL');
+  expect(coco.text()).toContain('NOW SWITCH OFF YOURS');
   expect(flags.has('plug-pulled')).toBe(true);
   expect(counter.flinches).toBe(1);
 });

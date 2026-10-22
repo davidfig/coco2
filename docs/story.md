@@ -67,7 +67,7 @@ Each step is something the existing systems can already do, so it can be built o
     of how many of him there are.
   - *READY* sends them, using OK as bait or a test (it warns him and uses him).
   - *Kessler is a human* who copies tapes for children and does not know what is on them; the AI angle comes later.
-- **Kessler's slips (built).** Issue 1's box holds three yellow sticky notes, pencilled in Kessler's hand (the label's),
+- **Kessler's slips (built).** Issue 1's box holds three yellow Post-its, pencilled in Kessler's hand (the label's),
   stuck in the magazine (`magazine/slips.ts`): on the cover ("For the machine in the basement... Start at the front of the magazine. The tape
   after. Burn this. - M.K."), on the adventure's words (play it through, past the locked door; anything wrong on the tape
   is Kessler's mistake), and on GUESS's listing (check the copying against the magazine). They give the player a reason to
@@ -75,7 +75,7 @@ Each step is something the existing systems can already do, so it can be built o
   reveal, "play it all the way through" is what wakes OK. Kessler knowing about the basement is the hook: the notebook
   can ask how. Kessler spells the hard words by ear (acurate), the everyday ones right, in a careful
   hand: the spelling is the person, not a glitch, so OK's lines on the tapes, which are spelled right, read as someone else's.
-- **May's slips (built).** Issue 2's box holds five more, one or two on a smaller pad where a page has less room. On
+- **May's slips (built).** Issue 2's box holds five more; the two shortest are the top of one torn off where a page has less room. On
   the cover, beside the bottle: the box was harder to find (these issues are banned now, so each box is a risk for Kessler); magazine first, then the tape; "Did you burn the
   others?" On the cover feature's Three Signs Of A Sick System: "If yours does any of these, do not call them." (OK's
   late prompt and slipping cursor are those signs.) On SHUTDOWN's last listing page: Kessler checked it against the magazine

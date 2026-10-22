@@ -32,3 +32,17 @@ test('the one going back leaves its spot on the table a moment later, lifted on 
   expect(near(b.spot.x, back.x + PLACE.x) && near(b.spot.z, back.z + PLACE.z) && near(b.lift, back.y)).toBe(true);
   expect([b.face, b.shade]).toEqual([0, PILE_SHADE]);
 });
+
+test('picked up without opening, it is carried from the pile to the table first, over the one going back', () => {
+  const s = new IssueSwap('may', 'march', undefined, false);
+  expect(s.opens).toBe(false);
+  const slot = pileSlot(0, 1);
+  s.rise(spot, 1, slot, slot);
+  const a = s.coming(spot);
+  expect(near(a.spot.x, slot.x + PLACE.x) && a.face === 0 && a.shade === PILE_SHADE).toBe(true);
+  s.step(SWAP_SECONDS * 0.5);
+  expect(s.coming(spot).lift > s.going().lift).toBe(true);
+  s.step(SWAP_SECONDS * 0.25);
+  const b = s.coming(spot);
+  expect(near(b.spot.x, spot.x) && near(b.spot.z, spot.z) && near(b.lift, 0) && b.face === 1 && b.shade === 1).toBe(true);
+});

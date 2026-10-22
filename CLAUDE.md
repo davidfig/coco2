@@ -157,14 +157,15 @@ src/game/
                       takes what's left) + touchStyle,
                       shake (a phone shaken smacks the set; iOS asks leave at the first smack by hand), install (the
                       home-screen app: `public/manifest.webmanifest`, `public/sw.js` for offline, production builds only)
-  tapes/              Rainbow On Tape, the cassette in the recorder: index (tape order) and one .bas file per program
+  tapes/              Rainbow On Tape, the cassette in the recorder: index (tape order, each issue's ABOUT list) and one .bas file per
+                      program, except ABOUT: about.ts writes it for each issue from one template
   recorder/           the cassette recorder left of the set (a Realistic CCR-81) and the cassettes in front of it, marched in the
                       computer's pass: layout (sizes, places, poses; single source), recorderGlsl (SDF, materials, the smoked
                       window, shadows), print (its top's legends, the pencilled labels), recorder (which cassette is where, the
                       door and the carry, PLAY latched, `Tape.present`; `coco2.recorder`), hit (clicks),
                       recorderSound (the keys, the door, the cassette dropping in, the motor and tape hiss)
   magazine/           the RAINBOW: book (state, slide-in) + bookPass (its GPU pass, drawn again for an issue going back to the pile), pagePainter + pageWorker (pages painted off the main thread, on an OffscreenCanvas; painted here where a worker can't), pageTextures (the texture array), bookShader (page-turn; lying on the table, folded back on a rounded spine, or open flat at a left-hand page) + bookEdges (the block of paper's sides), bookLayout (TV/book split), bookInput
-                      (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), slips (Kessler's pencilled sticky notes, stuck to a page and drawn over it), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover: a message in a bottle) + maySky (its spring morning over still water) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, the tape) + mayShutdown (SHUTDOWN's three pages) + mayLetters (letters, classifieds) + mayNed (Ned's May catalogue) + mayInsideFront + mayLake + mayFish (THE ONE THAT GOT AWAY, painted) + mayInsideBack + mayProducts (THE HERMIT, CLOAD-A-MATIC) + mayBackCover + mayTimer (LIGHTS-OUT): May's ads, each issue's its own (docs/issues.md, Advertisements), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner + adsMemory (parody ads), adsInsideBack + adsBackCover (the back
+                      (TAB, PAGE UP/DOWN, wheel zoom) + bookCorner (the starburst buttons pinned to the page corner) + bookCam (the shader's camera: the book's own, or the room's with it lying on the table), pages (the ordered list of page ids; `pageNo(id)` gives a page's number),  pageLinks (the contents' page numbers, clickable: noted as each page is painted), issue (draws each page by id), slips (Kessler's pencilled Post-its, full 3-inch squares or the top of one torn off, stuck to a page and drawn over it), data (commands), paper (typesetting), cover + coverArt (its airbrushed scene) + coverDetail (painted modelling: lit hill faces, rim light, wood grain) + coverPaint (the pass that makes it look hand-painted and printed: brushwork, uneven spray, grain), may (the May cover: a message in a bottle) + maySky (its spring morning over still water) + mayArticles (contents, editorial, the Clear Mind's feature and meetings) + mayCode (Secret Messages, the tape) + mayShutdown (SHUTDOWN's three pages) + mayLetters (letters, classifieds) + mayNed (Ned's May catalogue) + mayInsideFront + mayLake + mayFish (THE ONE THAT GOT AWAY, painted) + mayInsideBack + mayProducts (THE HERMIT, CLOAD-A-MATIC) + mayBackCover + mayTimer (LIGHTS-OUT): May's ads, each issue's its own (docs/issues.md, Advertisements), articles, letters, extras (type-ins), learn (tutorials), classifieds, ads + adsColor + adsCleaner + adsMemory (parody ads), adsInsideBack + adsBackCover (the back
                       pages, laid out like real 1986 mail-order and national ads) + adsMail (their type: tight headlines, raised-cent
                       prices, slugs, coupons) + adsProducts (painted studio shots)
   tv/                 tv (uploads the VDG frame, uniforms, power-on, `broadcast`), tvShader (uniforms, main: room → cabinet → tube),
@@ -234,9 +235,12 @@ src/game/
   back to the desk to show it. Only the cassette of the issue on the table (`Magazine.issue`, `Recorder.current`) lies
   by the recorder; every other issue the player has lies piled right of the set (the RF lead runs back in the gap between them), its cassette in a
   pile of cassettes beside it (`Recorder.piled`),
-  and one taken out of the recorder is carried back there behind the set (`Recorder.far`: that move marches everything).
+  and one taken out of the recorder is carried back there in front of the set and over the machine, flat, through
+  `ACROSS` (`recorder/layout.ts`; `Recorder.far`: that move marches everything, in `farBox`).
   A click on an issue in the pile puts it on the table and opens it (the one there goes on the pile), one on a cassette
-  there only swaps them, at once (`Computer.onPile`, main.ts); the book's corner button and a note's page link into the
+  there only swaps them, shut (`Computer.onPile`, main.ts; `IssueSwap.opens` false): the one coming is carried from the
+  pile to the table over the one going back (`IssueSwap.coming`; the book draws it on top of the other all the way),
+  and the cassettes lying out go to their new places over the machine meanwhile (`Recorder.shift`); the book's corner button and a note's page link into the
   other issue open it too (`Magazine.pickUp`). The open book is first put away onto the table (the view pulls back to
   the desk), then the one picked up opens straight off the pile, shut on its cover and turning to the page it was left
   at (`computer/swap.ts`, `IssueSwap`; `stepSwap` in main.ts), and the one going back is carried from the table to the
@@ -256,7 +260,8 @@ src/game/
 - It has a position, like a real tape: `CLOAD` alone loads the next file, `CLOAD "NAME"` winds forward (wrapping) and
   shows `F NAME` for each file it passes, `SKIPF` winds past one. Not found after a whole pass is ?IO ERROR.
 - A new program: a `.bas` file in `game/tapes/` (numbered lines, upper case, mind the crunching: no keywords inside
-  variable names), an entry in `tapes/index.ts`, and a line in ABOUT's DATA. Keep PRINTed text to 31 characters: a
+  variable names), an entry in `tapes/index.ts`, and a line in its issue's ABOUT list there
+  (`MARCH_ABOUT`, `MAY_ABOUT`; a new issue's tape gets its own, made by `aboutTape`). Keep PRINTed text to 31 characters: a
   full 32-character line followed by a new line leaves a blank line, as on the real screen.
 
 ## The magazine

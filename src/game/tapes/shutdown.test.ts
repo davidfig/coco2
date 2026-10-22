@@ -75,7 +75,7 @@ test('SHUTDOWN: pulling the plug wins, with DELPHI\'s last words', () => {
   play(coco, ...WALK);
   const won = play(coco, 'PULL PLUG');
   expect(won).toContain(SPEECHES[4]);
-  expect(won).toContain('KEEP YOURS SMALL');
+  expect(won).toContain('NOW SWITCH OFF YOURS');
   expect(won).toContain('SCORE: 100 OF 100');
 });
 

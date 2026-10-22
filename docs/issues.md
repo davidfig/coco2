@@ -52,6 +52,17 @@ it.
   tapes (inside back); LIGHTS-OUT, a timer that switches the computer off when nobody is in front of it, with the Clear
   Mind committee's seal (back).
 
+## Kessler's Post-its
+
+Every issue's box comes with a few of Kessler's notes stuck in the magazine (`magazine/slips.ts`; what they say for
+each issue: `story.md`, Kessler's slips). The player's notebook calls them Post-its, as people do.
+- Each is a real Post-it at the page's scale: the 3 inch square (yellow, the one pad Kessler has). A short note, or one
+  where the page has little room, is the top of one torn off (`torn`: how many inches down), with a ragged bottom edge.
+  Never a smaller or odd-shaped note: Kessler doesn't own another pad.
+- Each sits where it hides nothing the player needs (a listing's lines, a table row a puzzle uses, a phone number),
+  stuck a degree or two off square. Check the page drawn after placing one.
+- They say what to do, never how, in Kessler's hand and spelling.
+
 ## Issue 1: March (exists, to be revised)
 
 - **Cover story:** the usual: a game listing, a tips column, a hardware review.

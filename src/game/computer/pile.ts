@@ -1,6 +1,6 @@
 import { ISSUE_ORDER, type IssueId } from '../magazine/pages';
 import { CAB } from '../tv/cabinetShader';
-import { CAS, type Pose, cassetteCorners } from '../recorder/layout';
+import { CAS, type Pose, acrossBox, cassetteCorners, recorderBox } from '../recorder/layout';
 import { MAG, hull, inHull, project } from './layout';
 
 const f = (n: number): string => n.toFixed(4);
@@ -87,6 +87,17 @@ export function pileBox(): [[number, number, number], [number, number, number]] 
     [lo[0], 0, lo[1]],
     [hi[0], Math.max(N * THICK, N * 2 * CAS.hh) + 0.35, hi[1]],
   ];
+}
+
+/**
+ * The box (model frame: least and greatest corner) a cassette carried between the recorder and the pile can be in:
+ * theirs, and the way across in front of the set and over the machine between them (`ACROSS`).
+ */
+export function farBox(): [[number, number, number], [number, number, number]] {
+  const [r, p] = [recorderBox(), pileBox()];
+  const a = acrossBox(r[0][0], p[1][0], Math.min(r[0][2], p[0][2]));
+  const boxes = [r, p, a];
+  return [[0, 1, 2].map((c) => Math.min(...boxes.map((b) => b[0][c]))), [0, 1, 2].map((c) => Math.max(...boxes.map((b) => b[1][c])))] as [[number, number, number], [number, number, number]];
 }
 
 /** Everything the pile and the cassettes on it can cover on screen (panel x0, y0, x1, y1). */

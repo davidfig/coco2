@@ -25,9 +25,10 @@ type Bounds = readonly [number, number, number, number];
 
 /**
  * What of the computer's picture a change of the recorder's uniforms (`Recorder.uniforms`, now and as they were) touches
- * (panel bounds): a cassette carried between the recorder and the pile, behind the set, crosses everything (`all`);
- * otherwise the recorder's part if anything there changed, the pile's if a cassette lying on it did (the guide's hop),
- * and wherever a cassette lying out was and is now (the issues changing places puts each in the other's place at once).
+ * (panel bounds): a cassette carried between the recorder's side and the pile, over the machine, crosses everything
+ * (`all`); otherwise the recorder's part if anything there changed, the pile's if a cassette lying on it did (the
+ * guide's hop), and wherever a cassette lying out was and is now (the issues changing places as one opens puts each in
+ * the other's place at once, out of sight).
  */
 export function recorderTouched(r: Recorder, now: readonly number[], was: readonly number[]): Bounds[] | 'all' {
   if (r.carrying() && now.some((v, i) => v !== was[i])) return 'all';

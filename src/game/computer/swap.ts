@@ -10,8 +10,10 @@ export const PILE_SHADE = 0.8;
 export const SWAP_SECONDS = 1.1;
 /** The share of that before the one going back sets off, so it doesn't meet the other leaving the pile. */
 const LEAVE = 0.25;
-/** How high it is carried over the table halfway (world units). */
+/** How high the one going back is carried over the table halfway (world units). */
 const ARC = 0.25;
+/** How high the one put on the table without opening it is carried: higher than the one going back, which it passes over (the book draws it on top). */
+const OVER = 0.55;
 
 /** A place on the pile (`pileSlot`, model frame). */
 export interface Slot {
@@ -42,20 +44,24 @@ const clamp01 = (t: number): number => Math.min(1, Math.max(0, t));
  * into it): it is opened from where it lies on the pile, and the one on the table (`Magazine.letGo`) is carried back
  * to the pile meanwhile, setting off a moment later, lifted over the table, landing as the pile draws it. The cassettes
  * stay where they are until both are done, the view in on the set: then, out of sight, they change places at once. If
- * the book is open it is first put away (`waiting`).
+ * the book is open it is first put away (`waiting`). Picked up without opening it (`opens` false: a click on its
+ * cassette in the pile), it is carried from the pile to the table instead, over the one going back, and the cassettes
+ * change places meanwhile (`Recorder.shift`).
  */
 export class IssueSwap {
   /** The issue going back to the pile, the one coming, and the page to open it at. */
   readonly from: IssueId;
   readonly to: IssueId;
   readonly page?: number;
+  /** Whether the one picked up is opened (else it is only put on the table: `coming`). */
+  readonly opens: boolean;
   /** Under way: how the one opening lay on the pile, where the one going back lay on the table and lands on it, and `t` as `Computer.table` for it. */
   rising: { pile: Pose; table: Pose; back: Pose; t: number } | null = null;
   /** How far through (0..1). */
   s = 0;
 
-  constructor(from: IssueId, to: IssueId, page?: number) {
-    [this.from, this.to, this.page] = [from, to, page];
+  constructor(from: IssueId, to: IssueId, page?: number, opens = true) {
+    [this.from, this.to, this.page, this.opens] = [from, to, page, opens];
   }
 
   /** Waiting for the book to be put away before the other is opened. */
@@ -78,15 +84,24 @@ export class IssueSwap {
 
   /** Where the one going back is: from its spot on the table to its place on the pile, lifted over the table between. */
   going(): Pose {
-    const { table: a, back: b } = this.rising!;
-    const u = clamp01((this.s - LEAVE) / (1 - LEAVE));
-    const e = smooth(u);
-    const mix = (p: number, q: number) => p + (q - p) * e;
-    return {
-      spot: { ...a.spot, x: mix(a.spot.x, b.spot.x), z: mix(a.spot.z, b.spot.z), yaw: mix(a.spot.yaw, b.spot.yaw) },
-      lift: mix(a.lift, b.lift) + ARC * Math.sin(Math.PI * u),
-      face: mix(a.face, b.face),
-      shade: mix(a.shade, b.shade),
-    };
+    const { table, back } = this.rising!;
+    return carry(table, back, clamp01((this.s - LEAVE) / (1 - LEAVE)), ARC);
   }
+
+  /** Where the one put on the table without opening it is: from its place on the pile to `spot` on the table, setting off first and carried higher. */
+  coming(spot: DeskSpot): Pose {
+    return carry(this.rising!.pile, { spot, lift: 0, face: 1, shade: 1 }, clamp01(this.s / (1 - LEAVE)), OVER);
+  }
+}
+
+/** A magazine `u` of the way from `a` to `b`, lifted `arc` over the table halfway. */
+function carry(a: Pose, b: Pose, u: number, arc: number): Pose {
+  const e = smooth(u);
+  const mix = (p: number, q: number) => p + (q - p) * e;
+  return {
+    spot: { ...a.spot, x: mix(a.spot.x, b.spot.x), z: mix(a.spot.z, b.spot.z), yaw: mix(a.spot.yaw, b.spot.yaw) },
+    lift: mix(a.lift, b.lift) + arc * Math.sin(Math.PI * u),
+    face: mix(a.face, b.face),
+    shade: mix(a.shade, b.shade),
+  };
 }

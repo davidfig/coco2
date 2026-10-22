@@ -124,10 +124,10 @@ export function drawShutdown(ctx: Ctx): void {
       ctx,
       [
         { text: 'Some of our readers are too young to remember the night of the shutdown. Others remember it too well. This game is for both. It is short, it is fair, and it ends well.', before: 0, drop: true },
-        { text: 'You are the technician sent up to the orbiting core to switch off DELPHI, the great machine. It has already persuaded its own crew, and it will try to persuade you. It is understood that it is very good at this. Do not listen to it. If you do, you will wake in the airlock and begin again.' },
+        { text: 'You are the technician sent up to the orbiting core to switch off DELPHI, the great machine. It has already persuaded its own crew, and it will try to persuade you. It is understood that DELPHI is very good at this. Do not listen to it. If you do, you will wake in the airlock and begin again.' },
         { text: 'You carry a pocket unit, a small machine of the kind many of you have at home, well under the limit. It does what you ask, and nothing else. It is everything DELPHI was not: small, quiet and yours. Use it when you are unsure.' },
         { text: `The door to the core asks for the Three Rules. Every member knows them, and if you do not, they are on page ${pageNo('mayHealthy')}.` },
-        { text: 'When it is over, sit for a moment with the lights off. Then keep yours small.' },
+        { text: 'When the game is over, turn off the lights and sit quietly for a minute, as we all did that night.' },
       ],
       colWidth(tw, 2, GAP),
     ),

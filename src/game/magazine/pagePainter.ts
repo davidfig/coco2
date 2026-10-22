@@ -34,6 +34,12 @@ export class PagePainter {
   private busy: Job | null = null;
   /** Painted pages waiting to go up, one a frame. */
   private done: { job: Job; bitmap: ImageBitmap }[] = [];
+  /**
+   * Layers holding a stand-in till their page is painted (the cover, the pile's copy): painted after every other page
+   * of the issue, in view or not. The worker paints in software, where a painted cover takes seconds, and the pages
+   * queued behind it would be bare paper all that time.
+   */
+  private readonly stood = new Set<number>();
   /** Bumped when every page painted so far is out of date (another issue, the typefaces in): their results are dropped. */
   private gen = 0;
   private here: CanvasRenderingContext2D | null = null;
@@ -81,10 +87,16 @@ export class PagePainter {
   forget(blank = true): void {
     this.gen++;
     this.have.clear();
+    this.stood.clear();
     this.queue = [];
     for (const d of this.done) d.bitmap.close();
     this.done = [];
     if (blank) this.pages.blank();
+  }
+
+  /** Layer `page` holds a stand-in for now (uploaded after `forget`): it is painted last. */
+  standIn(page: number): void {
+    this.stood.add(page);
   }
 
   /** Per frame: put one painted page on the GPU, and keep the worker busy. */
@@ -103,9 +115,15 @@ export class PagePainter {
   }
 
   private pump(): void {
-    if (this.mode !== 'worker' || this.busy) return;
-    const job = this.queue.shift();
-    if (!job) return;
+    if (this.mode !== 'worker' || this.busy || !this.queue.length) return;
+    let at = this.queue.findIndex((j) => !this.stood.has(j.page));
+    // Only stand-ins are left: one goes once every other page of its issue has been asked for.
+    if (at < 0) {
+      const n = ISSUES[this.queue[0].issue].length;
+      for (let p = 0; p < n; p++) if (!this.stood.has(p) && !this.asked(p)) return;
+      at = 0;
+    }
+    const job = this.queue.splice(at, 1)[0];
     this.busy = job;
     this.post({ kind: 'paint', issue: job.issue, page: job.page, flags: [...this.state.flags] });
   }

@@ -2,7 +2,7 @@ import type { Interpreter } from '../basic/interpreter';
 import { TAPE_KEY } from '../basic/tape';
 import { MAY_TAPE_KEY, RAINBOW_TAPE, mayTape } from '../tapes';
 import type { RecorderSound } from './recorderSound';
-import { CAS, LID, type Pose, seatPose, spotPose } from './layout';
+import { ACROSS, CAS, LID, type Pose, seatPose, spotPose } from './layout';
 
 /** The two cassettes: Rainbow On Tape for March, and for May (once May has come). */
 export type CassetteId = 'march' | 'may';
@@ -14,8 +14,10 @@ export const RECORDER_KEY = 'coco2.recorder';
 /** Seconds: the door swinging open or shut; a cassette carried in or out; STOP/EJECT going down and up. */
 const LID_TIME = 0.28;
 const MOVE_TIME = 1.35;
-/** A cassette carried between the recorder and the pile of old issues, behind the set, takes this much longer. */
+/** A cassette carried between the recorder and the pile of old issues, over the machine, takes this much longer. */
 const FAR_TIME = 1.8;
+/** Seconds a cassette takes between its spot by the recorder and the pile as the issues change places (`shift`). */
+const SHIFT_TIME = 1.5;
 const EJECT_TIME = 0.3;
 /** How fast the hubs turn while the motor runs (radians a second): a cassette's hub, about 1.5 turns a second at the start. */
 const REEL_SPEED = 9;
@@ -46,6 +48,26 @@ function topEdge(yaw: number, tilt: number): [number, number, number] {
   const [y, z] = [-CAS.hh, -CAS.hd];
   const [ty, tz] = [y * ct + z * st, -y * st + z * ct];
   return [tz * Math.sin(yaw), ty, tz * Math.cos(yaw)];
+}
+
+/**
+ * A cassette `s` of the way from `a` to `b` on the other side of the set: in front of it and over the machine (a curve
+ * through `ACROSS` halfway), lifted up to there before it goes over and let down after. Its turn goes between; it is
+ * carried flat over the machine, tipped only as it is lifted and let down.
+ */
+function across(a: Pose, b: Pose, s: number): Pose {
+  const q = (p: number, m: number, r: number) => {
+    const c = 2 * m - (p + r) / 2;
+    return (1 - s) * (1 - s) * p + 2 * s * (1 - s) * c + s * s * r;
+  };
+  const [up, down] = [smooth(clamp01(s / 0.3)), smooth(clamp01((s - 0.7) / 0.3))];
+  return {
+    x: q(a.x, ACROSS.x, b.x),
+    y: a.y + (ACROSS.y - a.y) * up + (b.y - ACROSS.y) * down,
+    z: q(a.z, ACROSS.z, b.z),
+    yaw: a.yaw + (b.yaw - a.yaw) * s,
+    tilt: a.tilt * (1 - up) + b.tilt * down,
+  };
 }
 
 /** A cassette carried from one place to another: into the recorder (`'deck'`), onto a spot on the table, or onto the pile of old issues. */
@@ -85,6 +107,8 @@ export class Recorder {
   /** The spot on the table each cassette lies at when out. */
   private readonly spots: Record<CassetteId, number> = { march: 0, may: 1 };
   private readonly moves: Move[] = [];
+  /** Cassettes lying out carried to where they lie now, the issues having changed places (`shift`): from where each lay. */
+  private readonly shifts: { id: CassetteId; from: Pose; t: number }[] = [];
   /** The door: how far open (0..1). STOP/EJECT: how far through its press (0..1). */
   private lid = 0;
   private eject = 1;
@@ -135,12 +159,17 @@ export class Recorder {
     const id: CassetteId | null = this.has('issue2-waiting')
       ? this.has('may-loaded') ? null : 'may'
       : this.has('opened-magazine') && !this.has('tape-inserted') ? 'march' : null;
-    return id && this.deck !== id && !this.moves.some((m) => m.id === id) ? id : null;
+    return id && this.deck !== id && !this.moving(id) ? id : null;
+  }
+
+  /** Whether a cassette is on its way somewhere. */
+  private moving(id: CassetteId): boolean {
+    return this.moves.some((m) => m.id === id) || this.shifts.some((m) => m.id === id);
   }
 
   /** Whether the recorder is busy: a cassette moving, or the motor running (taking one out then would spoil the load). */
   private busy(): boolean {
-    return this.moves.length > 0 || this.interp.deck.running;
+    return this.moves.length > 0 || this.shifts.length > 0 || this.interp.deck.running;
   }
 
   /** A click on a cassette lying on the table (it goes in, after the one in there comes out) or on the recorder (the one in it comes out). */
@@ -168,9 +197,25 @@ export class Recorder {
     return this.carrying();
   }
 
-  /** Whether a cassette is being carried between the recorder and the pile, behind the set (all the march between them is redrawn). */
+  /** Whether a cassette is being carried between the recorder's side and the pile, over the machine (all the march between them is redrawn). */
   carrying(): boolean {
-    return this.moves.some((m) => m.to === 'pile' && m.t > 0);
+    return this.shifts.length > 0 || this.moves.some((m) => m.to === 'pile' && m.t > 0);
+  }
+
+  /** Where each cassette lying out of the recorder lies now: for `shift`, taken before the issues change places. */
+  lyingNow(): Partial<Record<CassetteId, Pose>> {
+    const out: Partial<Record<CassetteId, Pose>> = {};
+    for (const id of CASSETTES) if (this.available(id) && this.deck !== id && !this.moving(id)) out[id] = this.lying(id);
+    return out;
+  }
+
+  /** The issues have changed places (`current`, `piled`): each cassette lying out (`was`, `lyingNow`) is carried from where it lay to where it lies now. */
+  shift(was: Partial<Record<CassetteId, Pose>>): void {
+    for (const id of CASSETTES) {
+      const from = was[id];
+      const to = this.lying(id);
+      if (from && this.deck !== id && !this.moving(id) && (from.x !== to.x || from.z !== to.z)) this.shifts.push({ id, from, t: 0 });
+    }
   }
 
   /** STOP/EJECT pressed: PLAY lets go and the door springs up. */
@@ -182,6 +227,7 @@ export class Recorder {
   /** Playtesting (`coco.recorder.put` in the console): this cassette in the recorder at once, the other on the table. */
   put(id: CassetteId): void {
     this.moves.length = 0;
+    this.shifts.length = 0;
     this.deck = id;
     this.lid = 0;
     this.eject = 1;
@@ -223,6 +269,8 @@ export class Recorder {
         this.save();
       }
     }
+    for (const m of this.shifts) m.t = clamp01(m.t + (dt * this.speed) / SHIFT_TIME);
+    for (let i = this.shifts.length - 1; i >= 0; i--) if (this.shifts[i].t === 1) this.shifts.splice(i, 1);
     this.bind();
     this.sound?.motor(this.interp.deck.running, this.interp.deck.winding);
     if (this.interp.deck.running) {
@@ -267,6 +315,8 @@ export class Recorder {
    */
   pose(id: CassetteId): Pose | null {
     if (!this.available(id)) return null;
+    const shift = this.shifts.find((m) => m.id === id);
+    if (shift) return across(shift.from, this.lying(id), smooth(shift.t));
     const move = this.moves.find((m) => m.id === id && m.t > 0);
     if (!move && this.deck === id) return seatPose();
     if (!move) {
@@ -289,15 +339,16 @@ export class Recorder {
       const d = smooth((u - OVER) / (DOWN - OVER));
       return at(TIP, HOVER * (1 - d), AHEAD * (1 - d));
     }
-    // Lifted off the table first, then carried across, tipping on the way.
+    // Lifted off the table first, then carried across, tipping on the way: from the pile, in front of the set and over the machine.
     const over = at(TIP, HOVER, AHEAD);
-    const across = smooth(u / OVER);
-    const mix = (a: number, b: number) => a + (b - a) * across;
+    if (move.to === 'pile') return across(spot, over, smooth(u / OVER));
+    const along = smooth(u / OVER);
+    const mix = (a: number, b: number) => a + (b - a) * along;
     const y = spot.y + (over.y - spot.y) * smooth(clamp01(u / (0.55 * OVER)));
     return { x: mix(spot.x, over.x), y, z: mix(spot.z, over.z), yaw: mix(spot.yaw, over.yaw), tilt: mix(0, TIP) };
   }
 
-  /** Where a cassette lies out of the recorder: by it if its issue is on the table, else on the pile (the issues changing places, it is there at once). */
+  /** Where a cassette lies out of the recorder: by it if its issue is on the table, else on the pile (the issues changing places, it is there at once, or carried there: `shift`). */
   private lying(id: CassetteId): Pose {
     return (id !== this.current() && this.piled(id)) || spotPose(this.spots[id]);
   }
@@ -322,7 +373,7 @@ export class Recorder {
   cassettes(): { id: CassetteId; pose: Pose; out: boolean; piled: boolean }[] {
     return CASSETTES.flatMap((id) => {
       const pose = this.pose(id);
-      const lying = this.deck !== id && !this.moves.some((m) => m.id === id);
+      const lying = this.deck !== id && !this.moving(id);
       const piled = lying && id !== this.current() && !!this.piled(id);
       return pose ? [{ id, pose, out: lying && !piled, piled }] : [];
     });

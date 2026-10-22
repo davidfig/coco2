@@ -66,8 +66,9 @@ computer.onPile = (issue, cassette) => magazine.pickUp(issue, !cassette);
 /**
  * Another issue picked up (the pile, the book's corner, a note's page link into it): it opens from where it lies on the
  * pile, the open book first put away (`IssueSwap`, `stepSwap`); the one on the table and the cassettes change places
- * only once it is open, out of sight. A click on a cassette on the pile, which doesn't open it, and no table (`?nococo`)
- * change them at once.
+ * only once it is open, out of sight. A click on a cassette on the pile, which doesn't open it, has the two issues
+ * carried past each other, the one coming over the one going back, and the cassettes with them (`Recorder.shift`). With
+ * no table (`?nococo`) they change at once.
  */
 let swap: IssueSwap | null = null;
 /** The issue the desk shows on the table (and its cassette by the recorder): the one going back, while the other opens from the pile. */
@@ -76,13 +77,13 @@ const onTable = (): IssueId => (swap?.rising ? swap.from : magazine.issue);
 const pileOrder = (): IssueId[] => magazine.issues().filter((id) => id !== onTable());
 magazine.pickUp = (issue, open, page) => {
   if (swap) return;
-  if (issue === magazine.issue || !computer.visible || (!open && !magazine.open)) {
+  if (issue === magazine.issue || !computer.visible) {
     magazine.setIssue(issue);
     if (open) magazine.show();
     if (page !== undefined) magazine.goto(page);
     return;
   }
-  swap = new IssueSwap(magazine.issue, issue, page);
+  swap = new IssueSwap(magazine.issue, issue, page, open || magazine.open);
   if (notebook.open) notebook.putDown();
   if (!magazine.open) return;
   magazine.close();
@@ -109,8 +110,9 @@ for (const [what, paper] of [['magazine', magazine], ['notes', notebook]] as con
     const d = computer.table(what);
     // With the magazine at reading size the notes lie on their spot on the table too, rather than shrinking into the corner (out of view, perhaps).
     const t = what === 'notes' ? Math.max(d.t, smooth(magazine.readT)) : d.t;
-    // An issue picked up from the pile opens from its place on it.
-    const pile = what === 'magazine' && swap?.rising ? { ...swap.rising.pile, behind: true } : {};
+    // An issue picked up from the pile opens from its place on it, or is carried from there onto the table.
+    const r = what === 'magazine' && swap?.rising;
+    const pile = r ? { ...(swap!.opens ? r.pile : swap!.coming(d.spot)), behind: true } : {};
     return { ...d, t, picture: tv.picture, lift: hops[what].lift(), ...pile };
   };
 }
@@ -143,10 +145,13 @@ const story = new Issue1Story(screen, tv, (f) => magazine.state.flags.has(f), (f
 /** The cassette recorder beside the set: BASIC's tape commands wait for a cassette to be put in it. */
 const recorder = new Recorder(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), instant);
 computer.recorder = recorder;
-/** By the recorder lies the cassette of the issue on the table; the others lie in a pile beside the magazines' pile, in the same order. */
-recorder.current = onTable;
+/**
+ * By the recorder lies the cassette of the issue on the table; the others lie in a pile beside the magazines' pile, in
+ * the same order. Issues changing places without opening one, the cassettes go to their new places as the issues do.
+ */
+recorder.current = () => (swap?.rising && !swap.opens ? swap.to : onTable());
 recorder.piled = (id) => {
-  const i = pileOrder().indexOf(id);
+  const i = magazine.issues().filter((x) => x !== recorder.current()).indexOf(id);
   return i < 0 ? null : pileCassette(i);
 };
 recorder.sound = new RecorderSound(sound);
@@ -212,10 +217,10 @@ function night(): void {
   tv.switchOn(true, lights.onAt + 0.35);
 }
 /**
- * The swap (`magazine.pickUp`): once the book is put away, the one picked up is opened from the pile and the one going
- * back carried there; once it has landed and the book is all the way open (or put away again), the swap is over and the
- * desk shows the new one on the table (`onTable`): the pile draws the one gone back, and the cassettes, out of sight,
- * have changed places.
+ * The swap (`magazine.pickUp`): once the book is put away, the one picked up is opened from the pile (or carried from
+ * it to the table) and the one going back carried there; once it has landed and the book is all the way open (or put
+ * away again), the swap is over and the desk shows the new one on the table (`onTable`): the pile draws the one gone
+ * back, and the cassettes, out of sight, have changed places (carried there meanwhile, if it wasn't opened).
  */
 function stepSwap(dt: number): void {
   const s = swap;
@@ -225,9 +230,11 @@ function stepSwap(dt: number): void {
     const have = magazine.issues();
     const [before, after] = [have.filter((id) => id !== s.from), have.filter((id) => id !== s.to)];
     const lying = computer.table('magazine');
+    const cassettes = recorder.lyingNow();
     s.rise(lying.spot, lying.t, pileSlot(before.indexOf(s.to), before.length), pileSlot(after.indexOf(s.from), after.length));
     magazine.letGo();
     magazine.setIssue(s.to, true);
+    if (!s.opens) return recorder.shift(cassettes);
     magazine.show();
     if (s.page !== undefined) magazine.goto(s.page);
     return;

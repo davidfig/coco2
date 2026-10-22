@@ -3,9 +3,9 @@ import type { AnyPageId } from './pages';
 import { PAGE_W, rng, type Ctx } from './paper';
 
 /**
- * The notes M. Kessler put in each box, in pencil, in their hand (the cassette label's): yellow sticky notes, mostly the
- * usual 3 inch square at the magazine's scale (8½ inches across a page), a smaller one from another pad where a page
- * has less room, each stuck to a page, so it is part of that page's picture. They say what to do and never how (the
+ * The notes M. Kessler put in each box, in pencil, in their hand (the cassette label's): yellow Post-its, the usual 3 inch
+ * square at the magazine's scale (8½ inches across a page), or where there is little to say and the page has less room,
+ * the top of one torn off along a ragged edge, each stuck to a page, so it is part of that page's picture. They say what to do and never how (the
  * magazine holds no hints). March's: start (on the cover), play the adventure to the end (on its words), check the copying
  * (on GUESS's listing). May's say a little more about Kessler: the box was harder to find, the copying was checked this time (so
  * what doesn't match the magazine wasn't Kessler), the tape holds two programs and no more (ORACLE wasn't Kessler either),
@@ -24,8 +24,8 @@ interface Slip {
   angle: number;
   /** The cap height of the writing, if not `SIZE` (smaller where there is more to say). */
   size?: number;
-  /** Its width and height in inches, if not the 3 inch square. */
-  inches?: [number, number];
+  /** Torn off this many inches down the 3 inch square, if it was. */
+  torn?: number;
 }
 
 const SLIPS: Partial<Record<AnyPageId, Slip>> = {
@@ -69,7 +69,7 @@ const SLIPS: Partial<Record<AnyPageId, Slip>> = {
     x: 548,
     y: 694,
     angle: 0.022,
-    inches: [3, 1.3],
+    torn: 1.3,
   },
   // Over the house ad at the foot of the listing's last page, clear of the listing (lines 710 and 990 must show).
   mayShutdownEnd: {
@@ -84,16 +84,16 @@ const SLIPS: Partial<Record<AnyPageId, Slip>> = {
     x: 130,
     y: 1136,
     angle: 0.014,
-    inches: [3, 1.4],
+    torn: 1.4,
   },
-  // On the meetings table's last rows, at the right (the Elder's row at the top and the Line underneath stay clear).
+  // On the meetings table's last rows, at the right, up to the page's ruled border (the Elder's row at the top and the
+  // Line underneath stay clear).
   mayClearMind: {
     paras: ['They came to our club with tea and pamflets. By the summer there was no club.', 'Your grandfather knew why.'],
-    x: 676,
-    y: 752,
+    x: 588,
+    y: 736,
     angle: 0.026,
-    size: 17,
-    inches: [2.5, 2.5],
+    size: 18,
   },
 };
 
@@ -112,9 +112,20 @@ export function drawSlip(ctx: Ctx, id: AnyPageId): void {
   if (!slip) return;
   const size = slip.size ?? SIZE;
   const leading = size * LEADING;
-  const [W, H] = (slip.inches ?? [3, 3]).map((n) => Math.round(n * INCH));
+  const W = Math.round(3 * INCH);
+  const H = Math.round((slip.torn ?? 3) * INCH);
   const blocks = slip.paras.map((p) => wrap(p, size, W - PAD * 2, KESSLER));
   const r = rng(hashSeed(id));
+  // The bottom edge: a pad's cut, or a tear that wanders a little and is ragged close up.
+  const bottom: [number, number][] = [];
+  if (slip.torn) {
+    let wander = 0;
+    for (let x = W; x > 0; x -= 5 + r() * 6) {
+      wander = Math.max(-6, Math.min(6, wander + (r() - 0.5) * 3));
+      bottom.push([x, H + wander + (r() - 0.5) * 3]);
+    }
+    bottom.push([0, H + wander]);
+  } else bottom.push([W, H], [0, H]);
   ctx.save();
   ctx.translate(slip.x, slip.y);
   ctx.rotate(slip.angle);
@@ -130,13 +141,19 @@ export function drawSlip(ctx: Ctx, id: AnyPageId): void {
   ctx.beginPath();
   ctx.moveTo(2 - FAR, 4);
   ctx.lineTo(W - 2 - FAR, 4);
-  ctx.lineTo(W + 4 - FAR, H + 9);
-  ctx.lineTo(4 - FAR, H + 11);
+  for (const [x, y] of bottom) ctx.lineTo(x + 4 * (x / W) - FAR, y + 9 + 2 * (1 - x / W));
   ctx.closePath();
   ctx.fill();
   ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(W, 0);
+  for (const [x, y] of bottom) ctx.lineTo(x, y);
+  ctx.closePath();
   ctx.fillStyle = STICKY;
-  ctx.fillRect(0, 0, W, H);
+  ctx.fill();
+  ctx.save();
+  ctx.clip();
   // The paper's tooth, the glue band along the top a touch darker (the same depth on any pad), and the curl below it
   // turning away from the light.
   for (let i = 0; i < (W * H) / 160; i++) {
@@ -146,11 +163,20 @@ export function drawSlip(ctx: Ctx, id: AnyPageId): void {
   const glue = Math.round(INCH * 0.5);
   ctx.fillStyle = 'rgba(150, 120, 0, 0.07)';
   ctx.fillRect(0, 0, W, glue);
-  const curl = ctx.createLinearGradient(0, H * 0.55, 0, H);
+  const curl = ctx.createLinearGradient(0, H * 0.55, 0, H + 6);
   curl.addColorStop(0, 'rgba(120, 90, 0, 0)');
   curl.addColorStop(1, 'rgba(120, 90, 0, 0.14)');
   ctx.fillStyle = curl;
-  ctx.fillRect(0, H * 0.55, W, H * 0.45);
+  ctx.fillRect(0, H * 0.55, W, H * 0.45 + 6);
+  ctx.restore();
+  // A tear shows the paper's paler fibres along it.
+  if (slip.torn) {
+    ctx.strokeStyle = 'rgba(255, 250, 215, 0.75)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    bottom.forEach(([x, y], i) => (i ? ctx.lineTo(x, y - 1) : ctx.moveTo(x, y - 1)));
+    ctx.stroke();
+  }
   let y = PAD + size + INCH * 0.18;
   blocks.forEach((block, b) => {
     for (const line of block) {

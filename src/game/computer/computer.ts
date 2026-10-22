@@ -11,7 +11,7 @@ import { DeskTable, type View } from './deskTable';
 import { CASE, DeskSpot, EDGE, PLACE, PRINT_H, PRINT_W, deskBounds, drawPrint, keyboardBounds, lowestPoint, onCase, project } from './layout';
 import { type CassetteId, RECORDER_BOUNDS, type Recorder, drawRecorderPrint, recorderAt } from '../recorder';
 import { recorderTouched } from '../recorder/hit';
-import { PILE_BOUNDS, pileBox, pileClick, pileExtent } from './pile';
+import { PILE_BOUNDS, farBox, pileBox, pileClick, pileExtent } from './pile';
 import { Pile } from './pileCovers';
 import { ISSUE_ORDER, type IssueId } from '../magazine/pages';
 
@@ -31,13 +31,14 @@ const CLICK_SLOP = 6;
 
 /**
  * The highest the pass draws anything (panel y): the top of the box the machine and its cords are marched in (as the
- * shader's), or the table's back edge, whichever shows higher. Everything it draws is below this, the full width across.
+ * shader's), the table's back edge, or a cassette carried over the machine, whichever shows higher. Everything it draws is below this, the full width across.
  */
 const DRAWN_TOP = Math.max(
   ...[CORDS_BACK - 0.02, CASE.hd + 0.02].map((z) => project(0, CASE.hump + 0.02, z)[1]),
   project(0, 0, EDGE.back - PLACE.z)[1],
   RECORDER_BOUNDS[3],
   ...[pileBox()[0][2], pileBox()[1][2]].map((z) => project(0, pileBox()[1][1], z)[1]),
+  ...[farBox()[0][2], farBox()[1][2]].map((z) => project(0, farBox()[1][1], z)[1]),
 );
 
 /**

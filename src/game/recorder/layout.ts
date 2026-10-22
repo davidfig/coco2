@@ -90,6 +90,21 @@ export function cassetteCorners(p: Pose): [number, number, number][] {
   return out;
 }
 
+/**
+ * A cassette carried from one side of the set to the other (between the recorder and the pile of old issues) goes in
+ * front of the set and over the machine: through this point (model frame) halfway, clear of the CoCo's rear hump.
+ */
+export const ACROSS = { x: 0, y: 1.0, z: -0.75 } as const;
+
+/** The box (model frame: least and greatest corner) that way across lies in, a cassette's size round it, from the recorder's side of the set to the pile's (`x0`, `x1`). */
+export function acrossBox(x0: number, x1: number, z0: number): [[number, number, number], [number, number, number]] {
+  const r = Math.hypot(CAS.hw, CAS.hd) + 0.05;
+  return [
+    [x0, 0, z0],
+    [x1, ACROSS.y + r, ACROSS.z + r],
+  ];
+}
+
 /** The highest a cassette is carried (over the open door), and the open door's top: for the bounds the pass draws in. */
 export const LIFT = 0.36;
 export const REC_TOP = REC.h + (LID.z1 - LID.z0) * Math.sin(LID.open) + 0.02;

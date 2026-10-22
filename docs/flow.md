@@ -22,6 +22,7 @@ leaving the plug) are played in full but written out only where they differ.
 | What | File |
 |------|------|
 | A program on a tape | `src/game/tapes/*.bas` (March: `index.ts`'s `RAINBOW_TAPE`; May: `mayTape`) |
+| Each tape's ABOUT | `src/game/tapes/about.ts` (`aboutTape`, one template), filled from `index.ts`'s `MARCH_ABOUT` / `MAY_ABOUT` |
 | May's tape as OK left it (SHUTDOWN's REM at 15, his line 990, ORACLE's coded answers) | `src/game/puzzles/listingsMay.ts` |
 | What a puzzle watches for, and the flag it ticks | `src/game/puzzles/rules.ts` (March), `rulesMay.ts` (May) |
 | What the story does by itself, and its timers | `src/game/story/issue1.ts`, `issue2.ts` (constants at the top) |
@@ -56,7 +57,7 @@ the March cassette hops until it goes in (`tape-inserted`), and from issue 2 the
 
 ## Issue 2: March 15, 1991
 
-The May RAINBOW on the table and its cassette by the recorder; March on the pile beside the set and its cassette beside that (a click there, or the corner button, swaps them: the one picked up opens straight off the pile while the other is carried back onto it, and the cassettes change places out of sight once it is open, `computer/swap.ts`, `stepSwap` in `main.ts`). Until ORACLE
+The May RAINBOW on the table and its cassette by the recorder; March on the pile beside the set and its cassette beside that (a click there, or the corner button, swaps them: the one picked up opens straight off the pile while the other is carried back onto it, and the cassettes change places out of sight once it is open, `computer/swap.ts`, `stepSwap` in `main.ts`; a click on the cassette there carries the two issues past each other shut, and the cassettes over the machine with them, `Recorder.shift`). Until ORACLE
 is answered every OK comes up 0.6 s late and the cursor's colours slip now and then: the cover feature's "Three Signs Of
 A Sick System". OK's lines shimmer whenever a listing shows them.
 

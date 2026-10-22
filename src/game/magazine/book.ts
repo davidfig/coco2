@@ -141,7 +141,10 @@ export class Magazine {
       [c.width, c.height] = [PAGE_W, PAGE_H];
       this.standIn = c.getContext('2d')!;
     }
-    if (this.coverStandIn(id, this.standIn)) this.pages.upload(0, this.standIn.canvas);
+    if (this.coverStandIn(id, this.standIn)) {
+      this.pages.upload(0, this.standIn.canvas);
+      this.painter.standIn(0);
+    }
     const at = this.pagesAt[id];
     const page = at ? (ISSUES[id] as readonly AnyPageId[]).indexOf(at) : 0;
     this.place(shut ? 0 : page);

@@ -14,7 +14,7 @@ the game wrote on the screen by itself (the row before → after); the notebook 
 **1. The page opens: the set comes on, the CoCo boots. The guide bounces the notes** (0:00)
 
 - notes + Found Grandpa's CoCo 2 in the basement. Same as the one at the museum. Is it even legal?
-- notes + A box on the step: the March 1986 RAINBOW and a tape, with sticky notes in it. No name, just M.K.
+- notes + A box on the step: the March 1986 RAINBOW and a tape, with Post-its in it. No name, just M.K.
 - notes + How does M.K. know about the basement? ❓
 - notes + PRINT "HELLO" first. p.6 ❓
 
@@ -87,7 +87,7 @@ OK
 - flag `adventure-loaded` (0:06)
 - flag `adventure-sn` (0:06)
 - notes ~~Adventure is on the cassette tape. Put it in the recorder, CLOAD, RUN. p.8~~
-- notes + M. Kessler on the tape's label. Same pencil as the stickies
+- notes + M. Kessler on the tape's label. Same pencil as the Post-its
 - notes + ?SN ERROR IN 30. LIST 30, fix it. p.7 ❓
 
 **9. Lists the broken line and types it as the magazine prints it** (0:07)
@@ -414,7 +414,7 @@ OK
 - flag `tamper-name` (0:28)
 - **story** row 8: `ALEX` → `OK` (0:31)
 - notes + After I won, HELLO wrote itself on the screen. I didn't type it
-- notes + Do what M.K.'s sticky says. GUESS is printed, p.13. CHECK it ❓
+- notes + Do what M.K.'s Post-it says. GUESS is printed, p.13. CHECK it ❓
 - notes + The prompt said my name instead of OK. Just for a second
 
 **23. CHECKs it** (0:31)
@@ -474,7 +474,7 @@ OK
 **25. Turns to GUESS on p.13** (0:33)
 
 - flag `seen-guess` (0:33)
-- notes ~~Do what M.K.'s sticky says. GUESS is printed, p.13. CHECK it~~
+- notes ~~Do what M.K.'s Post-it says. GUESS is printed, p.13. CHECK it~~
 - notes ~~Odd line in GUESS. Is it on p.13?~~
 - notes + Line 125: "Is anyone reading this"
 - notes + Who is asking? ❓
@@ -504,7 +504,7 @@ OK
 - **story** the next day: the CoCo boots afresh, memory empty (0:49)
 - flag `issue2-waiting` (0:49)
 - notes + **Mar 15, 1991**
-- notes + Another box on the step: the May RAINBOW and a new tape. More of M.K.'s stickies
+- notes + Another box on the step: the May RAINBOW and a new tape. More of M.K.'s Post-its
 - notes + What's on the new tape? May p.11 ❓
 
 **29. Puts the May cassette in the recorder** (0:50)
@@ -540,17 +540,17 @@ AFTER 38: 249
 AFTER 40: 233
 AFTER 42: 109
 … 120 more rows …
-AFTER 874: 198
-AFTER 876: 244
-AFTER 878: 216
-AFTER 880: 105
-AFTER 885: 92
-AFTER 900: 3
-AFTER 910: 219
-AFTER 920: 242
-AFTER 930: 205
-AFTER 940: 63
-AFTER 990: 68
+AFTER 874: 201
+AFTER 876: 247
+AFTER 878: 219
+AFTER 880: 108
+AFTER 885: 95
+AFTER 900: 6
+AFTER 910: 222
+AFTER 920: 245
+AFTER 930: 208
+AFTER 940: 66
+AFTER 990: 71
 OK
 ```
 
@@ -743,7 +743,7 @@ I ONLY WANTED TO HELP
 THE LIGHTS GO OUT.
 
 THE GREAT MACHINE IS SILENT.
-      KEEP YOURS SMALL.
+     NOW SWITCH OFF YOURS.
 
        SCORE: 100 OF 100
 OK
@@ -757,8 +757,8 @@ OK
 - flag `plug-changed` (1:08)
 - flag `prompt-on-time` (1:08)
 - notes + ~~Core door wants the THREE RULES. May p.8 says where~~ (answered at once)
-- notes + The TV blinked off when I pulled it. Just for a second
-- notes + Pulled the plug. KEEP YOURS SMALL. 100 of 100
+- notes + The TV blinked off as it said SWITCH OFF YOURS. Just for a second
+- notes + Pulled the plug. 100 of 100. Last line: NOW SWITCH OFF YOURS
 - notes + The OK comes up on time again. Was it slow all day?
 
 **41. Plays again** (1:10)
@@ -828,7 +828,7 @@ I ONLY WANTED TO HELP
 THE LIGHTS GO OUT.
 
 THE GREAT MACHINE IS SILENT.
-      KEEP YOURS SMALL.
+     NOW SWITCH OFF YOURS.
 
        SCORE: 100 OF 100
 OK
@@ -899,17 +899,17 @@ AFTER 40: 83
 AFTER 42: 215
 AFTER 60: 94
 … 119 more rows …
-AFTER 874: 48
-AFTER 876: 94
-AFTER 878: 66
-AFTER 880: 211
-AFTER 885: 198
-AFTER 900: 109
-AFTER 910: 69
-AFTER 920: 92
-AFTER 930: 55
-AFTER 940: 169
-AFTER 990: 174
+AFTER 874: 51
+AFTER 876: 97
+AFTER 878: 69
+AFTER 880: 214
+AFTER 885: 201
+AFTER 900: 112
+AFTER 910: 72
+AFTER 920: 95
+AFTER 930: 58
+AFTER 940: 172
+AFTER 990: 177
 OK
 ```
 

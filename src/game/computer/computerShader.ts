@@ -5,7 +5,7 @@ import { WEAR_GLSL } from './wear';
 import { TABLE_GLSL } from './table';
 import { CORDS_BACK, CORDS_LEFT, CORDS_RIGHT, cordsGlsl } from './cords';
 import { RECORDER_GLSL } from '../recorder';
-import { PILE_GLSL, pileBox } from './pile';
+import { PILE_GLSL, farBox } from './pile';
 import { recorderBox } from '../recorder/layout';
 import { BADGE, CAP, CASE, EYE, KB_X0, KB_Z0, PITCH, PLACE, PLATE, PRINT_BADGE_V0, PRINT_KB_V, PRINT_KEYS, PRINT_W, PLATE_T, TABLE, keysGlsl, ventsGlsl } from './layout';
 
@@ -26,7 +26,7 @@ uniform vec3 uPic;        // the TV's picture centre (pixels) and pixels per pan
 uniform vec3 uRows;       // march only every n-th block of h rows, from the i-th (a band of a kept picture made a frame at a time)
 uniform vec3 uGlow;       // the light the lit screen throws (Tv.glow)
 uniform sampler2D uPrint; // layout.ts drawPrint: the keys' legends (R ink, B red cap) and the badge
-uniform float uFar;       // 1 while a cassette is carried between the recorder and the pile, behind the set
+uniform float uFar;       // 1 while a cassette is carried between the recorder and the pile, over the machine
 out vec4 outColor;
 
 const vec2 CAB = vec2(${f(CAB[0])}, ${f(CAB[1])});
@@ -298,9 +298,9 @@ void main() {
     vec2 pb = boxSpan(ro, rd, PILE_LO, PILE_HI);
     if (pb.x < pb.y) b = b.x < b.y ? vec2(min(b.x, pb.x), max(b.y, pb.y)) : pb;
   }
-  // A cassette carried between them goes through the space between the recorder's box and the pile's: all of it.
+  // A cassette carried between them goes through the space between the recorder's box and the pile's, and over the machine in front of the set: all of it.
   if (uFar > 0.5) {
-    vec2 fb = boxSpan(ro, rd, vec3(${f(Math.min(recorderBox()[0][0], pileBox()[0][0]))}, 0.0, ${f(Math.min(recorderBox()[0][2], pileBox()[0][2]))}), vec3(${f(Math.max(recorderBox()[1][0], pileBox()[1][0]))}, ${f(Math.max(recorderBox()[1][1], pileBox()[1][1]))}, ${f(Math.max(recorderBox()[1][2], pileBox()[1][2]))}));
+    vec2 fb = boxSpan(ro, rd, vec3(${farBox()[0].map(f).join(', ')}), vec3(${farBox()[1].map(f).join(', ')}));
     if (fb.x < fb.y) b = b.x < b.y ? vec2(min(b.x, fb.x), max(b.y, fb.y)) : fb;
   }
   float near = b.x, far = b.y;

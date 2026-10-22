@@ -72,7 +72,7 @@ export const GUESS_EXTRA_TEXT = guess
   .trim();
 
 /**
- * Kessler's typing slips in the tape's GUESS (the sticky on its page owns up to them): a word on the tape and as printed,
+ * Kessler's typing slips in the tape's GUESS (the Post-it on its page owns up to them): a word on the tape and as printed,
  * by line. Each is two letters swapped inside a string, so the program runs as it should and, a swap keeping a line's sum,
  * CHECK agrees with the magazine's table: they are a payoff for reading closely, not part of the puzzle (that is line 125).
  */
