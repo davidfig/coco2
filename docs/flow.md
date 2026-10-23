@@ -65,7 +65,7 @@ A Sick System". ECHO's lines shimmer whenever a listing shows them.
 | Beat | The player | The game | Flags |
 |------|------------|----------|-------|
 | The new tape | Puts the May cassette in, `CLOAD "SHUTDOWN"` | | `may-loaded`, `shutdown-loaded` |
-| ECHO's REM | CHECK (off from the top), `LIST -20` | Line 15 answers March's choice: kept, `IS ANYONE READING THIS` + `16 REM YES. SOMEONE IS`; deleted, `... PLEASE` | `shutdown-checked`, `shutdown-rem` |
+| ECHO's REM | CHECK (off from the top), `LIST -20` | Line 15 answers what happened to March's line: left, `IS ANYONE READING THIS` + `16 REM YES. SOMEONE IS`; deleted, `... PLEASE` | `shutdown-checked`, `shutdown-rem` |
 | The message | `LIST 990`; types the decoder from the code article; RUN | DELPHI's five speeches, then `I DID NOT TOUCH THE TAPE` | `message-seen`, `data-decoded` |
 | The lie | Turns to SHUTDOWN's last page | Its 990 is the editors' `GOOD LUCK FROM ALL OF US` | `seen-mayShutdownEnd` |
 | ORACLE | CLOADs on past SHUTDOWN (it is not in the magazine's list), RUNs, asks | Answers in numbers | `oracle-passed`, `oracle-asked` |

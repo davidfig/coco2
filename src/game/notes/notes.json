@@ -52,9 +52,8 @@
       "mood": 0.5
     },
     { "id": "who", "when": ["found-extra-line", "seen-guess"], "text": "Who is asking?", "mood": 0.72, "ask": true },
-    { "id": "choice", "when": ["found-extra-line", "seen-guess"], "text": "Delete it (type {GUESS_EXTRA_LINE})? Or leave it?", "mood": 0.6, "ask": true, "solved": "deleted-extra-line", "orSolved": "echo-thanks" },
     { "id": "saw-pleads", "when": "saw-pleads", "text": "Deleted it. The screen: IS ANYONE READING THIS, PLEASE. The line is back", "mood": 0.55 },
-    { "id": "saw-thanks", "when": "saw-thanks", "text": "Left it. The screen: THANK YOU. So does the line", "mood": 0.4 },
+    { "id": "saw-thanks", "when": "saw-thanks", "text": "Then the screen said THANK YOU. So does the line now", "mood": 0.4 },
     { "id": "night", "when": "issue1-done", "text": "Well, that was weird. Can't believe how late it is. Shut it all down, see what I missed in the morning", "mood": 0.3, "ask": true, "solved": "issue1-closed" },
     { "id": "day2", "when": "issue2-waiting", "text": "{day:1}", "mood": 0.05, "date": true },
     { "id": "nextday", "when": "issue2-waiting", "text": "Another box on the step: the May RAINBOW and a new tape. More of M.K.'s Post-its", "mood": 0.2 },

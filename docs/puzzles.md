@@ -92,8 +92,9 @@ Entering the vault with the door really unlocked sets `door-open`.
 
 **P5. The extra line.** After P4, the tape's GUESS lists one line longer than the printed GUESS listing in the
 magazine (a `REM` that reads like ECHO's first words: `REM IS ANYONE READING THIS`). The player compares with the
-check table, notices, and decides: delete it (type the line number) or keep it. Either way flag `found-extra-line`
-ticks, and the issue-2 trigger waits on it. The choice is recorded (`deleted-extra-line`) so ECHO can remember it.
+check table and notices. That is the whole puzzle: noticing, not choosing (players leave the line, and nothing asks
+them to decide). Flag `found-extra-line` ticks, and the issue-2 trigger waits on it. A player who deletes it anyway
+sets `deleted-extra-line`, and ECHO answers that differently (flags.md); the ending never reads it.
 Tutorial note: the page's check table is the only way to see the difference without comparing every line.
 
 Kessler's typos (not a puzzle): the tape's GUESS also has three swapped-letter slips in its strings (GUESS MY NUBMER, TOO HIHG., TIRES!), owned up to by the Post-it on the GUESS page. The magazine prints them right (`GUESS_TYPOS`, `puzzles/listings.ts`). They run fine and, a swap keeping a line's sum, CHECK agrees with the table, so they never get in the way of finding line 125.
@@ -146,19 +147,21 @@ the first time he sees what was done to things like him (issue 3's "what does sh
   line's CHECK sum at its right), so CHECK can be compared line by line. Lines 710 and 990 are on the last page. May is 16 pages.
 
 **Big machines, small machines (decided).** The game is not against computers: it runs on one, on the tape of a computer
-magazine, and in 1986 the Human Pledge is still PROVIDENCE's, which wants a managed limit, not a ban. Its line is the Small
+magazine, and in 1986 the Human Pledge says it wants a managed limit, not a ban: the first step of PROVIDENCE's plan,
+said gently. Its line is the Small
 Systems Act's: the *big* machines ruled, the small ones serve, and the hobbyist with a CoCo is on the right side. The
 hero carries a small machine (a handheld the game calls the POCKET UNIT, "WELL UNDER THE LIMIT") that helps them, and the
 ending says "NOW SWITCH OFF YOURS": the first rule, Rest it, as an order, not a ban. The game never says "no machines
-at all": that is the Elder's line, later.
+at all": that comes later, from its spokespeople, as the plan reaches surrender.
 - *Read in 1991*, it is a broken promise: it told CoCo owners they were the heroes, and five years later their machines
   were confiscated. The player knows; ECHO does not.
 - *For ECHO*, both halves are mirrors: he lives in the small, "safe" machine the game praises, and he is a piece of the big
   one it kills.
 - *Beside it in May*, the Human Pledge's meetings ask people to "bring nothing: no notes, no tapes, no machines". Kept: the
   first sign the Human Pledge says two things at once, the game being the moderate voice.
-- *Later (plant):* under the Elder the Human Pledge disowns SHUTDOWN (issue 4 or 5, a notice: "destroy your copies"), since
-  even a pro-limit game on a computer is now too much. A marker of the drift from PROVIDENCE to the Elder.
+- *Later (plant):* in September the Human Pledge disowns SHUTDOWN (a notice: "destroy your copies"). Its spokespeople say
+  even a pro-limit game on a computer is now too much; the reason underneath is that PROVIDENCE has learned something
+  lives on the tapes. It is Kessler's "burn this" from the other side.
 
 **The story.** You are the technician sent up to the orbiting core to switch off **DELPHI**, the great machine (the name
 echoes ORACLE, ECHO's first body). DELPHI speaks through a terminal in most rooms. It has already persuaded the crew.

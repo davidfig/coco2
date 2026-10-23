@@ -59,9 +59,9 @@ export const MARCH: readonly Part[] = [
   },
 ];
 
-/** March's choice: leave the extra line (the default), or delete it. */
-export const KEPT: readonly Part[] = [{ title: 'Issue 1: the choice (kept)', steps: [{ say: 'Leaves line 125 alone, and thinks', wait: 14 }] }];
-export const DELETED: readonly Part[] = [{ title: 'Issue 1: the choice (deleted)', steps: [{ say: `Deletes line ${GUESS_EXTRA_LINE}`, type: [`${GUESS_EXTRA_LINE}`], wait: 7 }] }];
+/** March's extra line: left alone (what players do), or deleted by a curious one. Not a choice the game asks for. */
+export const KEPT: readonly Part[] = [{ title: 'Issue 1: the extra line (left)', steps: [{ say: 'Leaves line 125 alone and goes on', wait: 14 }] }];
+export const DELETED: readonly Part[] = [{ title: 'Issue 1: the extra line (deleted)', steps: [{ say: `Deletes line ${GUESS_EXTRA_LINE}`, type: [`${GUESS_EXTRA_LINE}`], wait: 7 }] }];
 
 export const MAY: readonly Part[] = [
   {
@@ -135,7 +135,7 @@ export interface Route {
 }
 
 export const ROUTES: readonly Route[] = [
-  { name: 'Kept the line, pulled the plug', parts: [...MARCH, ...KEPT, ...MAY, ...PULLED, ...END, ...JULY] },
+  { name: 'Left the line, pulled the plug', parts: [...MARCH, ...KEPT, ...MAY, ...PULLED, ...END, ...JULY] },
   { name: 'Deleted the line', parts: [...MARCH, ...DELETED, ...MAY, ...PULLED, ...END], shows: [...DELETED, MAY[1]] },
   { name: 'Left the plug', parts: [...MARCH, ...KEPT, ...MAY, ...LEFT, ...END], shows: [...LEFT, ...END] },
 ];

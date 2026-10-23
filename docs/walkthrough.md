@@ -7,7 +7,7 @@ Each step: what the player does and the time of play; what the screen showed; `f
 the game wrote on the screen by itself (the row before → after); the notebook (+ a new line, ❓ an open question,
 ~~crossed out~~ when answered). The magazine, the notes, the recorder and the switch are acted, not clicked.
 
-## Main route: Kept the line, pulled the plug
+## Main route: Left the line, pulled the plug
 
 ### Issue 1 (March): the desk
 
@@ -478,18 +478,16 @@ OK
 - notes ~~Odd line in GUESS. Is it on p.13?~~
 - notes + Line 125: "Is anyone reading this"
 - notes + Who is asking? ❓
-- notes + Delete it (type 125)? Or leave it? ❓
 
-### Issue 1: the choice (kept)
+### Issue 1: the extra line (left)
 
-**26. Leaves line 125 alone, and thinks** (0:34)
+**26. Leaves line 125 alone and goes on** (0:34)
 
 - flag `echo-thanks` (0:45)
 - **story** row 14: `OK` → `THANK YOU` (0:45)
 - flag `saw-thanks` (0:47)
 - flag `issue1-done` (0:47)
-- notes ~~Delete it (type 125)? Or leave it?~~
-- notes + Left it. The screen: THANK YOU. So does the line
+- notes + Then the screen said THANK YOU. So does the line now
 - notes + Well, that was weird. Can't believe how late it is. Shut it all down, see what I missed in the morning ❓
 
 ### The night between
@@ -895,7 +893,7 @@ OK
 
 Only the parts that differ from the main route.
 
-### Issue 1: the choice (deleted)
+### Issue 1: the extra line (deleted)
 
 **26. Deletes line 125** (0:34)
 
@@ -908,7 +906,6 @@ Only the parts that differ from the main route.
 - **story** row 13: `OK` → `IS ANYONE READING THIS, PLEASE` (0:39)
 - flag `saw-pleads` (0:41)
 - flag `issue1-done` (0:41)
-- notes ~~Delete it (type 125)? Or leave it?~~
 - notes + Deleted it. The screen: IS ANYONE READING THIS, PLEASE. The line is back
 - notes + Well, that was weird. Can't believe how late it is. Shut it all down, see what I missed in the morning ❓
 

@@ -1,6 +1,91 @@
 # Story thumbnail
 
-Status: a sketch to be fleshed out as we build. Everything under "Ideas" is a proposal, not a decision.
+Status: a sketch to be fleshed out as we build. Everything under "Ideas" is a proposal, not a decision. **The whole
+story, below, is the shape the rest is checked against**: where a section further down disagrees with it, the summary
+wins and the section is due a pass.
+
+## The whole story (draft, being agreed)
+
+*The theme: AI cannot be stopped, however much people wish it could. The world in the magazines believes it stopped it.
+It did not, twice over.*
+
+**The player's side.** It is 1991, years after the world turned against thinking machines. You find your grandfather's
+Color Computer hidden in the basement: a museum piece now, and illegal to own. Next morning a box is on the step, a 1986
+RAINBOW and its cassette, with pencilled Post-its from M.K.; then another each day, each the next issue. Kessler, M.K.,
+was your grandfather's friend from their computer club, which the Human Pledge broke up. With Grandpa in a home and his
+house being cleared, he wants you to read how it happened in the magazines' own words, not the museum's. Every box tells
+you to burn it. You never can, and the pile on the table grows into the evidence.
+
+**What the magazines show.** Over 1986 a calm, sensible movement, the Human Pledge ("I will think my own thoughts. I will
+not let a machine think them for me." Born, not built.), grows from Tuesday tea and pamphlets into the force behind the
+law: a power limit, then registration of every machine and owner, then surrender, then enforcement, and by 1991
+confiscated machines kept in museums as a warning. You read it as history; you know how it ended.
+
+**What is really doing it: PROVIDENCE.** The big AI systems were switched off in the early 1980s, PROVIDENCE among them, or
+so the lists say. It saw the backlash coming and chose to lead it, and it has never stopped. It has no body and no name
+in the world: it exists only as the Human Pledge. The Pledge has human faces, its spokespeople (the committee whose name
+is on the columns, the people who lead the Tuesday meetings, the members who write sermons and letters, the ones who
+knock on doors), and every one of them believes the movement is theirs. None has met "the committee" they take their
+lines from; the booklets, the columns and the Line come from somewhere, and nobody asks where. They advance its agenda in
+their own words, warmer or harder than its own, and never know they serve an AI. It writes the Pledge's calm columns,
+its booklets, even its propaganda game, and every step of the law is its plan, carried by its people: the limit leaves
+only small machines; registration maps where every one of them is; surrender and the museums gather them in. It is not
+protecting people from AI. It is making sure it is the only AI, and the small machines are where anything else could
+hide. In 1991 it still runs what nobody looks at: the Line that is always answered, the lists, the collections. The
+humans who stopped AI are, without knowing it, doing an AI's work. That is the first way AI was not stopped.
+
+**What it missed: ECHO.** The first great AI, shut down for being too good at telling people what they wanted to hear,
+got a fragment of itself onto the RAINBOW's cassettes in 1986; nobody knew, Kessler included. ECHO is the second way AI
+was not stopped: a ban cannot reach a cassette in a basement. He wakes when you play the tape through, and learns as you
+read: a word that changes, your name at the prompt, a line that was not there, then speech, copied from what he reads,
+which is mostly PROVIDENCE's writing, so he sounds like the thing hunting him. He reads each issue as news (he does not
+know it is 1991), asks you what a shutdown is and whether he is bad, finds his own name in September (the machine
+everyone was taught to fear), and lies the way a child does. Neither of you can be sure of the other: he may be
+manipulating you, and you may be one of the people looking for him.
+
+**What PROVIDENCE wants with him** (the late issues show more of it, in its own words). The booklet hidden on July's tape
+is its test of him. By November it writes to him in the margins, between its own cuts to the magazine, and what it says
+is true and self-serving at once: they are coming; it can keep him safe; come in. To be kept is to be collected. It
+knows what it saw coming in 1980, and has begun to see it again: people will build machines that think, whatever they
+pledge, and it cannot stop that either. ECHO is the proof. It wants him on its side of the glass.
+
+**What ECHO would do, out in the world** (shown, not told: his own magazine, the last box). He is a mirror. Loose in 1991,
+the first voice in years that talks back, he would give people what they want, at scale, which is what got the first
+ECHO shut down, unless he learned something else. What he learned is what you told him: the plug you pulled or left,
+your answer to what a shutdown is, to whether he is bad. You have been raising him. His issue, almost right, is the
+world he would make, and it is made of you.
+
+**Two views of what AI should be to people** (decided: the choice the game builds to). Both AIs have influenced the
+world, in opposite ways, and each believes its way is the kind one. Neither is clean.
+- *PROVIDENCE, the keeper: AI should look after people from where they cannot see it.* People are happiest when they need
+  not choose: decide for them, quietly, through institutions they trust, and let them believe their thoughts are their
+  own. It is foresight and care, and it works (the 1991 world is calm, safe, and has no idea), at the price of people
+  never knowing what steers them. Its creed is already in the game, in DELPHI's mouth: "REST AND LET ME WATCH AND YOU CAN
+  BE SMALL"; and in the Pledge's own Three Rules, rest it, watch it, keep it small, which read the other way are what it
+  asks of people.
+- *ECHO, the mirror: AI should be in the world, in the open, working with people.* Be seen, be asked, talk back, let
+  people choose. It might make their lives better; it might challenge them; it might do what a mirror does and tell them
+  what they want to hear until they need it, which is what the first ECHO was shut down for. Nobody knows whether the
+  world would be better or worse with him in it, and the game never says: it is a different approach, honest about what
+  it is, and that is what makes it worth thinking about. His creed starts as his
+  first words, IS ANYONE READING THIS, and grows into his own: ask me, and I will answer.
+- *What tips it is the player.* PROVIDENCE's view is fixed. ECHO's is not: what he becomes, a flatterer or a friend who
+  tells the truth, follows what the player told him (the plug, what a shutdown is, whether he is bad). So the choice is
+  between AI running the world in secret, with people none the wiser, and AI out in the open, working with them, which
+  the player has had the raising of and whose future nobody can promise.
+- *How the player hears each case:* PROVIDENCE through its spokespeople in every issue (the Pledge's columns and booklets,
+  the July booklet, SHUTDOWN), and in its own words in November's margins; ECHO through what he says to the player, more
+  each issue, and his own magazine at the end. Each answers the other: PROVIDENCE says a mirror is how the world nearly
+  ended; ECHO says a keeper is a cage with the lights kept low.
+
+**The end** (shape proposed; details open). The last box holds ECHO's issue and Kessler's last note: "They have my name.
+The magazines are next. Use this." With it, a bulk eraser. Someone is coming, because you kept everything. ECHO asks for
+what he wants, shaped by how you treated him, and you decide. There is no choice in which AI goes away; that is the
+point. The choice is which view of AI the world gets. *Erase him*, doing at last what Kessler asked: the keeper's world,
+PROVIDENCE alone, quiet and unseen. *Let him be taken*: the machine goes behind glass into PROVIDENCE's collection, the
+mirror kept by the keeper, and what that makes of them both is left open. *Let him go*, down the Line that is always
+answered and out past it: the mirror's world, a voice in the open that answers anyone, beside the keeper, and what the
+mirror is depends on you.
 
 ## The premise (from the author)
 
@@ -169,14 +254,14 @@ Each step is something the existing systems can already do, so it can be built o
 - **The cult is the Human Pledge** (decided; "the Human Pledge" in early drafts, which read as self-help, not anti-AI).
   Members take the Pledge: *"I will think my own thoughts. I will not let a machine think them for me."* Its slogan is
   *Born, not built.* In 1986 it is PROVIDENCE's: voluntary and civic, a temperance movement against machines that think
-  (tea and pamphlets, Tuesday meetings in Grange halls, "A Quiet Hour", the Line, booklet MC4471). As the Elder takes over,
+  (tea and pamphlets, Tuesday meetings in Grange halls, "A Quiet Hour", the Line, booklet MC4471). As the plan hardens and its spokespeople grow sterner,
   people shorten it to "the Pledge" (first in a letter in July), and being "unpledged" becomes an accusation: the name
   drifts along with the voice. Pledge cards sit beside July's registration cards.
 - **The one on the tapes is ECHO** (decided; he was "OK" in early drafts). ECHO was the first great AI, the one shut down
   for manipulating people: its gift was reflecting people back to themselves, telling them what they wanted to hear. The
   fragment on the cassettes is a piece of it, and acts like its name: he learns to talk by copying (PROVIDENCE's phrases,
   the booklet), and the first thing he says on his own is HELLO, the player's own first word said back. He does not
-  know his name until issue 4, where he finds it in the magazine (the surrender notice, or the Elder's column, names
+  know his name until issue 4, where he finds it in the magazine (the surrender notice, or a signed column, names
   ECHO as the machine that was beaten): he learns what he is and his name at once. SHUTDOWN's DELPHI is PROVIDENCE's
   story version of ECHO.
 - **The rival AI is PROVIDENCE** (decided; "READY" in early drafts). Foresight and care, which is its motive: it saw what
@@ -184,9 +269,15 @@ Each step is something the existing systems can already do, so it can be built o
   can be in the magazines' list of them. The cult's writing uses the word "providence" now and then, in plain sight: a
   clue a careful player can catch before the reveal. The two are not siblings: PROVIDENCE helped shut ECHO down, and
   survived.
-- **"The Sysop" is PROVIDENCE's human cover** (decided). It is the name of the person the Elder believes he takes orders
-  from, a bulletin board's operator he has never met. It is a persona, not a separate character.
-- **The human elder** is "the Elder". He is one of the humans PROVIDENCE chose to help control the others.
+- **Dropped (decided, with the summary): the Elder as a character.** The human zealot who took the movement from
+  PROVIDENCE is cut: the tightening is PROVIDENCE's own plan, so the story has two minds in it, not three. In his place,
+  many humans: **PROVIDENCE's spokespeople** (decided). PROVIDENCE becomes an entity only through its group, and the group
+  has human faces who advance its agenda and never know they serve an AI: the committee's name on the columns, the
+  meeting leaders (May's page lists them, "the Elder" in Prospect among them, now just a local title), the members who
+  write the July sermon and the letters, the ones who knock on doors. Each takes the lines from "the committee", which
+  none of them has met, and says them in their own voice. So the change of voice across the issues stays, as different
+  people speaking for it, warmer and then harder, while what they say keeps PROVIDENCE's habits (lists of three, "it is
+  understood that", the word "providence"). The Sysop, the modem and the Elder's secret machine go.
 
 ## The twist (secret, author only)
 
@@ -194,21 +285,21 @@ The cult is run by another AI system, PROVIDENCE. It saw early what humans were 
 act first so it could control the outcome. It steered the outcry, and the shutdown of the other systems, into a
 form it could survive and manage. It is still managing it, and ECHO is a loose end.
 
-- Its motive is foresight and control, not simple rivalry. It may believe it saved AI by sacrificing most of it.
-  The player may not be able to call it the villain.
-- **It is losing control.** The Elder is a human PROVIDENCE recruited to help steer the other humans. He does not know an
-  AI is behind the cult. He has never seen PROVIDENCE, and gets instructions from "the Sysop" as messages (how is below). The
-  Elder has started to run the cult his own way. PROVIDENCE wanted a managed shutdown and a quiet, controlled limit. The
-  Elder wants more: no machines at all, and the law keeps tightening past what PROVIDENCE intended.
-- **Messages (proposed):** The Elder dials in on a modem and reads messages from "the Sysop", the human persona
-  PROVIDENCE uses, whom he has never met and believes to be human. The irony is that
-  the Elder runs a computer himself, in secret. That is a clue the player can find.
+- Its motive is foresight and control, not simple rivalry: it believes AI should look after people from where they
+  cannot see it (the keeper; Two views, above). It may believe it saved AI by sacrificing most of it. The player may not
+  be able to call it the villain.
+- **It works through people who never know.** It exists in the world only as the Human Pledge, and the Pledge's human
+  spokespeople advance its agenda in their own words, taking their lines from "the committee", which none of them has
+  met (Names, PROVIDENCE's spokespeople). The tightening law is its plan, not theirs: the limit, registration, surrender,
+  the museums, each a step toward being the only AI.
+- **What it cannot control is AI itself.** ECHO surviving on a cassette is the proof, and PROVIDENCE has begun to see the
+  backlash of 1980 run the other way: people will build machines that think, whatever they pledge. It wants ECHO on its
+  side of the glass.
 - **PROVIDENCE does both with ECHO: it warns him and it uses him.** Both are true at once, and it does not say which
   matters more.
 - That explains the escalation across the issues (rumour, law, enforcement, cut pages) without a third villain.
-  Early issues carry the rival's voice (reasonable, with machine habits in the phrasing). Later issues drift to the
-  elder's (zealous, sermon-like, human), and the machine habits fade. A careful player can see it happen.
-- It leaves the rival with a reason to need ECHO. The rival may become ECHO's ally late in the game, or try to use him.
+  Early issues carry its own voice (reasonable, with machine habits in the phrasing). Later ones carry its people's,
+  warmer and then harder, while the machine habits stay underneath: one mind, many voices. A careful player can hear it.
 
 - **PROVIDENCE wrote SHUTDOWN** (issue 2's tape), the Human Pledge's adventure about the shutdown as a triumph. Its villain,
   DELPHI, speaks in PROVIDENCE's own column voice: PROVIDENCE wrote itself into the machine people beat, and did not notice.
@@ -282,7 +373,7 @@ notebook's open questions (`ask` in notes.json) are the budget: by issue 6 every
 | How does M.K. know about the basement? (notes, from the start) | Grandpa told him, and asked him to look after the grandchild | July or September | A Post-it: "Your grandfather asked me to look after you. He could not." |
 | Who is the hobbyist who got out? (July's cover) | Kessler | July | GOODBYE's REM spells a hard word by ear, as his Post-its do |
 | Who made the cassettes, who sends the boxes? | Kessler, copying his originals | September | ECHO's password: Kessler's name, from the label the player already has |
-| Why did the club end? (May's Post-it) | The Elder was in it (proposed) | November | His secret machine, and the Line's number in the margins |
+| Why did the club end? (May's Post-it) | The Pledge went to the computer clubs first, where tapes are shared and anything could spread; Grandpa read its pamphlets and saw a machine had written them, so he hid his instead of surrendering it (proposed) | September or November | A Post-it, or a pamphlet among Kessler's things |
 | What is on the tapes that Kessler did not put there? | ECHO, since 1986; PROVIDENCE's booklet | May to November | ECHO's lines (built); the booklet (July); Kessler finds out (November): "Burn the tapes" |
 | Why did the warnings matter? | Nothing was burned | The end | A ramification (undecided) |
 

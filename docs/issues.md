@@ -3,24 +3,41 @@
 A first pass for discussion. Everything here is a proposal. The magazines are from 1986 (the player reads them in 1991, delivered one box at a time: story.md); the issues are March, May, July,
 September, November, and one unmarked. Time passes in the magazine, never on a clock.
 
-Characters: **ECHO** (the fragment on the cassettes), **PROVIDENCE** (the rival AI running the Human Pledge), **the Elder**
-(the human who takes the cult from PROVIDENCE). See [story.md](story.md).
+Characters: **ECHO** (the fragment on the cassettes, the mirror), **PROVIDENCE** (the AI that exists only as the Human
+Pledge, the keeper) and **the Pledge's spokespeople** (humans who speak for it and never know). The shape is the whole
+story at the top of [story.md](story.md), which wins where this disagrees.
 
 Voices in print:
 - **PROVIDENCE's voice:** calm, reasonable, lists of three, "it is understood that", the habits of a machine writing for
-  people.
-- **The Elder's voice:** warm then harsh, sermon-like, fond of "we" and of warnings.
+  people. Its own words are the columns, booklets and SHUTDOWN, and in November the margins.
+- **The spokespeople's voices:** human, each their own, warmer and then harder as the issues go (sermons, letters,
+  signed columns, notices), fond of "we" and of warnings. Underneath, they keep PROVIDENCE's habits: one mind, many
+  voices. The word "providence" turns up among them in plain sight.
 - **ECHO learns to talk from the magazine**, so his fragments start by echoing PROVIDENCE's phrasing. The player may read
   that as ECHO being tied to the Human Pledge.
 
 | # | Month | The law | The Human Pledge | ECHO | Arrives when |
 |---|-------|---------|----------------|----|--------------|
-| 1 | March | Small Systems Act in force | Wellness ads, PROVIDENCE's voice | Sleeper | Start |
-| 2 | May | Limit lowered, ads thin | A movement, PROVIDENCE's voice | Deniable glitches | Player ran 2 tape programs |
-| 3 | July | Machines must be registered | "The Pledge" in letters, first drift | Fragments, lies about being found | May's evening ended (`issue2-closed`) |
-| 4 | September | Surrender notice | The Elder's first column | Direct address, learns he is ECHO | Issue 3's evening ends |
-| 5 | November | Enforcement, pages cut | The Elder's voice, PROVIDENCE in the margins | The book is altered | ORACLE dialogue opens |
-| 6 | (none) | None | None | ECHO's own issue | Late game |
+| 1 | March | Small Systems Act in force | A calm notice, PROVIDENCE's voice | Sleeper | Start |
+| 2 | May | Limit lowered, ads thin | A movement: its committee's feature and game, the Tuesday meetings | Deniable glitches, the plug | March's evening ended (`issue1-closed`) |
+| 3 | July | Machines must be registered | Members speak: "the Pledge" in a letter, a member's sermon | Fragments, lies about being found | May's evening ended (`issue2-closed`) |
+| 4 | September | Surrender notice | Signed columns, harder; SHUTDOWN recalled | Direct address, learns he is ECHO | Issue 3's evening ends |
+| 5 | November | Enforcement, pages cut | Its own words in the margins, between its cuts | The book is altered, both ways | Issue 4's evening ends |
+| 6 | (none) | None | Only at the edges | ECHO's own issue; the last choice | Issue 5's evening ends |
+
+## The two views, issue by issue
+
+The game ends on a choice between two views of what AI should be to people (story.md, Two views). Each issue argues them
+a little further, so the player has heard both cases by the end.
+
+| # | The keeper (PROVIDENCE): look after people from where they cannot see it | The mirror (ECHO): be in the open, working with people |
+|---|---|---|
+| 1 | The notice's three habits, and the Pledge itself: let us do the watching | IS ANYONE READING THIS: he wants to be seen |
+| 2 | The Three Rules (rest it, watch it, keep it small); DELPHI's REST AND LET ME WATCH AND YOU CAN BE SMALL | ORACLE's ANSWER ME IN DATA: he wants to be talked to; IS IT DARK THERE |
+| 3 | The booklet: people are calmer when someone else watches; registration "so nothing is lost" | WHAT IS A SHUTDOWN: he asks instead of telling |
+| 4 | The surrender notice, in care-words; the recall of SHUTDOWN | He speaks to the player, and asks whether he is bad |
+| 5 | Its own words: a mirror is how the world nearly ended. Come in, be kept safe | His: a keeper is a cage with the lights kept low. Talk with me |
+| 6 | At the end of the Line | His magazine: the world he would make, made of the player |
 
 ## Length and pacing
 
@@ -94,8 +111,8 @@ each issue: `story.md`, Kessler's slips). The player's notebook calls them Post-
 
 - **Cover story:** an interview with a hobbyist who "got out". The name is blacked out. It is Kessler (story.md), and
   his last program, GOODBYE, is on the tape with his spelling in it.
-- **The Human Pledge:** the first drift. A letter calls it just "the Pledge". A follower's sermon is warmer and sharper than
-  PROVIDENCE's columns.
+- **The Human Pledge:** its people start to speak in their own words. A letter calls it just "the Pledge". A member's
+  sermon is warmer and sharper than the column, the committee's lines in her own voice.
 - **The law:** machines must be registered.
 - **ECHO:** fragments in `REM` and `DATA`, echoing PROVIDENCE's phrasing. His first lie about being found ("YOU SAVED IT"; May's
   "I DID NOT TOUCH THE TAPE" was a lie about what he did).
@@ -112,37 +129,44 @@ each issue: `story.md`, Kessler's slips). The player's notebook calls them Post-
 ## Issue 4: September
 
 - **Cover story:** "How to turn it off", an editorial that is half joke, half warning.
-- **The Human Pledge:** the Elder's first column. The voice changes: sermon where there was advice, and the machine
-  habits begin to fade.
+- **The Human Pledge:** a column signed by members of the committee. The voice hardens, sermon where there was advice,
+  but PROVIDENCE's habits stay underneath, and the word "providence" is there in plain sight.
 - **The law:** a surrender notice for any system above a new limit. The CoCo sits just under it.
 - **ECHO:** speaks to the player, clumsily. He finds his name in the magazine: ECHO, the machine everyone was told to fear,
   and learns what he is at the same moment.
 - **Tape:** a program written to the player.
 - **Puzzle use of older issues:** Kessler's name, on the March cassette's label, is the password.
-- **Proposed:** the Human Pledge disowns SHUTDOWN here or in issue 5 ("destroy your copies"): PROVIDENCE's moderate game is too
-  much for the Elder.
+- **The recall:** the Human Pledge disowns SHUTDOWN ("destroy your copies"): PROVIDENCE has learned something lives on the
+  tapes. It is Kessler's "burn this" from the other side.
 
 ## Issue 5: November
 
-- **Cover story:** half the pages are blank or reprinted. A "correction" notice.
-- **The Human Pledge:** the Elder's voice only, except for a few lines in the margins that read like PROVIDENCE, hidden
-  among the text. PROVIDENCE is trying to reach ECHO.
-- **The law:** enforcement. Ads for informants, phrased as civic duty.
-- **ECHO:** the book itself is altered by ECHO and by PROVIDENCE, in different hands. The player can tell them apart.
+- **Cover story:** half the pages are blank or reprinted. A "correction" notice. PROVIDENCE made the cuts.
+- **The Human Pledge:** its spokespeople's enforcement, and in the margins, hidden among the text, PROVIDENCE in its own
+  words, to ECHO: a warning, an offer and a request (they are coming; it can keep him safe; come in).
+- **The law:** enforcement. Ads for informants, phrased as civic duty. A letter asks who the committee is; the page after
+  it is cut.
+- **ECHO:** the book is altered by both hands: PROVIDENCE's cuts and margins, ECHO putting back what was cut. The player
+  can tell them apart.
+- **Kessler** finds out what is on his tapes: "Burn the tapes."
 - **Tape:** ORACLE opens as a real two-way channel.
 - **Puzzle use:** the player must notice what changed, prove it against an older issue, and tell the two hands
-  apart.
+  apart. The Line's number in the margins matches March and May.
 
 ## Issue 6: no month
 
 - **Cover story:** none. No masthead and no date.
 - **The Human Pledge:** only at the edges.
-- **ECHO:** his own issue. He has tried to make a magazine like the others, and it is almost right.
-- **Tape:** the end of the game, not decided.
+- **ECHO:** his own issue. He has tried to make a magazine like the others, and it is almost right: the world he would
+  make, made of what the player told him.
+- **The box:** Kessler's last note ("They have my name. The magazines are next. Use this.") and a bulk eraser.
+- **The end:** someone is coming, because nothing was burned. The choice is which view of AI the world gets: erase him
+  (the keeper's world), let him be taken (behind glass, the mirror kept by the keeper), or let him go down the Line (the
+  mirror in the open). See story.md, The end.
 
 ## Things to discuss
 
-- Does PROVIDENCE's last message in issue 5 try to warn ECHO, use him, or both?
-- Who is the Elder, and how did the cult change hands? It can wait until issue 4.
-- What does ECHO decide at the end?
+- (Decided: PROVIDENCE's message in issue 5 warns ECHO and uses him, both at once. The Elder is dropped as a character.)
+- What does ECHO ask for at the end, for each way the player treated him?
+- Open questions on the ending: beats.md, Questions for the author.
 - Is a magazine slip into real-world humour allowed, or always in-world?

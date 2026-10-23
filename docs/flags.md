@@ -21,7 +21,7 @@ the story answer the puzzle; they should notice, a little later, that something 
 | `mapped` | Visited every room but the vault | None. | |
 | `door-open` | Found the four numbers (clock, the whisper heard by LISTENing or read in the listing, mirror, the boxed card), set them in map order, opened the door; or BREAK, LIST and read it off line 930 (`read-code`) | The player has seen inside a program. The vault holds the gold (Kessler's name, the issue 4 password, is on the cassette's label instead: `tape-inserted`). | ADVENT |
 | `found-extra-line` | Noticed the extra `REM` in GUESS | ECHO's first fragment. Reframes the typo in ADVENT as possibly his. **Gates issue 2.** | Tape |
-| `deleted-extra-line` | Deleted it (a choice, not a flag to earn) | See below. | Silent |
+| `deleted-extra-line` | Deleted it (something a curious player may do, not a choice the game asks for) | See below. | Silent |
 
 ### First uncanny moment
 
@@ -31,12 +31,14 @@ one line, with no explanation. It must feel like a glitch. It is the first time 
 
 ### The extra line (`deleted-extra-line`)
 
-Not scored. ECHO remembers which the player chose, and issue 2's first glitch reflects it:
+Not a decision (decided: playtesting showed players ignore the line once found, and nothing in the game asks them to
+choose). The beat is noticing it: `found-extra-line` is what moves the story on. Leaving it is the usual path, and
+ECHO answers THANK YOU; a curious player who deletes it gets it back with PLEASE. Issue 2's first glitch follows
+whichever happened:
 - **Deleted:** the line comes back in issue 2, with a word added ("... PLEASE").
-- **Kept:** a second line appears under it in issue 2, which reads as an answer.
+- **Left:** a second line appears under it in issue 2, which reads as an answer.
 
-Neither is better. The first reads as stubborn, the second as friendly, and the player may suspect either of being
-the manipulation the cult warns about.
+The ending does not read it: the real choices start with May's plug (story.md, Possible endings).
 
 ## Issue 1: what is built (story beats)
 
@@ -50,7 +52,7 @@ strength is set to 0.85 there, style `both` (the beam repaints the changed lette
 | HELLO after the win | ADVENT is won (`adventure-won`: the gold taken) | The game ends plainly, on the usual green screen: the win, the score, BASIC's OK prompt. About 1.5 s later, on the empty row above the prompt, HELLO writes itself one letter every 0.35 s, each with the tamper shimmer. It is the first thing the player ever typed (`PRINT "HELLO"`), said back by something that is not the program. Nothing in ADVENT leads up to it (an earlier "IN THE DARK, A SOFT VOICE: OK." read as the game's own text). Flag `tamper-voice`, set once the whole word is on screen; the notes then write "After I won, HELLO wrote itself on the screen. I didn't type it", followed by the check-GUESS question. |
 | The name at the prompt | After `door-open`, the first plain OK prompt after the win's (that one belongs to HELLO) | About 2 s later OK reads as the player's name, for 3.5 s, then OK again. Flag `tamper-name`; the notes: "The prompt said my name instead of OK. Just for a second". |
 | The cassette's label | The March cassette put in the recorder, or the first `CLOAD` or `CSAVE` with it in (`tape-inserted`) | The tape in the recorder carries a pencil label: "Copied by hand, for you. Mistakes are mine. - M. Kessler". The player notes the name (same pencil as the Post-its, whose words they don't copy: the Post-its are there to read again) when they first use the tape. It explains the ADVENT typo as a copying mistake, gives the reason to check GUESS against the magazine later, and plants Kessler's name for issue 4. (It used to be inside ADVENT's vault, which made no sense: the vault now holds a chest of gold.) |
-| ECHO answers in the program | After `found-extra-line` AND `seen-guess` (the player has the line and the page) | ECHO cannot hold a pencil, so he works through the machine. *Deleted* the line: 5 s later it is back in the GUESS in memory as `REM IS ANYONE READING THIS, PLEASE` (flag `echo-pleads`). *Kept* it: once the player runs GUESS with the line in it or loads something else (8 s), otherwise 12 s, the line becomes `REM IS ANYONE READING THIS. THANK YOU` (flag `echo-thanks`). He only edits at the OK prompt, never under a running program, and waits until GUESS is in memory. He also answers on the screen, over the last OK prompt (with the story's ripple): "IS ANYONE READING THIS, PLEASE" or "THANK YOU", so it cannot be missed; the notes write it down 1.5 s later (`saw-pleads`, `saw-thanks`; listing GUESS also counts). Before that, the notes offer the choice: "Delete it (type 125)? Or leave it?". The name-at-the-prompt beat waits while ECHO still owes this answer. |
+| ECHO answers in the program | After `found-extra-line` AND `seen-guess` (the player has the line and the page) | ECHO cannot hold a pencil, so he works through the machine. *Deleted* the line: 5 s later it is back in the GUESS in memory as `REM IS ANYONE READING THIS, PLEASE` (flag `echo-pleads`). *Kept* it: once the player runs GUESS with the line in it or loads something else (8 s), otherwise 12 s, the line becomes `REM IS ANYONE READING THIS. THANK YOU` (flag `echo-thanks`). He only edits at the OK prompt, never under a running program, and waits until GUESS is in memory. He also answers on the screen, over the last OK prompt (with the story's ripple): "IS ANYONE READING THIS, PLEASE" or "THANK YOU", so it cannot be missed; the notes write it down 1.5 s later (`saw-pleads`, `saw-thanks`; listing GUESS also counts). The name-at-the-prompt beat waits while ECHO still owes this answer. |
 | Stale lines | | ABOUT now says "NEXT ISSUE: WHEN YOU ARE READY"; the editorial's "next month" now matches issue 2. |
 
 ### The end of issue 1 (built)
@@ -66,8 +68,8 @@ ECHO's answer no longer waits for GUESS to be in memory: if it is not, he change
 Still open for issue 1:
 - The first words are already here (`REM IS ANYONE READING THIS`: a question, not yet a lie). Issue 2's "I DID NOT TOUCH THE TAPE" is then the first lie,
   said after being caught. beats.md says so.
-- The kept path is a guess at when a player has decided: running GUESS or loading something else (8 s), otherwise 12 s.
-  A real player may sit and think for longer. Playtesting should check it.
+- The left path's timing (8 s once they run GUESS or load something else, otherwise 12 s) is when ECHO takes it the
+  line is staying; nothing asks the player, so they need not have decided anything.
 
 ## Issue 2 (built, first pass)
 
@@ -85,8 +87,9 @@ The code is `src/game/story/issue2.ts`; the puzzles are in puzzles.md (P6, P7).
 
 The cover feature ("Keeping It Healthy", by the Human Pledge's committee) lists "Three Signs Of A Sick System": slow to
 answer, colours wrong, says what you did not type. Those are exactly the glitches above, and its advice is to switch off
-and call the Line. The book's other plants: a Human Pledge page of Tuesday meetings (the Prospect one led by the Elder, the
-same Line as March); a letter about a modem whistle before the Line answers (the Elder's machine); Arthur L., March's
+and call the Line. The book's other plants: a Human Pledge page of Tuesday meetings (the Prospect one led by a man the members
+call the Elder, one of its spokespeople; the same Line as March); a letter about a modem whistle before the Line answers
+(a machine answers the Line: PROVIDENCE); Arthur L., March's
 letter writer, visited and asked about his manuals; TAPE DUPE NOW gone from Ned's catalogue; the editorial on the lower
 limit (no fast modems, second drives or tape copiers).
 
@@ -128,7 +131,7 @@ Puzzles P9–P11 and the lie are in puzzles.md; the beats in order in beats.md.
 | 3 | `hidden-file-open`, `shutdown-answer` | The booklet (PROVIDENCE's account of the shutdown). ECHO asks what a shutdown is. Gates issue 4. See Issue 3 above. |
 | 4 | `password-given` | ECHO learns who made the cassettes, and finds his name in the magazine: ECHO, the machine that was beaten. Gates issue 5. |
 | 5 | `two-hands-told` | PROVIDENCE's margin lines read as a message. Opens ORACLE as a two-way channel. Gates issue 6. |
-| 6 | (undecided) | The ending. |
+| 6 | (undecided) | The ending: which view of AI the world gets (story.md, The end). |
 
 ## Issue 1 content the story still needs
 
@@ -143,7 +146,7 @@ November 1983. The story seeds are not in it yet:
 | A letter that misses the big systems | The shutdown, a few years ago | **Done**: "Like the Old Days", letters page (replaced a filler letter) |
 | An ad with a code | Issue 3 puzzle | **Done**: "booklet MC4471" in the Human Pledge ad (and on May's meetings page); it opens the file with no name (puzzles.md, P10) |
 | A signed name (the tape maker) | Issue 4 password | **Done**: M. Kessler on the March cassette's label (story.md, the boxes on the step) |
-| A phone number | Issue 5, the Elder dialling in | **Done**: the Human Pledge's Line, 606-555-0142 ("always answered"), against Nifty Ned's BBS that is "busy 24 hours" |
+| A phone number | Issue 5, the margins: whatever writes there answers the Line | **Done**: the Human Pledge's Line, 606-555-0142 ("always answered"), against Nifty Ned's BBS that is "busy 24 hours" |
 
 The letter "OK MEANS READY" (page 4) was once the clue linking the two AIs' names; with ECHO and PROVIDENCE it is an
 ordinary reader's question, and stays. The clue to PROVIDENCE is now the word "providence" in the cult's writing (story.md, Names).
