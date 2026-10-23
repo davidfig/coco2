@@ -12,6 +12,7 @@ import { drawGuessListing } from './extras';
 import { drawFirstProgram, drawStopping, drawTape } from './learn';
 import { drawLetters } from './letters';
 import { ISSUES, ISSUE_DATE, type AnyPageId, type IssueId } from './pages';
+import { drawJulyCover, julyDraft } from './julyDraft';
 import { drawMayCover } from './may';
 import { drawMayBackCover } from './mayBackCover';
 import { drawMayInsideBack } from './mayInsideBack';
@@ -74,6 +75,23 @@ const PAGES: Record<AnyPageId, PageDef> = {
   mayMarketplace: { draw: drawMayNed },
   mayInsideBack: { draw: drawMayInsideBack, colour: true },
   mayBackCover: { draw: drawMayBackCover, colour: true },
+  // July: placeholders until each page is written (julyDraft.ts).
+  julyCover: { draw: drawJulyCover, colour: true },
+  julyInsideFront: { draw: julyDraft('julyInsideFront') },
+  julyContents: { draw: julyDraft('julyContents') },
+  julyLetters: { draw: julyDraft('julyLetters') },
+  julyEditorial: { draw: julyDraft('julyEditorial') },
+  julyInterview: { draw: julyDraft('julyInterview') },
+  julyPlace: { draw: julyDraft('julyPlace') },
+  julyRegister: { draw: julyDraft('julyRegister') },
+  julyRegisterList: { draw: julyDraft('julyRegisterList') },
+  julyTape: { draw: julyDraft('julyTape') },
+  julyClearMind: { draw: julyDraft('julyClearMind') },
+  julySermon: { draw: julyDraft('julySermon') },
+  julyClassifieds: { draw: julyDraft('julyClassifieds') },
+  julyMarketplace: { draw: julyDraft('julyMarketplace') },
+  julyInsideBack: { draw: julyDraft('julyInsideBack') },
+  julyBackCover: { draw: julyDraft('julyBackCover') },
 };
 
 /** Draw page `i` (0-based) of an issue onto a PAGE_W × PAGE_H canvas. */

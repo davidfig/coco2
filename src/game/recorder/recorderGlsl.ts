@@ -1,10 +1,10 @@
 import { CAS, GRILLE, HUB, JACKS, KEYS, LED, LID, REC, WELL, WIN } from './layout';
-import { PRINT_LABEL_V0, PRINT_LABEL_V1, PRINT_TOP_V } from './print';
+import { PRINT_LABEL_ROW_V, PRINT_LABEL_V0, PRINT_LABEL_V1, PRINT_TOP_V } from './print';
 
 const f = (n: number): string => n.toFixed(4);
 
 /**
- * GLSL for the cassette recorder and the two cassettes, for the computer's march (`computerShader.ts`): their SDF
+ * GLSL for the cassette recorder and the three cassettes, for the computer's march (`computerShader.ts`): their SDF
  * (`recorder`, materials 20 and up), what each part is made of (`recMaterial`), the smoked window over the cassette
  * (`recGlass`, laid over whatever the ray found under it) and their shadows on the table (`recShadow`). Needs the
  * computer shader's sdBox, noise, stipple and LIGHT.
@@ -12,10 +12,10 @@ const f = (n: number): string => n.toFixed(4);
 export const RECORDER_GLSL = /* glsl */ `
 uniform float uLid;         // how far the door is open (radians)
 uniform vec4 uRecKeys;      // RECORD, PLAY, STOP/EJECT: how far each is down (0..1); the record lamp
-uniform vec4 uCasA, uCasB;  // the March and the May cassette: centre (model frame) and turn; y under the table hides one
-uniform vec2 uCasTilt;      // each one's tilt about its own x
+uniform vec4 uCasA, uCasB, uCasC; // the March, May and July cassettes: centre (model frame) and turn; y under the table hides one
+uniform vec3 uCasTilt;      // each one's tilt about its own x
 uniform vec2 uReel;         // the hubs' turn (radians), and how much of the tape has wound onto the right-hand reel (0..1)
-uniform sampler2D uRecPrint; // print.ts: the recorder's top, and the two labels
+uniform sampler2D uRecPrint; // print.ts: the recorder's top, and the labels
 
 const vec3 REC_C = vec3(${f(REC.x)}, 0.0, ${f(REC.z)});
 const vec2 REC_YAW = vec2(${f(Math.cos(REC.yaw))}, ${f(Math.sin(REC.yaw))});
@@ -32,7 +32,7 @@ const vec3 CAS_B = vec3(${f(CAS.hw)}, ${f(CAS.hh)}, ${f(CAS.hd)});
 const vec4 HUB_P = vec4(${f(HUB.x)}, ${f(HUB.z)}, ${f(HUB.r)}, 0.0);
 const vec2 PACK = vec2(${f(HUB.empty)}, ${f(HUB.full)});
 const float TOP_TEXELS = ${f(1024 / (2 * REC.hw))}, LABEL_TEXELS = ${f(512 / (2 * CAS.hw))};
-const float PRINT_TOP_V = ${f(PRINT_TOP_V)}, PRINT_LABEL_V0 = ${f(PRINT_LABEL_V0)}, PRINT_LABEL_V1 = ${f(PRINT_LABEL_V1)};
+const float PRINT_TOP_V = ${f(PRINT_TOP_V)}, PRINT_LABEL_V0 = ${f(PRINT_LABEL_V0)}, PRINT_LABEL_V1 = ${f(PRINT_LABEL_V1)}, PRINT_LABEL_ROW_V = ${f(PRINT_LABEL_ROW_V)};
 
 /** Light the recorder gives off itself (the record lamp), added after the room's light. */
 vec3 recEmit = vec3(0.0);
@@ -66,10 +66,11 @@ float cassette(vec3 c) {
 /** The key \`i\` (0..5): how far it is down. */
 float keyDown(float i) { return i == 0.0 ? uRecKeys.x : i == 1.0 ? uRecKeys.y : i == 4.0 ? uRecKeys.z : 0.0; }
 
-/** The recorder and the cassettes into \`r\` (distance, material): 20 body, 21 keys, 22 door, 24 and 25 the cassettes. */
+/** The recorder and the cassettes into \`r\` (distance, material): 20 body, 21 keys, 22 door, 24 to 26 the cassettes. */
 vec2 recorder(vec3 p, vec2 r) {
   if (length(p - uCasA.xyz) < r.x + 0.46) { float d = cassette(casLocal(p, uCasA, uCasTilt.x)); if (d < r.x) r = vec2(d, 24.0); }
   if (length(p - uCasB.xyz) < r.x + 0.46) { float d = cassette(casLocal(p, uCasB, uCasTilt.y)); if (d < r.x) r = vec2(d, 25.0); }
+  if (length(p - uCasC.xyz) < r.x + 0.46) { float d = cassette(casLocal(p, uCasC, uCasTilt.z)); if (d < r.x) r = vec2(d, 26.0); }
   vec3 q = recLocal(p);
   // Further off than the box it stands in (the door open), that box is a safe step.
   float box = sdBox(q - vec3(0.0, 0.5, -0.1), vec3(REC_B.x, 0.5, REC_B.z + 0.1) + 0.02, 0.0);
@@ -112,13 +113,16 @@ void recMaterial(vec3 p, vec3 n, vec3 rd, float id, float fp, float st, inout ve
   gloss = 0.12;
   bump = 0.12;
   if (id >= 24.0) {
-    vec3 c = id == 24.0 ? casLocal(p, uCasA, uCasTilt.x) : casLocal(p, uCasB, uCasTilt.y);
+    vec3 c = id == 24.0 ? casLocal(p, uCasA, uCasTilt.x) : id == 25.0 ? casLocal(p, uCasB, uCasTilt.y) : casLocal(p, uCasC, uCasTilt.z);
     alb = vec3(0.075, 0.073, 0.07) * (0.95 + 0.1 * st); // the shell, smoky black
     gloss = 0.25;
     if (c.y < CAS_B.y - 0.004) return;
     bump = 0.0;
     vec2 uv = c.xz / (2.0 * CAS_B.xz) + 0.5;
-    vec4 lab = recPrint(vec2((uv.x + (id == 24.0 ? 0.0 : 1.0)) * 0.5, mix(PRINT_LABEL_V0, PRINT_LABEL_V1, uv.y)), fp, LABEL_TEXELS);
+    // Its label: two to a row in the print texture, in issue order.
+    float li = id - 24.0;
+    float col = mod(li, 2.0), row = floor(li / 2.0);
+    vec4 lab = recPrint(vec2((uv.x + col) * 0.5, mix(PRINT_LABEL_V0, PRINT_LABEL_V1, uv.y) + row * PRINT_LABEL_ROW_V), fp, LABEL_TEXELS);
     if (lab.a > 0.5) {
       alb = lab.rgb * 0.8;
       gloss = 0.03;
@@ -221,8 +225,8 @@ float recShadow(vec2 xz) {
   vec3 q = recLocal(vec3(xz.x - 0.08, 0.0, xz.y + 0.06));
   vec2 b = abs(q.xz) - REC_B.xz + 0.04;
   float s = 0.6 * exp(-max(length(max(b, 0.0)) + min(max(b.x, b.y), 0.0) - 0.04, 0.0) * 14.0);
-  for (int i = 0; i < 2; i++) {
-    vec4 c = i == 0 ? uCasA : uCasB;
+  for (int i = 0; i < 3; i++) {
+    vec4 c = i == 0 ? uCasA : i == 1 ? uCasB : uCasC;
     if (c.y > 0.2 + REC_B.y || c.y < 0.0) continue;
     // Lifted, its shadow falls further off and fainter.
     vec3 cq = casLocal(vec3(xz.x - 0.1 * c.y, 0.0, xz.y + 0.08 * c.y), vec4(c.x, 0.0, c.z, c.w), 0.0);

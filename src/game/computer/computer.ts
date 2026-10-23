@@ -10,6 +10,9 @@ import { CORDS_BACK } from './cords';
 import { DeskTable, type View } from './deskTable';
 import { CASE, DeskSpot, EDGE, PLACE, PRINT_H, PRINT_W, deskBounds, drawPrint, keyboardBounds, lowestPoint, onCase, project } from './layout';
 import { type CassetteId, RECORDER_BOUNDS, type Recorder, drawRecorderPrint, recorderAt } from '../recorder';
+
+/** The shader's cassettes, in `Recorder.uniforms` order. */
+const CAS_UNIFORMS = ['uCasA', 'uCasB', 'uCasC'] as const;
 import { recorderTouched } from '../recorder/hit';
 import { PILE_BOUNDS, farBox, pileBox, pileClick, pileExtent } from './pile';
 import { Pile } from './pileCovers';
@@ -378,14 +381,11 @@ export class Computer {
       if (rec.length) {
         gl.uniform1f(u.uLid, rec[0]);
         gl.uniform4f(u.uRecKeys, rec[1], rec[2], rec[3], rec[4]);
-        gl.uniform4f(u.uCasA, rec[5], rec[6], rec[7], rec[8]);
-        gl.uniform4f(u.uCasB, rec[9], rec[10], rec[11], rec[12]);
-        gl.uniform2f(u.uCasTilt, rec[13], rec[14]);
-        gl.uniform2f(u.uReel, rec[15], rec[16]);
-      } else {
-        gl.uniform4f(u.uCasA, 0, -10, 0, 0);
-        gl.uniform4f(u.uCasB, 0, -10, 0, 0);
+        gl.uniform3f(u.uCasTilt, rec[17], rec[18], rec[19]);
+        gl.uniform2f(u.uReel, rec[20], rec[21]);
       }
+      // Each cassette's centre and turn (none: all under the table).
+      CAS_UNIFORMS.forEach((name, i) => gl.uniform4fv(u[name], rec.length ? rec.slice(5 + 4 * i, 9 + 4 * i) : [0, -10, 0, 0]));
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, this.recPrint);
       gl.uniform1i(u.uRecPrint, 1);

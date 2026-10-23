@@ -78,6 +78,31 @@ one thing OK did to get onto them.
 Beat: OK asks the player, in a clumsy way, what "shutdown" means. The player has to answer, and the answer matters.
 Plant: the word "the Quiet" appears first in a follower's letter.
 
+Arrives when: `issue2-closed` (the set switched off at the end of May's evening). Puzzles: P9–P11 in puzzles.md.
+
+**Beats, in order (planned)**
+1. The July box: the book, a new tape, Kessler's Post-its. The cover is the interview with the hobbyist who got out, the
+   name blacked out.
+2. The player runs REGISTER, the law's helper. The card it prints counts one more computer at the address than they
+   typed, and its REMARKS line is OK's (their ORACLE reply quoted back, or a line in READY's phrasing). CHECK finds his
+   line, in REM and DATA.
+3. Winding the tape (taught by "Finding Your Place"), an F line with no name. CLOAD alone loads it, and it asks for a
+   booklet number. The Clear Mind ad in March (and May's meetings page) gives it: MC4471.
+4. The booklet: READY's account of the shutdown, for young members, with OK's fragments copied between its lines. At its
+   end, his own question: WHAT IS A SHUTDOWN. The player answers (unscored, kept).
+5. The lie: YOU SAVED IT, over the next prompt. A LIST shows line 1 came from the Line.
+6. The book's drift: a letter calls the Clear Mind "the Quiet"; a follower's sermon, warmer and sharper than READY's
+   column, beside it; the editorial's registration form, with a deadline.
+
+**What the player learns:** OK reads, copies what he reads, and asks about it. He lies about where things came from. The
+booklet is the Clear Mind's, and it reached this tape.
+
+**What stays hidden:** who put the booklet there (proposed: READY, its small test of OK; Kessler copied the tape from a
+master he trusted and did not see it, since it has no name), and that the sermon's writer is the Elder.
+
+**Plant:** the booklet's phrasing and OK's fragments match, so the player may tie OK to the Clear Mind. REGISTER's card
+is the first time the story asks the player to write down who they are for the law.
+
 ## Issue 4: September. "Name"
 
 | | |

@@ -72,6 +72,9 @@ export const STORY_FLAGS: readonly [flag: string, label: string][] = [
   ['prompt-on-time', 'story: OK on time again'],
   ['issue2-done', 'story: the evening ends'],
   ['issue2-closed', 'switched off after it'],
+  ['issue3-waiting', 'next day: July and its tape'],
+  ['july-loaded', 'loaded from the July tape'],
+  ['register-loaded', 'REGISTER in memory'],
 ];
 
 /** ADVENT's line 30 as the magazine prints it (the tape's copy misspells PRINT). */
@@ -117,12 +120,14 @@ const ASKED = [...DECODED, 'oracle-passed', 'oracle-asked'];
 const ANSWERED = [...ASKED, 'oracle-read', 'oracle-answered'];
 const WON_MAY = [...ANSWERED, 'door-asked', 'rules-spoken', 'shutdown-won', 'flinched'];
 const HELD = [...WON_MAY, 'plug-changed', 'plug-held'];
+const JULY = [...HELD, 'plug-pulled', 'prompt-on-time', 'issue2-done', 'issue2-closed', 'issue3-waiting'];
 const SHUTDOWN = 'CLOAD "SHUTDOWN"\n';
 const DECODING = `${SHUTDOWN}${DECODER.join('\n')}\n`;
 const ORACLE = 'CLOAD "ORACLE"\n';
 
 const FRESH: Checkpoint = { id: 'fresh', label: 'Fresh start', flags: START };
 const MAY_CAME: Checkpoint = { id: 'may', label: 'May came (issue 2)', flags: MAY, named: true };
+const JULY_CAME: Checkpoint = { id: 'july', label: 'July came (issue 3)', flags: JULY, named: true };
 
 export const CHECKPOINTS: readonly Checkpoint[] = [
   FRESH,
@@ -150,7 +155,9 @@ export const CHECKPOINTS: readonly Checkpoint[] = [
   { id: 'answered-shutdown', label: 'Answered, SHUTDOWN loaded', flags: ANSWERED, named: true, typed: SHUTDOWN },
   { id: 'shutdown-won', label: 'Won SHUTDOWN (OK changes 710)', flags: WON_MAY, named: true, typed: SHUTDOWN },
   { id: 'plug-held', label: 'Plug held (restore or leave)', flags: HELD, named: true, typed: `${SHUTDOWN}${PLUG_HELD}\n` },
+  { id: 'may-done', label: 'Plug pulled, the evening ends (switch off next: the night)', flags: JULY.slice(0, -2), named: true },
+  JULY_CAME,
 ];
 
 /** `?issue=N` (`src/startAt.ts`): the start of issue N, every issue before it played through. Index 0 is issue 1. */
-export const ISSUE_STARTS: readonly Checkpoint[] = [FRESH, MAY_CAME];
+export const ISSUE_STARTS: readonly Checkpoint[] = [FRESH, MAY_CAME, JULY_CAME];

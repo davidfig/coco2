@@ -1,13 +1,15 @@
 import { HeadlessCoco } from '../coco/headless';
-import type { AnyPageId } from '../magazine/pages';
+import type { AnyPageId, IssueId } from '../magazine/pages';
 import { isSolved, noteText, visibleNotes, type Note } from '../notes/notes';
 import { ISSUE_1_RULES } from '../puzzles/rules';
 import { ISSUE_2_RULES } from '../puzzles/rulesMay';
+import { ISSUE_3_RULES } from '../puzzles/rulesJuly';
 import { PuzzleWatcher } from '../puzzles/watcher';
 import { Issue1Story } from '../story/issue1';
+import { Days } from '../story/days';
 import { Issue2Story } from '../story/issue2';
 import { rowText } from '../story/screenText';
-import { MAY_TAPE_KEY, mayTape } from '../tapes';
+import { TAPE_KEYS, issueTape } from '../tapes';
 import type { Tv } from '../tv/tv';
 import { COLS } from '../vdg/vdg';
 import { ROUTES, type Route } from './walkthroughRoute';
@@ -49,6 +51,7 @@ export class Play {
   readonly flags = new Set<string>(['booted']);
   readonly story: Issue1Story;
   readonly story2: Issue2Story;
+  readonly days: Days;
   /** Seconds of play so far. */
   t = 0;
   /** What happened since the step began, besides the typing: flags, the story's own writing on the screen. */
@@ -73,7 +76,8 @@ export class Play {
       if (before !== after) this.events.push(`**story** row ${row}: \`${before}\` → \`${after}\` (${this.clock()})`);
     };
     const tv = { tamperStrength: 0, tamperStyle: 'ghost' } as unknown as Tv;
-    this.story = new Issue1Story(coco.screen, tv, has, set, coco.interp, () => {
+    this.story = new Issue1Story(coco.screen, tv, has, set, coco.interp);
+    this.days = new Days(has, set, () => {
       if (coco.interp.state !== 'idle') coco.interp.halt();
       coco.interp.program.clear();
       coco.interp.edited();
@@ -81,7 +85,7 @@ export class Play {
       this.events.push(`**story** the next day: the CoCo boots afresh, memory empty (${this.clock()})`);
     });
     this.story2 = new Issue2Story(coco.screen, has, set, coco.interp, () => this.events.push(`**story** the set flinches: the picture starts to collapse and comes back (${this.clock()})`));
-    new PuzzleWatcher(coco.interp, has, set, [...ISSUE_1_RULES, ...this.story.rules, ...ISSUE_2_RULES, ...this.story2.rules]);
+    new PuzzleWatcher(coco.interp, has, set, [...ISSUE_1_RULES, ...this.story.rules, ...ISSUE_2_RULES, ...this.story2.rules, ...ISSUE_3_RULES]);
     coco.onFrame = (dt) => {
       this.t += dt;
       this.story.step(dt);
@@ -114,12 +118,12 @@ export class Play {
   }
 
   switchOn(): void {
-    this.story.wake();
+    this.days.wake();
   }
 
-  /** The May cassette put in the recorder (it carries OK's answer to what was done with GUESS's extra line). */
-  insertMay(): void {
-    this.coco.interp.tape.insert(mayTape(this.flags.has('deleted-extra-line')), MAY_TAPE_KEY);
+  /** An issue's cassette put in the recorder (May's carries OK's answer to what was done with GUESS's extra line). */
+  insert(id: IssueId): void {
+    this.coco.interp.tape.insert(issueTape(id, (f) => this.flags.has(f)), TAPE_KEYS[id]);
   }
 
   /** Run one step; returns what it showed and what happened. */

@@ -247,6 +247,56 @@ question decoded on the machine), `oracle-answered`.
 
 Not detected: decoding by hand. A player who does that never sets `oracle-read`, but `oracle-answered` still works.
 
+## Issue 3 puzzles (planned; the July tape's ABOUT and REGISTER, without OK's line, are built)
+
+Teaches where things are on a tape (rung E): `SKIPF`, the `F NAME` lines a search prints for every file it passes,
+`CLOAD` alone loading whatever comes next, and the tape counter. The July tape (`julyTape`, its CSAVEs in
+`coco2.tape.july`) holds ABOUT and REGISTER, as the magazine and ABOUT list them, and after them a file with no name. The
+July issue's tutorial is "Finding Your Place" (SKIPF, the F lines, CLOAD alone, writing down the counter); it says a
+file you did not expect shows up as an F line too, which is the whole clue.
+
+### P9. REGISTER
+
+The law this issue is registration (issues.md). The tape's REGISTER is the editors' helper for it: it asks for your name,
+the machine's serial number, your town and how many computers are at the address, and prints the card the way the form
+wants it copied, with a REMARKS line at the bottom. The magazine prints it (with its RAINBOW CHECK), so it can be
+compared. Read in 1991 it is the list they later used to collect the machines; the player is asked to type their name
+into it, and may not want to.
+- *OK's fragment:* the card says one more computer at the address than the player typed, and REMARKS holds a line in
+  READY's phrasing (`IT IS UNDERSTOOD THAT ONE IS LISTENING`, a draft) or, if the player answered ORACLE in May, their
+  reply quoted back (`coco2.reply`). On the tape the line that does it is OK's, in REM and DATA, spelled right; CHECK parts
+  from the printed sums there.
+- Flags: `july-loaded`, `register-loaded`, `register-run` (a card printed), `register-odd` (the card's extra line on the
+  screen), `register-checked` (CHECK typed), `register-line` (OK's line on screen after a LIST).
+
+### P10. The file with no name (the code in the ad)
+
+Winding the July tape (`CLOAD "X"`, `SKIPF`) shows an `F` line with no name after REGISTER: a file nobody listed. A name
+search can never find it; only `CLOAD` alone, from just before it (SKIPF past REGISTER, or CLOAD REGISTER first), loads it.
+RUN asks `BOOKLET NUMBER?`. The answer is the Clear Mind's booklet, **MC4471**, in March's Clear Mind ad and on May's
+meetings page (the seed planted in issue 1: a back-issue lookup of under a minute). A wrong number: `NO SUCH BOOKLET.
+CALL THE LINE.`
+- *The booklet* is READY's text on the shutdown for young members ("Why The Big Machines Sleep", a draft): calm, lists
+  of three, "it is understood that". It is what OK has been reading; between its lines are his REM fragments repeating its
+  phrases, as a child copies out a page.
+- *The cheat* stays open, as ADVENT's door: BREAK at the prompt, LIST, read `IF B$="MC4471"`, CONT.
+- Flags: `blank-file-seen` (an F with no name on the screen), `booklet-loaded`, `booklet-asked` (the prompt shown),
+  `hidden-file-open` (the booklet printed; the cheat counts, `booklet-read-code` records which way).
+
+### P11. What is a shutdown?
+
+The booklet ends, and the program goes on past where READY's text stops, in OK's lines: `WHAT IS A SHUTDOWN`, an INPUT.
+Whatever the player types is kept (`coco2.shutdown`), unscored, and OK's phrasing from then on follows it (flags.md, What
+OK remembers). An empty answer asks again once, then takes the silence as the answer. Flags: `shutdown-asked`,
+`shutdown-answer`.
+
+### The lie
+
+Once the booklet has been opened, OK says, over the next OK prompt (tampered), `YOU SAVED IT`: the file was the
+player's, not his. It is a child's lie about being found. The player knows they never saved a file with no name, and a
+LIST shows line 1 says where it came from (`REM MC4471 FROM THE LINE`). Flags: `saved-lie` (said), `lie-caught` (line 1
+on the screen after a LIST, with `saved-lie` in).
+
 ## The notebook page (built)
 
 - A sheet of ruled paper peeks up from the bottom-left of the window. It is the player's own notes, written in a pen
@@ -278,5 +328,5 @@ The notes are what someone jots down for themselves: short fragments, not senten
 ## Later issues (not drafted)
 
 Issue 2: `DATA`, `READ`, `CSAVE`; a cipher on `DATA` lines; SHUTDOWN; writing a short program that answers ORACLE. Issue 3: tape
-position and unsaved files appearing; reading old ads for codes. Issue 4: `POKE` to the screen; OK writes to video
+position and unsaved files appearing; reading old ads for codes (drafted above). Issue 4: `POKE` to the screen; OK writes to video
 memory. Issue 5–6: the player writes a message program for OK; the cult's wording clue.

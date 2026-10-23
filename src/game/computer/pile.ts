@@ -48,6 +48,7 @@ const CAS_SLOTS: readonly { dx: number; dz: number; yaw: number }[] = [
 export const SPINES: Record<IssueId, { date: string; volume: string; colour: string }> = {
   march: { date: 'March 1986', volume: 'VOLUME V  NUMBER 8', colour: '#141a52' },
   may: { date: 'May 1986', volume: 'VOLUME V  NUMBER 10', colour: '#2a5a9a' },
+  july: { date: 'July 1986', volume: 'VOLUME V  NUMBER 12', colour: '#3a3f58' },
 };
 
 /** Place `i` (from the bottom) in a pile of `n`: its centre and turn. */

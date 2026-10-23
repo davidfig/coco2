@@ -17,7 +17,7 @@ Voices in print:
 |---|-------|---------|----------------|----|--------------|
 | 1 | March | Small Systems Act in force | Wellness ads, READY's voice | Sleeper | Start |
 | 2 | May | Limit lowered, ads thin | A movement, READY's voice | Deniable glitches | Player ran 2 tape programs |
-| 3 | July | Machines must be registered | "The Quiet" in letters, first drift | Fragments, first lie | Player caught the lie |
+| 3 | July | Machines must be registered | "The Quiet" in letters, first drift | Fragments, lies about being found | May's evening ended (`issue2-closed`) |
 | 4 | September | Surrender notice | The Elder's first column | Direct address, learns he is OK | OK is named |
 | 5 | November | Enforcement, pages cut | The Elder's voice, READY in the margins | The book is altered | ORACLE dialogue opens |
 | 6 | (none) | None | None | OK's own issue | Late game |
@@ -51,6 +51,9 @@ it.
   computer away); THE HERMIT, a cable that connects to nothing, and CLOAD-A-MATIC's bulk erasers and guaranteed-blank
   tapes (inside back); LIGHTS-OUT, a timer that switches the computer off when nobody is in front of it, with the Clear
   Mind committee's seal (back).
+- **July (proposed):** a serial-number plate, engraved, "so yours is never mistaken for another"; Nifty Ned's catalogue
+  with a REGISTERED OWNER decal and a filing box for your receipts; a dust cover with no label on it, "nothing to read
+  from across the room"; CLOAD-A-MATIC's tape labels that peel off clean.
 
 ## Kessler's Post-its
 
@@ -90,9 +93,13 @@ each issue: `story.md`, Kessler's slips). The player's notebook calls them Post-
 - **The Clear Mind:** the first drift. A letter calls it "the Quiet". A follower's sermon is warmer and sharper than
   READY's columns.
 - **The law:** machines must be registered.
-- **OK:** fragments in `REM` and `DATA`, echoing READY's phrasing. The first lie.
-- **Tape:** a utility that prints your files. It prints one the player did not save.
-- **Puzzle use of issues 1 and 2:** a code in an old ad opens a hidden tape file.
+- **OK:** fragments in `REM` and `DATA`, echoing READY's phrasing. His first lie about being found ("YOU SAVED IT"; May's
+  "I DID NOT TOUCH THE TAPE" was a lie about what he did).
+- **Tape (planned):** ABOUT and REGISTER (the registration helper; the card it prints counts one machine too many), then
+  a file with no name: the Clear Mind's booklet, which OK has been reading. Puzzles P9–P11 (puzzles.md).
+- **Puzzle use of issues 1 and 2:** the booklet number in the Clear Mind ad (March) and on the meetings page (May),
+  MC4471, opens the file with no name.
+- **Teaches:** where things are on a tape: SKIPF, the F lines, CLOAD alone, the counter ("Finding Your Place").
 
 ## Issue 4: September
 

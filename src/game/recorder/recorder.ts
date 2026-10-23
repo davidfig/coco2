@@ -1,12 +1,16 @@
 import type { Interpreter } from '../basic/interpreter';
-import { TAPE_KEY } from '../basic/tape';
-import { MAY_TAPE_KEY, RAINBOW_TAPE, mayTape } from '../tapes';
+import { ISSUE_ARRIVES, ISSUE_ORDER, newestIssue, type IssueId } from '../magazine/pages';
+import { TAPE_KEYS, issueTape } from '../tapes';
 import type { RecorderSound } from './recorderSound';
 import { ACROSS, CAS, LID, type Pose, seatPose, spotPose } from './layout';
 
-/** The two cassettes: Rainbow On Tape for March, and for May (once May has come). */
-export type CassetteId = 'march' | 'may';
-const CASSETTES: readonly CassetteId[] = ['march', 'may'];
+/** The cassettes: each issue's Rainbow On Tape, once its box has come. */
+export type CassetteId = IssueId;
+const CASSETTES: readonly CassetteId[] = ISSUE_ORDER;
+/** How many cassettes the shader draws (`uniforms`: each one's pose, then each one's tilt). */
+export const CASSETTE_COUNT = CASSETTES.length;
+/** The flag that says something has been loaded from each issue's cassette: till then the story waits on it going in (`wanted`). */
+const LOADED: Record<CassetteId, string> = { march: 'tape-inserted', may: 'may-loaded', july: 'july-loaded' };
 
 /** Where the recorder's state is kept: which cassette is in it, and the spot on the table each lies at when out. */
 export const RECORDER_KEY = 'coco2.recorder';
@@ -95,9 +99,9 @@ function readSaved(): { deck: CassetteId | null; spots: Partial<Record<CassetteI
  * The cassette recorder beside the set, and the cassettes lying in front of it (see `layout.ts`). It starts empty: a
  * click on a cassette puts it in (the door swings up, the cassette goes down into the well, the door shuts and PLAY
  * latches down), and a click on the recorder with one in takes it out again (STOP/EJECT) onto the table. Only a
- * cassette seated with the door shut is in for BASIC (`Tape.present`): CLOAD, SKIPF and CSAVE wait for one. The May
- * cassette lies on the table once May has come (`issue2-waiting`); putting it in loads the May tape into BASIC's
- * cassette (`Tape.insert`), March's the March one. Only the cassette of the issue on the table lies by the recorder
+ * cassette seated with the door shut is in for BASIC (`Tape.present`): CLOAD, SKIPF and CSAVE wait for one. Each
+ * issue's cassette is there once its box has come (`ISSUE_ARRIVES`); putting one in loads its tape into BASIC's
+ * cassette (`Tape.insert`, `issueTape`). Only the cassette of the issue on the table lies by the recorder
  * (`current`); the others lie on the pile of old issues beside the set (`piled`), and one taken out of the recorder goes
  * back there. Drawn by the computer's march (`recorderGlsl.ts`, `uniforms`).
  */
@@ -105,7 +109,7 @@ export class Recorder {
   /** The cassette in the recorder (seated, or on its way in or out). */
   private deck: CassetteId | null;
   /** The spot on the table each cassette lies at when out. */
-  private readonly spots: Record<CassetteId, number> = { march: 0, may: 1 };
+  private readonly spots: Record<CassetteId, number> = { march: 0, may: 1, july: 0 };
   private readonly moves: Move[] = [];
   /** Cassettes lying out carried to where they lie now, the issues having changed places (`shift`): from where each lay. */
   private readonly shifts: { id: CassetteId; from: Pose; t: number }[] = [];
@@ -141,24 +145,29 @@ export class Recorder {
     const saved = readSaved();
     this.deck = saved.deck;
     for (const c of CASSETTES) if (saved.spots[c] === 0 || saved.spots[c] === 1) this.spots[c] = saved.spots[c]!;
-    if (this.spots.march === this.spots.may) this.spots.may = 1 - this.spots.march;
+    // Each issue's cassette lies at the other spot from the one before it, so the two by the recorder as they change places never meet.
+    CASSETTES.forEach((c, i) => {
+      if (i > 0 && this.spots[c] === this.spots[CASSETTES[i - 1]]) this.spots[c] = 1 - this.spots[CASSETTES[i - 1]];
+    });
     this.speed = instant ? Infinity : 1;
     this.interp.tape.present = false;
   }
 
-  /** The cassettes there are: March's always, May's once May has come. */
+  /** The cassettes there are: March's always, each other once its issue has come. */
   private available(id: CassetteId): boolean {
-    return id === 'march' || this.has('issue2-waiting');
+    const flag = ISSUE_ARRIVES[id];
+    return flag === null || this.has(flag);
   }
 
   /**
    * The cassette the story waits on to be put in, lying on the table: March's once the magazine has been opened, until
-   * it has gone in (`tape-inserted`); May's once it has come, until something has been loaded from it (`may-loaded`).
+   * it has gone in (`tape-inserted`); each later issue's once it has come, until something has been loaded from it
+   * (`may-loaded`, `july-loaded`).
    */
   wanted(): CassetteId | null {
-    const id: CassetteId | null = this.has('issue2-waiting')
-      ? this.has('may-loaded') ? null : 'may'
-      : this.has('opened-magazine') && !this.has('tape-inserted') ? 'march' : null;
+    const newest = newestIssue(this.has);
+    const ready = newest !== 'march' || this.has('opened-magazine');
+    const id: CassetteId | null = ready && !this.has(LOADED[newest]) ? newest : null;
     return id && this.deck !== id && !this.moving(id) ? id : null;
   }
 
@@ -285,11 +294,11 @@ export class Recorder {
 
   /** BASIC's tape follows the cassette in the recorder: in only while it is seated with the door shut. */
   private bind(): void {
-    const seated = !!this.deck && this.lid === 0 && !this.moves.length;
-    if (seated && this.deck !== this.loaded) {
-      this.loaded = this.deck;
-      if (this.deck === 'may') this.interp.tape.insert(mayTape(this.has('deleted-extra-line')), MAY_TAPE_KEY);
-      else this.interp.tape.insert(RAINBOW_TAPE, TAPE_KEY);
+    const deck = this.deck;
+    const seated = !!deck && this.lid === 0 && !this.moves.length;
+    if (seated && deck !== this.loaded) {
+      this.loaded = deck;
+      this.interp.tape.insert(issueTape(deck, this.has), TAPE_KEYS[deck]);
       this.wind();
     }
     this.interp.tape.present = seated;
@@ -364,7 +373,7 @@ export class Recorder {
     const out = [smooth(this.lid) * LID.open, recording ? 1 : 0, playing ? 1 : 0, press, recording ? 1 : 0];
     const poses = CASSETTES.map((c) => this.pose(c));
     for (const p of poses) out.push(...(p ? [p.x, p.y, p.z, p.yaw] : [0, -10, 0, 0]));
-    out.push(poses[0]?.tilt ?? 0, poses[1]?.tilt ?? 0);
+    for (const p of poses) out.push(p?.tilt ?? 0);
     out.push(this.reel % (Math.PI * 2), this.wound);
     return out;
   }

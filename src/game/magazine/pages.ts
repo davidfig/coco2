@@ -53,17 +53,53 @@ export const MAY_PAGE_IDS = [
 ] as const;
 
 export type MayPageId = (typeof MAY_PAGE_IDS)[number];
-export type AnyPageId = PageId | MayPageId;
+
+/**
+ * The July issue, in the order it is bound (all starting "july"). Planned in docs/issues.md, Issue 3; its pages are
+ * placeholders for now (`julyDraft.ts`).
+ */
+export const JULY_PAGE_IDS = [
+  'julyCover',
+  'julyInsideFront',
+  'julyContents',
+  'julyLetters',
+  'julyEditorial',
+  'julyInterview',
+  'julyPlace',
+  'julyRegister',
+  'julyRegisterList',
+  'julyTape',
+  'julyClearMind',
+  'julySermon',
+  'julyClassifieds',
+  'julyMarketplace',
+  'julyInsideBack',
+  'julyBackCover',
+] as const;
+
+export type JulyPageId = (typeof JULY_PAGE_IDS)[number];
+export type AnyPageId = PageId | MayPageId | JulyPageId;
 
 /** Every issue the player can have, in the order they arrive. */
-export const ISSUES = { march: PAGE_IDS, may: MAY_PAGE_IDS } as const satisfies Record<string, readonly AnyPageId[]>;
+export const ISSUES = { march: PAGE_IDS, may: MAY_PAGE_IDS, july: JULY_PAGE_IDS } as const satisfies Record<string, readonly AnyPageId[]>;
 export type IssueId = keyof typeof ISSUES;
-export const ISSUE_ORDER: readonly IssueId[] = ['march', 'may'];
+export const ISSUE_ORDER: readonly IssueId[] = ['march', 'may', 'july'];
 /** The month on each issue's cover and running foot. */
-export const ISSUE_DATE: Record<IssueId, string> = { march: 'March 1986', may: 'May 1986' };
+export const ISSUE_DATE: Record<IssueId, string> = { march: 'March 1986', may: 'May 1986', july: 'July 1986' };
+/**
+ * The flag that brings each issue's box (null: there from the start). It is set in the dark of the night before
+ * (`story/days.ts`), and from then on the issue is the player's: on the table, its cassette by the recorder.
+ */
+export const ISSUE_ARRIVES: Record<IssueId, string | null> = { march: null, may: 'issue2-waiting', july: 'issue3-waiting' };
+
+/** The issues that have come, given the story's flags, in the order they came. */
+export const issuesHad = (has: (flag: string) => boolean): IssueId[] => ISSUE_ORDER.filter((id) => ISSUE_ARRIVES[id] === null || has(ISSUE_ARRIVES[id]!));
+
+/** The newest issue that has come. */
+export const newestIssue = (has: (flag: string) => boolean): IssueId => issuesHad(has).at(-1)!;
 
 /** The issue page `id` is bound in. */
-export const issueOf = (id: AnyPageId): IssueId => ((MAY_PAGE_IDS as readonly AnyPageId[]).includes(id) ? 'may' : 'march');
+export const issueOf = (id: AnyPageId): IssueId => ISSUE_ORDER.find((issue) => (ISSUES[issue] as readonly AnyPageId[]).includes(id))!;
 
 /** Where page `id` is in its issue, counting from 0 (what the book's `goto` takes). */
 export const pageIndex = (id: AnyPageId): number => (ISSUES[issueOf(id)] as readonly AnyPageId[]).indexOf(id);

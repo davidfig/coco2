@@ -21,13 +21,14 @@ leaving the plug) are played in full but written out only where they differ.
 
 | What | File |
 |------|------|
-| A program on a tape | `src/game/tapes/*.bas` (March: `index.ts`'s `RAINBOW_TAPE`; May: `mayTape`) |
-| Each tape's ABOUT | `src/game/tapes/about.ts` (`aboutTape`, one template), filled from `index.ts`'s `MARCH_ABOUT` / `MAY_ABOUT` |
+| A program on a tape | `src/game/tapes/*.bas` (March: `index.ts`'s `RAINBOW_TAPE`; May: `mayTape`; July: `julyTape`); which tape a cassette holds: `issueTape`, `TAPE_KEYS` |
+| Each tape's ABOUT | `src/game/tapes/about.ts` (`aboutTape`, one template), filled from `index.ts`'s `MARCH_ABOUT` / `MAY_ABOUT` / `JULY_ABOUT` |
 | May's tape as OK left it (SHUTDOWN's REM at 15, his line 990, ORACLE's coded answers) | `src/game/puzzles/listingsMay.ts` |
-| What a puzzle watches for, and the flag it ticks | `src/game/puzzles/rules.ts` (March), `rulesMay.ts` (May) |
+| What a puzzle watches for, and the flag it ticks | `src/game/puzzles/rules.ts` (March), `rulesMay.ts` (May), `rulesJuly.ts` (July) |
 | What the story does by itself, and its timers | `src/game/story/issue1.ts`, `issue2.ts` (constants at the top) |
+| The night between issues, and which flag brings each | `src/game/story/days.ts` (`NIGHTS`), `magazine/pages.ts` (`ISSUE_ARRIVES`) |
 | The notebook's lines, what earns each, what crosses it out | `src/game/notes/notes.ts` (`NOTES`) |
-| A page of the magazine | `src/game/magazine/issue.ts`'s table → the page's draw function; page order in `pages.ts` |
+| A page of the magazine | `src/game/magazine/issue.ts`'s table → the page's draw function; page order in `pages.ts` (July's pages are placeholders, `julyDraft.ts`) |
 | Flag order, checkpoints (`?at=`, `src/startAt.ts`) | `src/game/debug/checkpoints.ts` |
 
 ## Issue 1: March 14, 1991
@@ -76,4 +77,13 @@ A Sick System". OK's lines shimmer whenever a listing shows them.
 | The choice: left | Loads something else (6 s), or sits at OK (25 s) | | `plug-left` |
 | The evening ends | Switches off | Notes: "Enough for tonight" | `issue2-done`, `issue2-closed` |
 
-Issue 3 is not built.
+## Issue 3: March 16, 1991 (being built)
+
+The night after May's evening (`days.ts`) brings the July RAINBOW to the table and its cassette by the recorder; May and
+March go on the pile. The pages are placeholders (`magazine/julyDraft.ts`), each saying what it will hold. The plan:
+puzzles.md, Issue 3; beats.md, Issue 3.
+
+| Beat | The player | The game | Flags |
+|------|------------|----------|-------|
+| The box | Switches on, the next day | The CoCo boots afresh; July on the table | `issue3-waiting` |
+| The new tape | Puts the July cassette in, `CLOAD "REGISTER"`, RUN | The registration card (`tapes/register.bas`; OK's line in it is not built) | `july-loaded`, `register-loaded` |

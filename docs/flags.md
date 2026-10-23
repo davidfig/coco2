@@ -81,7 +81,7 @@ The code is `src/game/story/issue2.ts`; the puzzles are in puzzles.md (P6, P7).
 | His hand | Any LIST that leaves one of OK's lines on the screen, or the decoder printing his message | The words are claimed (`TextScreen.claim`), so they shimmer and keep the story's ripple, like line 125 in March. |
 | The flinch | `shutdown-won`, the first time | The picture starts its switch-off collapse for a few frames and comes back. `flinched`. |
 | The plug | The first RUN after `shutdown-won` | OK has changed the plug line in memory and on the tape: "IT WILL NOT COME", `IS IT DARK THERE`. `plug-held`, then `plug-pulled` or `plug-left` (P8). |
-| On time | Two prompts after `oracle-answered` | `prompt-on-time`; the notes: "The OK comes up on time again. Was it slow all day?". Then `issue2-done` ("Enough for tonight", once `plug-pulled` or `plug-left` is in too), and switching off sets `issue2-closed`. Issue 3 is not built. |
+| On time | Two prompts after `oracle-answered` | `prompt-on-time`; the notes: "The OK comes up on time again. Was it slow all day?". Then `issue2-done` ("Enough for tonight", once `plug-pulled` or `plug-left` is in too), and switching off sets `issue2-closed`: the night, and July (Issue 3). |
 
 The cover feature ("Keeping It Healthy", by the Clear Mind's committee) lists "Three Signs Of A Sick System": slow to
 answer, colours wrong, says what you did not type. Those are exactly the glitches above, and its advice is to switch off
@@ -103,12 +103,29 @@ limit (no fast modems, second drives or tape copiers).
 
 All are unscored. The last two need a typed reply, which is new for the engine.
 
+## Issue 3 (planned; only `issue3-waiting`, `july-loaded` and `register-loaded` are built)
+
+Puzzles P9–P11 and the lie are in puzzles.md; the beats in order in beats.md.
+
+| Flag | Set when | What happens |
+|------|----------|--------------|
+| `issue3-waiting` | The room goes dark after `issue2-closed` (or the set is switched on, after a reload) | The next day: the CoCo boots afresh, the July RAINBOW is the issue on the table, its cassette by the recorder, May and March on the pile. The notes date the day and write the box. |
+| `july-loaded`, `register-loaded` | The first CLOAD from the July tape; REGISTER in memory | None. |
+| `register-run`, `register-odd` | REGISTER printed a card; the card's extra machine or REMARKS line on the screen | The notes: the card says one more computer than they typed. OK's REMARKS line is claimed (shimmers). |
+| `register-checked`, `register-line` | CHECK on REGISTER; OK's line on the screen after a LIST | The notes: it isn't on the printed listing. |
+| `blank-file-seen` | An F line with no name on the screen | The notes: a file with no name, after REGISTER. |
+| `booklet-loaded`, `booklet-asked` | It is loaded (CLOAD alone); it asks BOOKLET NUMBER? | The notes point at the Clear Mind ad (March) and the meetings page (May), never the number. |
+| `hidden-file-open`, `booklet-read-code` | The booklet printed; got past by reading the listing | The booklet's text, with OK's fragments between its lines. |
+| `shutdown-asked`, `shutdown-answer` | His WHAT IS A SHUTDOWN; any answer (kept in `coco2.shutdown`) | Unscored. OK's phrasing follows it from here (What OK remembers). |
+| `saved-lie`, `lie-caught` | YOU SAVED IT over the next prompt; a LIST showing line 1 after it | The notes: "I never saved it. Line 1 says it came from the Line". |
+| `issue3-done`, `issue3-closed` | `shutdown-answer` and `lie-caught`; then switched off | "Enough for tonight"; the night, as May's. Issue 4 is not built. |
+
 ## Issues 2 to 6 (proposed flags, to be named with the puzzle agent)
 
 | Issue | Flag (working name) | Story consequence |
 |-------|---------------------|-------------------|
 | 2 | `data-decoded`, `oracle-answered` | The second lie ("I DID NOT TOUCH THE TAPE"), then OK reads the player's reply and the prompt stops lagging. `oracle-answered` gates issue 3. See beats.md for the full order. |
-| 3 | `hidden-file-open` | The shutdown article. OK asks what a shutdown is. Gates issue 4. |
+| 3 | `hidden-file-open`, `shutdown-answer` | The booklet (READY's account of the shutdown). OK asks what a shutdown is. Gates issue 4. See Issue 3 above. |
 | 4 | `password-given` | OK learns who made the cassettes. He learns his name is OK. Gates issue 5. |
 | 5 | `two-hands-told` | READY's margin lines read as a message. Opens ORACLE as a two-way channel. Gates issue 6. |
 | 6 | (undecided) | The ending. |
@@ -124,7 +141,7 @@ November 1983. The story seeds are not in it yet:
 | The Small Systems Act notice | The law | **Done**: a paragraph in the editorial (PRINT #-2) |
 | "Clear Mind, Clear Code" column | READY's voice, the list of three | **Done** as a boxed ad on the catalogue page (page 16), replacing two educational ads. It has the list of three, the Tuesday meetings, and the Line (606-555-0142) |
 | A letter that misses the big systems | The shutdown, a few years ago | **Done**: "Like the Old Days", letters page (replaced a filler letter) |
-| An ad with a code | Issue 3 puzzle | **Placeholder in place**: "booklet MC4471" in the Clear Mind ad. The puzzle agent may change it |
+| An ad with a code | Issue 3 puzzle | **Done**: "booklet MC4471" in the Clear Mind ad (and on May's meetings page); it opens the file with no name (puzzles.md, P10) |
 | A signed name (the tape maker) | Issue 4 password, found in the vault | ADVENT, not the letters page |
 | A phone number | Issue 5, the Elder dialling in | **Done**: the Clear Mind's Line, 606-555-0142 ("always answered"), against Nifty Ned's BBS that is "busy 24 hours" |
 

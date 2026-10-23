@@ -2,7 +2,10 @@ import { dash, hashSeed, measure, wrap, write } from '../handwriting';
 import { type Spot, type Written, doodle, ringPath, ringRef } from './doodles';
 import { DAYS, type Note, isSolved, noteText, visibleNotes } from './notes';
 import { type InkMark, ageOver, ageUnder } from './wear';
-import type { IssueId } from '../magazine/pages';
+import { ISSUE_DATE, ISSUE_ORDER, type IssueId } from '../magazine/pages';
+
+/** A page reference in a note: "p.N" is March's, and "May p.N", "July p.N" … another issue's (its month, then the page). */
+const PAGE_REF = new RegExp(`(?:(${ISSUE_ORDER.slice(1).map((id) => ISSUE_DATE[id].split(' ')[0]).join('|')}) )?p\\.(\\d+)`, 'g');
 
 /**
  * A page torn out of a spiral notebook (Mead's one-subject, 10½ × 8 in with the wire; about 7½ in wide once torn
@@ -176,7 +179,7 @@ function paper(ctx: CanvasRenderingContext2D, sheet = 0): void {
 
 /**
  * A "p.N" in the notes, as a rectangle on the sheet: clicking it turns the magazine to that page (`page` is its index).
- * "May p.N" is a page of the May issue; a bare "p.N" is March's. A ringed doodle (doodles.ts's `Spot`) is one too, with
+ * "May p.N" (or another month) is a page of that issue; a bare "p.N" is March's. A ringed doodle (doodles.ts's `Spot`) is one too, with
  * `to` saying where a click on it goes instead.
  */
 export interface PageLink {
@@ -293,11 +296,11 @@ export function drawSheet(ctx: CanvasRenderingContext2D, flags: ReadonlySet<stri
       const pen = { size: SIZE, seed: base + i * 131, mood: note.mood, ink };
       const spans: [number, number][] = [];
       const w = write(ctx, line, LEFT, y - 6, { ...pen, track: (k, a, b) => (spans[k] = [a, b]) });
-      for (const m of line.matchAll(/(May )?p\.(\d+)/g)) {
+      for (const m of line.matchAll(PAGE_REF)) {
         const a = spans[m.index!]?.[0];
         const b = spans[m.index! + m[0].length - 1]?.[1];
         if (a === undefined || b === undefined) continue;
-        ring({ x: a - 8, y: y - 6 - pen.size * 1.2, w: b - a + 16, h: pen.size * 1.6, page: Number(m[2]) - 1, issue: m[1] ? 'may' : 'march', seed: hashSeed(`${note.id}:ref:${m.index}`), mood: note.mood, slot: 0, box: [0, 0, 0, 0], done: solved });
+        ring({ x: a - 8, y: y - 6 - pen.size * 1.2, w: b - a + 16, h: pen.size * 1.6, page: Number(m[2]) - 1, issue: m[1] ? (m[1].toLowerCase() as IssueId) : 'march', seed: hashSeed(`${note.id}:ref:${m.index}`), mood: note.mood, slot: 0, box: [0, 0, 0, 0], done: solved });
       }
       if (solved) done.add(note.id);
       if (solved) dash(ctx, LEFT - 6, y - 14, LEFT + w + 6, y - 15, { ...pen, size: 24, mood: 0.5 });

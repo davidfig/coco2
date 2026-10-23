@@ -55,7 +55,7 @@ export class Issue1Story {
   /** The prompt that follows the win belongs to HELLO; the name waits for a later one. */
   private winPrompt = false;
 
-  constructor(private readonly screen: TextScreen, tv: Tv, private readonly has: (flag: string) => boolean, private readonly set: (flag: string) => void, private readonly interp: Interpreter, private readonly newDay: () => void) {
+  constructor(private readonly screen: TextScreen, tv: Tv, private readonly has: (flag: string) => boolean, private readonly set: (flag: string) => void, private readonly interp: Interpreter) {
     tv.tamperStrength = TAMPER_STRENGTH;
     // The beam repaints the changed letters (a bright line down each cell) and the old ones fade: both, so it shows.
     tv.tamperStyle = 'both';
@@ -211,16 +211,6 @@ export class Issue1Story {
   /** The set was switched off. Once OK has answered, that is the end of the evening, and of the issue. */
   sleep(): void {
     if (this.has('issue1-done')) this.set('issue1-closed');
-  }
-
-  /**
-   * The room went dark after the set was switched off (`night` in main.ts), or the set was switched on, or the page loaded,
-   * which is waking up too. After the night that ended issue 1, it is the next day: the CoCo starts afresh and May is here.
-   */
-  wake(): void {
-    if (!this.has('issue1-closed') || this.has('issue2-waiting')) return;
-    this.newDay();
-    this.set('issue2-waiting');
   }
 
   step(dt: number): void {

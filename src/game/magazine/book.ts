@@ -5,7 +5,7 @@ import { IssueState, newState } from './data';
 import { PagePainter } from './pagePainter';
 import { PageTextures, SPARE } from './pageTextures';
 import { linkAt } from './pageLinks';
-import { ISSUES, ISSUE_ORDER, pageIndex, type AnyPageId, type IssueId } from './pages';
+import { ISSUES, ISSUE_ARRIVES, ISSUE_ORDER, issuesHad, newestIssue, pageIndex, type AnyPageId, type IssueId } from './pages';
 import { readSave, writeSave } from './bookSave';
 import { loadFonts } from './fonts';
 import { PAGE_H, PAGE_W } from './paper';
@@ -121,9 +121,9 @@ export class Magazine {
   }
   pageId = (i: number): AnyPageId | undefined => ISSUES[this.issue][i];
 
-  /** The issues the player has: March from the start, May once it has come in the mail. */
+  /** The issues the player has: March from the start, each after it once its box has come (`ISSUE_ARRIVES`). */
   issues(): IssueId[] {
-    return ISSUE_ORDER.filter((id) => id === 'march' || this.state.flags.has('issue2-waiting'));
+    return issuesHad((f) => this.state.flags.has(f));
   }
 
   /**
@@ -256,8 +256,9 @@ export class Magazine {
   setFlag(flag: string): void {
     if (this.state.flags.has(flag)) return;
     this.state.flags.add(flag);
-    // The May issue comes in the mail: it is the one on the table now.
-    if (flag === 'issue2-waiting') this.setIssue('may');
+    // A new issue comes in the mail: it is the one on the table now.
+    const came = ISSUE_ORDER.find((id) => ISSUE_ARRIVES[id] === flag);
+    if (came) this.setIssue(came);
     this.save();
   }
 
@@ -387,8 +388,8 @@ export class Magazine {
     const s = readSave();
     for (const f of s.flags ?? []) this.state.flags.add(f);
     Object.assign(this.pagesAt, s.pages);
-    // A save from before issues could be switched, made after May came, opens on May.
-    const issue = s.issue ?? (this.state.flags.has('issue2-waiting') ? 'may' : 'march');
+    // A save from before issues could be switched opens on the newest one.
+    const issue = s.issue ?? newestIssue((f) => this.state.flags.has(f));
     if (this.issues().includes(issue)) this.issue = issue;
     this.place(s.page ? (ISSUES[this.issue] as readonly AnyPageId[]).indexOf(s.page) : 0);
     this.savedView = this.viewKey();

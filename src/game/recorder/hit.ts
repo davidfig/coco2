@@ -1,7 +1,7 @@
 import { hull, inHull, project } from '../computer/layout';
 import { PILE_BOUNDS } from '../computer/pile';
 import { REC, cassetteCorners, recToModel, recorderExtent } from './layout';
-import type { CassetteId, Recorder } from './recorder';
+import { CASSETTE_COUNT, type CassetteId, type Recorder } from './recorder';
 
 /** The recorder's outline on screen (panel units), its door shut, with the plugs in its side. */
 const OUTLINE = hull([-REC.hw, REC.hw + 0.15].flatMap((x) => [0, REC.h].flatMap((y) => [-REC.hd, REC.hd].map((z) => project(...recToModel(x, y, z))))));
@@ -37,19 +37,23 @@ export function recorderTouched(r: Recorder, now: readonly number[], was: readon
   return [...(atRec ? [RECORDER_BOUNDS] : []), ...(atPile ? [PILE_BOUNDS] : []), ...(swept ? [swept] : [])];
 }
 
+/** Where the cassettes' tilts start in `Recorder.uniforms`: after the door, the keys and each one's pose. */
+const TILTS = 5 + 4 * CASSETTE_COUNT;
+
 /**
  * Where on screen (panel x0, y0, x1, y1) the cassettes whose places changed (`Recorder.uniforms`, now and as they were)
  * lay and lie now, with room for their shadows on the table; null if none moved.
  */
 export function cassettesSwept(now: readonly number[], was: readonly number[]): [number, number, number, number] | null {
   const pts: [number, number][] = [];
-  for (let c = 0; c < 2; c++) {
+  for (let c = 0; c < CASSETTE_COUNT; c++) {
     const i = 5 + 4 * c;
-    const moved = [i, i + 1, i + 2, i + 3, 13 + c].some((k) => now[k] !== was[k]);
+    const t = TILTS + c;
+    const moved = [i, i + 1, i + 2, i + 3, t].some((k) => now[k] !== was[k]);
     if (!moved) continue;
     for (const u of [now, was]) {
       if (u[i + 1] < -5) continue;
-      const pose = { x: u[i], y: u[i + 1], z: u[i + 2], yaw: u[i + 3], tilt: u[13 + c] };
+      const pose = { x: u[i], y: u[i + 1], z: u[i + 2], yaw: u[i + 3], tilt: u[t] };
       pts.push(...cassetteCorners(pose).flatMap((p) => [project(...p), project(p[0], 0, p[2])]));
     }
   }
@@ -70,7 +74,7 @@ export function recorderChanged(now: readonly number[], was: readonly number[]):
   now.forEach((v, i) => {
     if (v === was[i]) return;
     // Each cassette's centre and turn are four from index 5; its x first.
-    const cas = i >= 5 && i < 13 ? 5 + 4 * Math.floor((i - 5) / 4) : -1;
+    const cas = i >= 5 && i < TILTS ? 5 + 4 * Math.floor((i - 5) / 4) : -1;
     if (cas >= 0 && (now[cas] > PILE_SIDE || was[cas] > PILE_SIDE)) atPile = true;
     else atRec = true;
   });

@@ -1,7 +1,8 @@
 {
   "days": [
     { "when": null, "date": "Mar 14, 1991" },
-    { "when": "issue2-waiting", "date": "Mar 15, 1991" }
+    { "when": "issue2-waiting", "date": "Mar 15, 1991" },
+    { "when": "issue3-waiting", "date": "Mar 16, 1991" }
   ],
   "notes": [
     { "id": "found", "when": null, "text": "Found Grandpa's CoCo 2 in the basement. Same as the one at the museum. Is it even legal?", "mood": 0.04 },
@@ -91,6 +92,9 @@
     { "id": "pulled", "when": "plug-pulled", "text": "Typed {PLUG_LINE} back and pulled it. It's only a game. Isn't it?", "mood": 0.75 },
     { "id": "left", "when": "plug-left", "text": "Left {PLUG_LINE} the way it is. Let it keep its plug", "mood": 0.6 },
     { "id": "ontime", "when": "prompt-on-time", "text": "The OK comes up on time again. Was it slow all day?", "mood": 0.55 },
-    { "id": "night2", "when": "issue2-done", "text": "Enough for tonight. Switch it off", "mood": 0.35, "ask": true, "solved": "issue2-closed" }
+    { "id": "night2", "when": "issue2-done", "text": "Enough for tonight. Switch it off", "mood": 0.35, "ask": true, "solved": "issue2-closed" },
+    { "id": "day3", "when": "issue3-waiting", "text": "{day:2}", "mood": 0.05, "date": true },
+    { "id": "box3", "when": "issue3-waiting", "text": "A third box: the July RAINBOW and its tape. Same pencil on the label", "mood": 0.25 },
+    { "id": "julytape", "when": "issue3-waiting", "text": "What's on this one? July p.{p:julyTape}", "mood": 0.2, "ask": true, "solved": "july-loaded" }
   ]
 }

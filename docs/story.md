@@ -84,6 +84,10 @@ Each step is something the existing systems can already do, so it can be built o
   it." (ORACLE is on it too, and the label agrees with the note.) On the Clear Mind's meetings: they came to "our club"
   with tea and pamflets, by the summer there was no club, "Your grandfather knew why": Kessler knew Grandpa, which is
   how Kessler can know about the basement, and Grandpa knew something about the Clear Mind.
+- **July's Post-its (proposed, not built).** Four, warier again. On the cover, over the blacked-out name: "I knew him.
+  Do not look for him." On the registration form: "Do not send this in. Do not put the machine on any list." On the
+  tape page: "ABOUT and REGISTER." (the file with no name is not his either). On "Finding Your Place": "Write down the
+  counter for each one, the way I do." (it is how a careful player notices a file between them).
 - **Grandpa is alive, but away** (proposed: in a home, his house being cleared), so Kessler finding out the machine
   was found is unexplained, not a promise kept. Kessler knew Grandpa (the same CoCo club, until the Clear Mind came
   to it: May's slip, built), and proposed:

@@ -847,6 +847,50 @@ OK
 - flag `issue2-closed` (1:14)
 - notes ~~Enough for tonight. Switch it off~~
 
+### Issue 3 (July): the box, REGISTER
+
+**45. Switches it on: the next day** (1:15)
+
+- **story** the next day: the CoCo boots afresh, memory empty (1:15)
+- flag `issue3-waiting` (1:15)
+- notes + **Mar 16, 1991**
+- notes + A third box: the July RAINBOW and its tape. Same pencil on the label
+- notes + What's on this one? July p.10 ❓
+
+**46. Puts the July cassette in the recorder** (1:16)
+
+**47. Loads REGISTER (July p.10) and runs it** (1:17)
+
+```
+CLOAD "REGISTER"
+OK
+RUN
+
+REGISTER YOUR COMPUTER
+ANSWER, THEN COPY THE CARD
+ONTO THE FORM IN THE EDITORIAL.
+
+YOUR NAME? ALEX
+SERIAL NUMBER? 26-3026B
+YOUR TOWN? DAYTON
+COMPUTERS AT THIS ADDRESS? 1
+
+REGISTRATION CARD
+-------------------------------
+OWNER:   ALEX
+SERIAL:  26-3026B
+TOWN:    DAYTON
+MACHINES: 1
+REMARKS: NONE
+-------------------------------
+SEND IT BY SEPTEMBER 1, 1986.
+OK
+```
+
+- flag `july-loaded` (1:17)
+- flag `register-loaded` (1:17)
+- notes ~~What's on this one? July p.10~~
+
 ## Branch: Deleted the line
 
 Only the parts that differ from the main route.

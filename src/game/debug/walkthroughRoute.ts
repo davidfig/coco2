@@ -69,7 +69,7 @@ export const MAY: readonly Part[] = [
     steps: [
       { say: 'Switches the set off', act: (p) => p.switchOff() },
       { say: 'Switches it on: the next day', act: (p) => p.switchOn() },
-      { say: 'Puts the May cassette in the recorder', act: (p) => p.insertMay() },
+      { say: 'Puts the May cassette in the recorder', act: (p) => p.insert('may') },
     ],
   },
   {
@@ -115,6 +115,18 @@ export const LEFT: readonly Part[] = [{ title: 'Issue 2: the choice (left)', ste
 
 export const END: readonly Part[] = [{ title: 'The end of issue 2', steps: [{ say: 'Switches the set off', act: (p) => p.switchOff() }] }];
 
+/** Issue 3, as far as it is built: the July box, its tape, REGISTER. */
+export const JULY: readonly Part[] = [
+  {
+    title: 'Issue 3 (July): the box, REGISTER',
+    steps: [
+      { say: 'Switches it on: the next day', act: (p) => p.switchOn() },
+      { say: 'Puts the July cassette in the recorder', act: (p) => p.insert('july') },
+      { say: `Loads REGISTER (July p.${pageNo('julyTape')}) and runs it`, type: ['CLOAD "REGISTER"', 'RUN', NAME, '26-3026B', 'DAYTON', '1'] },
+    ],
+  },
+];
+
 export interface Route {
   name: string;
   parts: readonly Part[];
@@ -123,7 +135,7 @@ export interface Route {
 }
 
 export const ROUTES: readonly Route[] = [
-  { name: 'Kept the line, pulled the plug', parts: [...MARCH, ...KEPT, ...MAY, ...PULLED, ...END] },
+  { name: 'Kept the line, pulled the plug', parts: [...MARCH, ...KEPT, ...MAY, ...PULLED, ...END, ...JULY] },
   { name: 'Deleted the line', parts: [...MARCH, ...DELETED, ...MAY, ...PULLED, ...END], shows: [...DELETED, MAY[1]] },
   { name: 'Left the plug', parts: [...MARCH, ...KEPT, ...MAY, ...LEFT, ...END], shows: [...LEFT, ...END] },
 ];

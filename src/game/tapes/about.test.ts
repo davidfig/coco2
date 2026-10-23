@@ -2,11 +2,12 @@ import { HeadlessCoco } from '../coco/headless';
 import { expect, test } from '../../test/check';
 import type { TapeFile } from '../basic/tape';
 import type { AboutIssue } from './about';
-import { MARCH_ABOUT, MAY_ABOUT, MAY_TAPE_KEY, RAINBOW_TAPE, mayTape } from '.';
+import { JULY_ABOUT, MARCH_ABOUT, MAY_ABOUT, MAY_TAPE_KEY, RAINBOW_TAPE, julyTape, mayTape } from '.';
 
 const ISSUES: readonly [string, AboutIssue, readonly TapeFile[]][] = [
   ['MARCH', MARCH_ABOUT, RAINBOW_TAPE],
   ['MAY', MAY_ABOUT, mayTape(true)],
+  ['JULY', JULY_ABOUT, julyTape()],
 ];
 
 for (const [label, about, tape] of ISSUES) {

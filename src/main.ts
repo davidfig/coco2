@@ -16,8 +16,8 @@ import { overPage, tvEnds } from './game/magazine/bookLayout';
 import { SeenTracker } from './game/magazine/seen';
 import { RoomLights } from './game/room/lights';
 import { smooth } from './game/magazine/bookLayout';
-import { ISSUE_1_RULES, ISSUE_2_RULES, PuzzleWatcher } from './game/puzzles';
-import { Framing, Guide, Hop, Issue1Story, Issue2Story } from './game/story';
+import { ISSUE_1_RULES, ISSUE_2_RULES, ISSUE_3_RULES, PuzzleWatcher } from './game/puzzles';
+import { Days, Framing, Guide, Hop, Issue1Story, Issue2Story } from './game/story';
 import { Shake, TouchKeys, installable, noZoom, wantsTouchKeys } from './game/touch';
 import { Tv } from './game/tv/tv';
 import { TAMPER_STYLES, TamperStyle } from './game/tv/tvShader';
@@ -131,11 +131,11 @@ computer.busy = (x, y) => {
 };
 const bookInput = attachBookInput(magazine, canvas, () => notebook.covers(), computer.visible ? () => {} : undefined);
 const seen = new SeenTracker();
-/** Placeholder for issue 2, shown once issue 1's night has passed. */
 /** `?book` starts with the magazine open (for playtesting). */
 if (params.has('book')) magazine.show();
 
-const story = new Issue1Story(screen, tv, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), basic.interp, () => {
+const story = new Issue1Story(screen, tv, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), basic.interp);
+const days = new Days((f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), () => {
   // The next day: the CoCo is switched on again, with nothing in memory.
   if (basic.interp.state !== 'idle') basic.interp.halt();
   basic.interp.program.clear();
@@ -158,7 +158,7 @@ recorder.sound = new RecorderSound(sound);
 const story2 = new Issue2Story(screen, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), basic.interp, () => tv.flinch());
 /** A new player is drawn to the notes, and then to the magazine, until each has been opened once. */
 const guide = new Guide((f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), () => !!recorder.wanted());
-const puzzles = new PuzzleWatcher(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), [...ISSUE_1_RULES, ...story.rules, ...ISSUE_2_RULES, ...story2.rules]);
+const puzzles = new PuzzleWatcher(basic.interp, (f) => magazine.state.flags.has(f), (f) => magazine.setFlag(f), [...ISSUE_1_RULES, ...story.rules, ...ISSUE_2_RULES, ...story2.rules, ...ISSUE_3_RULES]);
 /** `?tamper=ghost|scan|both` overrides how a tampered cell shows (for comparing; the story sets it per issue). */
 const tamperStyle = params.get('tamper') as TamperStyle;
 if (TAMPER_STYLES.includes(tamperStyle)) tv.tamperStyle = tamperStyle;
@@ -200,13 +200,13 @@ engine.earlyUpdaters.push((dt) => {
 // A page load is waking up: if the last session ended the evening without switching off, that counts as the night.
 story.sleep();
 story2.sleep();
-story.wake();
+days.wake();
 let setOn = tv.powerTime >= 0;
-/** The room is going dark at the end of issue 1's evening (`night`), and the next day hasn't been set out yet. */
+/** The room is going dark at the end of an evening (`night`), and the next day hasn't been set out yet. */
 let goingDark = false;
 /**
- * The set switched off at the end of issue 1's evening: the room's lights blink out, the night passes in the dark, and
- * they come on again on the next day, the set and the CoCo with them and the May RAINBOW on the table.
+ * The set switched off at the end of an evening: the room's lights blink out, the night passes in the dark, and they
+ * come on again on the next day, the set and the CoCo with them and the next RAINBOW on the table.
  */
 function night(): void {
   lights.night();
@@ -271,20 +271,20 @@ engine.updaters.push((dt) => {
   story.step(dt);
   story2.step(dt);
   const on = tv.powerTime >= 0;
-  if (on && !setOn) story.wake();
+  if (on && !setOn) days.wake();
   if (!on && setOn) {
-    const closing = !magazine.state.flags.has('issue1-closed');
+    const nights = days.nights();
     story.sleep();
     story2.sleep();
-    if (closing && magazine.state.flags.has('issue1-closed')) night();
+    if (days.nights() > nights) night();
   }
   setOn = on;
-  // In the dark it is the next day: the CoCo starts afresh and May is on the table, to come in with the lights. Setting
-  // it out holds up a frame (May's pages, the pile), so it waits until a frame has been drawn with the bulb gone cold:
+  // In the dark it is the next day: the CoCo starts afresh and the next issue is on the table, to come in with the lights.
+  // Setting it out holds up a frame (its pages, the pile), so it waits until a frame has been drawn with the bulb gone cold:
   // the lights go out first and the stall passes in the dark.
   if (goingDark && lights.dark) {
     goingDark = false;
-    story.wake();
+    days.wake();
     litFor = 0;
     magazine.arrive = notebook.arrive = 0;
   }

@@ -4,33 +4,41 @@ import { CAS, GRILLE, HUB, KEYS, KEY_NAMES, LED, REC } from './layout';
 /**
  * The recorder's print texture, 1024 × 1024, straight alpha (ink over whatever the shader makes the part of): the top
  * of the recorder seen from above, its back edge up (the brand, the keys' legends, the grille's border) in the top
- * `PRINT_TOP_V`; under it the two cassettes' labels side by side, March's then May's, each seen from above with the
- * back edge up and its window cut out (alpha 0 is the shell, or the tape through the window).
+ * `PRINT_TOP_V`; under it the cassettes' labels, in issue order two to a row (March's then May's, then July's under
+ * March's), each seen from above with the back edge up and its window cut out (alpha 0 is the shell, or the tape
+ * through the window).
  */
 export const PRINT_SIZE = 1024;
 const TOP_H = Math.round((PRINT_SIZE * REC.hd) / REC.hw);
 const LABEL_Y = TOP_H + 16;
 const LABEL_W = PRINT_SIZE / 2;
 const LABEL_H = Math.round((LABEL_W * CAS.hd) / CAS.hw);
-export const PRINT_TOP_V = TOP_H / PRINT_SIZE;
-export const PRINT_LABEL_V0 = LABEL_Y / PRINT_SIZE;
-export const PRINT_LABEL_V1 = (LABEL_Y + LABEL_H) / PRINT_SIZE;
-
-const SANS = 'Helvetica, Arial, sans-serif';
-/** The date gone over in felt marker, dark blue, so it shows from across the table: Kessler's letters, without the pencil's grain. */
-const MARKER: Hand = { ...KESSLER, pencil: false, tremor: 0.5, ink: [24, 34, 108] };
+/** A row of labels, and the gap under it. */
+const LABEL_ROW = LABEL_H + 16;
 /** What each cassette's maker (M. Kessler, in pencil) wrote on it: the title over the window, its date in marker beside it, and under it. */
 const LABELS: readonly { title: string; date: string; under: readonly string[] }[] = [
   { title: 'RAINBOW ON TAPE', date: 'MARCH 86', under: ['Copied by hand, for you. Mistakes are mine.', '- M. Kessler'] },
   { title: 'RAINBOW ON TAPE', date: 'MAY 86', under: ['ABOUT   SHUTDOWN'] },
+  { title: 'RAINBOW ON TAPE', date: 'JULY 86', under: ['ABOUT   REGISTER'] },
 ];
+/** The texture's height: the top, and the rows of labels under it. */
+export const PRINT_H = LABEL_Y + Math.ceil(LABELS.length / 2) * LABEL_ROW;
+export const PRINT_TOP_V = TOP_H / PRINT_H;
+/** Where the first row of labels starts and ends (v), and how far down each next row is. */
+export const PRINT_LABEL_V0 = LABEL_Y / PRINT_H;
+export const PRINT_LABEL_V1 = (LABEL_Y + LABEL_H) / PRINT_H;
+export const PRINT_LABEL_ROW_V = LABEL_ROW / PRINT_H;
 
+const SANS = 'Helvetica, Arial, sans-serif';
+/** The date gone over in felt marker, dark blue, so it shows from across the table: Kessler's letters, without the pencil's grain. */
+const MARKER: Hand = { ...KESSLER, pencil: false, tremor: 0.5, ink: [24, 34, 108] };
 export function drawRecorderPrint(): HTMLCanvasElement {
   const c = document.createElement('canvas');
-  c.width = c.height = PRINT_SIZE;
+  c.width = PRINT_SIZE;
+  c.height = PRINT_H;
   const g = c.getContext('2d')!;
   drawTop(g);
-  LABELS.forEach((l, i) => drawLabel(g, i * LABEL_W, l));
+  LABELS.forEach((l, i) => drawLabel(g, (i % 2) * LABEL_W, LABEL_Y + Math.floor(i / 2) * LABEL_ROW, l));
   return c;
 }
 
@@ -67,11 +75,11 @@ function drawTop(g: CanvasRenderingContext2D): void {
   });
 }
 
-/** A cassette's label at canvas x `x0`: cream paper with a printed band and rules, pencil on it, its window cut out. */
-function drawLabel(g: CanvasRenderingContext2D, x0: number, l: (typeof LABELS)[number]): void {
+/** A cassette's label at canvas `x0`, `y0`: cream paper with a printed band and rules, pencil on it, its window cut out. */
+function drawLabel(g: CanvasRenderingContext2D, x0: number, y0: number, l: (typeof LABELS)[number]): void {
   // Cassette x, z to canvas pixels.
   const X = (x: number) => x0 + (x / (2 * CAS.hw) + 0.5) * LABEL_W;
-  const Y = (z: number) => LABEL_Y + (z / (2 * CAS.hd) + 0.5) * LABEL_H;
+  const Y = (z: number) => y0 + (z / (2 * CAS.hd) + 0.5) * LABEL_H;
   const [lx0, lx1, ly0, ly1] = [X(-CAS.hw + 0.03), X(CAS.hw - 0.03), Y(-CAS.hd + 0.02), Y(0.09)];
   g.fillStyle = '#ece5d2';
   g.fillRect(lx0, ly0, lx1 - lx0, ly1 - ly0);
