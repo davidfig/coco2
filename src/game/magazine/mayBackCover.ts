@@ -5,7 +5,7 @@ import { Ctx, HEAVY, PAGE_H, PAGE_W, SANS, SERIF, colWidth, flow, rowsFor, text 
 
 // May's back cover: LIGHTS-OUT, a plug-in timer that switches the computer off for you, as a national ad: the photograph
 // across the top of the page, a heavy headline under it, two columns of copy, the maker's logo, and a seal of approval
-// from the Clear Mind's committee (the advertisers have started to quote it).
+// from the Human Pledge's committee (the advertisers have started to quote it).
 
 const INK = '#1a1c22';
 const BLUE = '#1f3f7a';
@@ -49,7 +49,7 @@ function seal(ctx: Ctx, cx: number, cy: number, r: number): void {
   ctx.arc(0, 0, r * 0.66, 0, Math.PI * 2);
   ctx.stroke();
   arcText(ctx, 'SMALL SYSTEMS COMMITTEE', 0, 0, r * 0.8, 0, `bold ${Math.round(r * 0.125)}px ${SANS}`, BLUE);
-  arcText(ctx, '• THE CLEAR MIND •', 0, 0, r * 0.8, Math.PI, `bold ${Math.round(r * 0.125)}px ${SANS}`, BLUE, true);
+  arcText(ctx, '• THE HUMAN PLEDGE •', 0, 0, r * 0.8, Math.PI, `bold ${Math.round(r * 0.125)}px ${SANS}`, BLUE, true);
   text(ctx, 'REST.', 0, -r * 0.2, `italic bold ${Math.round(r * 0.2)}px ${SERIF}`, BLUE, 'center');
   text(ctx, 'REMEMBER.', 0, r * 0.06, `italic bold ${Math.round(r * 0.2)}px ${SERIF}`, BLUE, 'center');
   text(ctx, 'RETURN.', 0, r * 0.32, `italic bold ${Math.round(r * 0.2)}px ${SERIF}`, BLUE, 'center');

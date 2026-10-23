@@ -2,7 +2,8 @@ import type { Interpreter } from '../basic/interpreter';
 import type { TextScreen } from '../coco/screen';
 import { Program } from '../basic/program';
 import { MAY_TAPE_KEY } from '../tapes';
-import { OK_LINES, OK_MESSAGE, PLUG_HELD, PLUG_LINE, PLUG_PRINTED, PLUG_QUESTION, isShutdown } from '../puzzles/listingsMay';
+import { ECHO_LINES, ECHO_MESSAGE, PLUG_LINE, PLUG_PRINTED, heldQuestion, isPlugHeld, isShutdown, plugHeld, plugQuestion } from '../puzzles/listingsMay';
+import { savedName } from './issue1';
 import { screenText } from '../puzzles/rules';
 import type { Rule } from '../puzzles/watcher';
 import { COLS, ROWS } from '../vdg/vdg';
@@ -14,7 +15,7 @@ const PROMPT_LAG = 0.6;
 const MISSTEP_EVERY: readonly [number, number] = [18, 34];
 /** Prompts after the answer before the player notices they come on time (the first one is still being read). */
 const ON_TIME_AFTER = 2;
-/** Seconds at OK, once the plug has been held, before the player is taken to have left OK's line 710 as it is. */
+/** Seconds at OK, once the plug has been held, before the player is taken to have left ECHO's line 710 as it is. */
 const LEAVE_AFTER = 25;
 /** The same, once they have gone off to load something else. */
 const LEAVE_AFTER_GOING_ON = 6;
@@ -22,8 +23,8 @@ const LEAVE_AFTER_GOING_ON = 6;
 /**
  * What the story does in issue 2 (see `docs/flags.md`, Issue 2), besides the May cassette coming (it lies by the
  * recorder for the player to put in: `recorder/`): until the player answers ORACLE the machine is a little off in
- * deniable ways (a late OK, a cursor colour out of order). OK's lines shimmer whenever a listing puts them on the screen,
- * and so does his message when the decoder prints it. SHUTDOWN's first win makes the set flinch, and then OK changes the
+ * deniable ways (a late OK, a cursor colour out of order). ECHO's lines shimmer whenever a listing puts them on the screen,
+ * and so does his message when the decoder prints it. SHUTDOWN's first win makes the set flinch, and then ECHO changes the
  * line that pulls the plug (P8), and waits to see what the player does about it. The puzzles' own flags are in
  * `puzzles/rulesMay.ts`.
  */
@@ -41,10 +42,10 @@ export class Issue2Story {
     private readonly flinch: () => void = () => {},
   ) {}
 
-  /** OK's lines in a listing, and his message as the decoder prints it, are his: claimed, so they shimmer and keep rippling. */
+  /** ECHO's lines in a listing, and his message as the decoder prints it, are his: claimed, so they shimmer and keep rippling. */
   private readonly hisLines: Rule = (e) => {
     if (e.type !== 'idle' || !this.has('issue2-waiting')) return;
-    const mine = this.interp.program.list().filter((l) => OK_LINES.includes(l));
+    const mine = this.interp.program.list().filter((l) => ECHO_LINES.includes(l) || isPlugHeld(l));
     for (let r = 0; r < ROWS; r++) {
       const row = rowText(this.screen, r);
       for (const l of mine) {
@@ -55,11 +56,12 @@ export class Issue2Story {
     }
     // The message may run over the end of a row, so it is looked for in the screen as one long line.
     const text = screenText(this.screen.vram);
-    const at = text.indexOf(OK_MESSAGE);
-    if (at >= 0) this.screen.claim(at, OK_MESSAGE.length);
-    // His question at the plug, as SHUTDOWN prints it.
-    const asked = this.has('plug-changed') ? text.indexOf(PLUG_QUESTION) : -1;
-    if (asked >= 0) this.screen.claim(asked, PLUG_QUESTION.length);
+    const at = text.indexOf(ECHO_MESSAGE);
+    if (at >= 0) this.screen.claim(at, ECHO_MESSAGE.length);
+    // His question at the plug, as SHUTDOWN prints it, the player's name and all (as his line in memory has it).
+    const question = this.interp.program.list().map(heldQuestion).find((q) => q) ?? plugQuestion(savedName());
+    const asked = this.has('plug-changed') ? text.indexOf(question) : -1;
+    if (asked >= 0) this.screen.claim(asked, question.length);
   };
 
   /** The lights going out in SHUTDOWN, the first time: the set flinches with them. */
@@ -81,7 +83,7 @@ export class Issue2Story {
   };
 
   /**
-   * After the first win, OK changes the line that pulls the plug: in memory if SHUTDOWN is there, and on the May tape if it
+   * After the first win, ECHO changes the line that pulls the plug: in memory if SHUTDOWN is there, and on the May tape if it
    * is in the recorder, so a fresh CLOAD shows it too. Only at OK (changing lines under a running program would lose its
    * place); with neither to hand, he waits.
    */
@@ -89,15 +91,17 @@ export class Issue2Story {
     if (this.interp.state !== 'idle') return;
     let done = false;
     const p = this.interp.program;
+    // He asks by the player's name, the first thing he learned about them.
+    const held = plugHeld(savedName()).slice(String(PLUG_LINE).length);
     if (isShutdown(p) && p.index(PLUG_LINE) >= 0) {
-      p.set(PLUG_LINE, PLUG_HELD.slice(String(PLUG_LINE).length));
+      p.set(PLUG_LINE, held);
       done = true;
     }
     const file = this.interp.tape.cassette === MAY_TAPE_KEY ? this.interp.tape.files().find((f) => f.name === 'SHUTDOWN') : undefined;
     if (file) {
       const copy = new Program();
       copy.load(file.text);
-      copy.set(PLUG_LINE, PLUG_HELD.slice(String(PLUG_LINE).length));
+      copy.set(PLUG_LINE, held);
       this.interp.tape.save('SHUTDOWN', copy.save());
       done = true;
     }

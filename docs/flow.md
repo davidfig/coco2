@@ -23,7 +23,7 @@ leaving the plug) are played in full but written out only where they differ.
 |------|------|
 | A program on a tape | `src/game/tapes/*.bas` (March: `index.ts`'s `RAINBOW_TAPE`; May: `mayTape`; July: `julyTape`); which tape a cassette holds: `issueTape`, `TAPE_KEYS` |
 | Each tape's ABOUT | `src/game/tapes/about.ts` (`aboutTape`, one template), filled from `index.ts`'s `MARCH_ABOUT` / `MAY_ABOUT` / `JULY_ABOUT` |
-| May's tape as OK left it (SHUTDOWN's REM at 15, his line 990, ORACLE's coded answers) | `src/game/puzzles/listingsMay.ts` |
+| May's tape as ECHO left it (SHUTDOWN's REM at 15, his line 990, ORACLE's coded answers) | `src/game/puzzles/listingsMay.ts` |
 | What a puzzle watches for, and the flag it ticks | `src/game/puzzles/rules.ts` (March), `rulesMay.ts` (May), `rulesJuly.ts` (July) |
 | What the story does by itself, and its timers | `src/game/story/issue1.ts`, `issue2.ts` (constants at the top) |
 | The night between issues, and which flag brings each | `src/game/story/days.ts` (`NIGHTS`), `magazine/pages.ts` (`ISSUE_ARRIVES`) |
@@ -51,8 +51,8 @@ the March cassette hops until it goes in (`tape-inserted`), and from issue 2 the
 | The win | TAKE GOLD | The game ends plainly. 1.5 s later `HELLO` writes itself over the empty row above OK | `adventure-won`, `tamper-voice` |
 | The name | The next OK prompt (usually the CLOAD of GUESS) | 2.2 s later OK reads as the player's name for 3.5 s | `tamper-name` |
 | GUESS | `CLOAD "GUESS"`, CHECK, LIST; finds line 125, `REM IS ANYONE READING THIS`; turns to GUESS's page | Notes: who is asking? delete it or leave it? | `found-extra-line`, `seen-guess` |
-| The choice: kept | Does nothing (12 s; 8 s once they run GUESS or load something) | The line becomes `... THANK YOU`, and THANK YOU over the last OK | `ok-thanks`, `saw-thanks` |
-| The choice: deleted | Types `125` | 5 s later the line is back with `, PLEASE`, and the screen says so | `deleted-extra-line`, `ok-pleads`, `saw-pleads` |
+| The choice: kept | Does nothing (12 s; 8 s once they run GUESS or load something) | The line becomes `... THANK YOU`, and THANK YOU over the last OK | `echo-thanks`, `saw-thanks` |
+| The choice: deleted | Types `125` | 5 s later the line is back with `, PLEASE`, and the screen says so | `deleted-extra-line`, `echo-pleads`, `saw-pleads` |
 | The evening ends | | Notes: "Shut it all down" | `issue1-done` |
 | The night | Switches the set off (a reload counts as the night passed) | The room's lights blink out (`RoomLights.night`, `night()` in `main.ts`); in the dark the CoCo boots empty, the May box arrives and the date heads the notes; a second later the lights flicker on, the set with them, and May slides onto the table; March lies on the table right of the set, its cassette beside it, the start of a pile of the issues not on the table (`computer/pile.ts`, `Computer.pile`, `Recorder.piled`) | `issue1-closed`, `issue2-waiting` |
 
@@ -60,19 +60,19 @@ the March cassette hops until it goes in (`tape-inserted`), and from issue 2 the
 
 The May RAINBOW on the table and its cassette by the recorder; March on the pile beside the set and its cassette beside that (a click there, or the corner button, swaps them: the one picked up opens straight off the pile while the other is carried back onto it, and the cassettes change places out of sight once it is open, `computer/swap.ts`, `stepSwap` in `main.ts`; a click on the cassette there carries the two issues past each other shut, and the cassettes over the machine with them, `Recorder.shift`). Until ORACLE
 is answered every OK comes up 0.6 s late and the cursor's colours slip now and then: the cover feature's "Three Signs Of
-A Sick System". OK's lines shimmer whenever a listing shows them.
+A Sick System". ECHO's lines shimmer whenever a listing shows them.
 
 | Beat | The player | The game | Flags |
 |------|------------|----------|-------|
 | The new tape | Puts the May cassette in, `CLOAD "SHUTDOWN"` | | `may-loaded`, `shutdown-loaded` |
-| OK's REM | CHECK (off from the top), `LIST -20` | Line 15 answers March's choice: kept, `IS ANYONE READING THIS` + `16 REM YES. SOMEONE IS`; deleted, `... PLEASE` | `shutdown-checked`, `shutdown-rem` |
+| ECHO's REM | CHECK (off from the top), `LIST -20` | Line 15 answers March's choice: kept, `IS ANYONE READING THIS` + `16 REM YES. SOMEONE IS`; deleted, `... PLEASE` | `shutdown-checked`, `shutdown-rem` |
 | The message | `LIST 990`; types the decoder from the code article; RUN | DELPHI's five speeches, then `I DID NOT TOUCH THE TAPE` | `message-seen`, `data-decoded` |
 | The lie | Turns to SHUTDOWN's last page | Its 990 is the editors' `GOOD LUCK FROM ALL OF US` | `seen-mayShutdownEnd` |
 | ORACLE | CLOADs on past SHUTDOWN (it is not in the magazine's list), RUNs, asks | Answers in numbers | `oracle-passed`, `oracle-asked` |
 | | Decodes it (DATA under the decoder) | `WHO ARE YOU` / `ANSWER ME IN DATA` | `oracle-read` |
 | The answer | Writes a message of their own in DATA, RUNs or CSAVEs it | Kept (`coco2.reply`); two prompts later the OK is on time again | `oracle-answered`, `prompt-on-time` |
-| SHUTDOWN | Plays: LISTEN to a terminal loses (back to the airlock); the unit; the Three Rules at the core door; PULL PLUG | The set flinches as the lights go out; then OK changes line 710, in memory and on the tape | `listened`, `door-asked`, `rules-spoken`, `shutdown-won`, `flinched`, `plug-changed` |
-| The plug | Plays again | `IT WILL NOT COME.` `IS IT DARK THERE` | `plug-held` |
+| SHUTDOWN | Plays: LISTEN to a terminal loses (back to the airlock); the unit; the Three Rules at the core door; PULL PLUG | The set flinches as the lights go out; then ECHO changes line 710, in memory and on the tape | `listened`, `door-asked`, `rules-spoken`, `shutdown-won`, `flinched`, `plug-changed` |
+| The plug | Plays again | `IT WILL NOT COME.` `IS IT DARK THERE, <NAME>` (`plugHeld`, `listingsMay.ts`) | `plug-held` |
 | The choice: pulled | Retypes 710 as printed, plays to the core, pulls it | The win, without the flinch | `plug-pulled` |
 | The choice: left | Loads something else (6 s), or sits at OK (25 s) | | `plug-left` |
 | The evening ends | Switches off | Notes: "Enough for tonight" | `issue2-done`, `issue2-closed` |
@@ -86,4 +86,4 @@ puzzles.md, Issue 3; beats.md, Issue 3.
 | Beat | The player | The game | Flags |
 |------|------------|----------|-------|
 | The box | Switches on, the next day | The CoCo boots afresh; July on the table | `issue3-waiting` |
-| The new tape | Puts the July cassette in, `CLOAD "REGISTER"`, RUN | The registration card (`tapes/register.bas`; OK's line in it is not built) | `july-loaded`, `register-loaded` |
+| The new tape | Puts the July cassette in, `CLOAD "REGISTER"`, RUN | The registration card (`tapes/register.bas`; ECHO's line in it is not built) | `july-loaded`, `register-loaded` |

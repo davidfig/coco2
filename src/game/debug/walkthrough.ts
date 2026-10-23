@@ -121,7 +121,7 @@ export class Play {
     this.days.wake();
   }
 
-  /** An issue's cassette put in the recorder (May's carries OK's answer to what was done with GUESS's extra line). */
+  /** An issue's cassette put in the recorder (May's carries ECHO's answer to what was done with GUESS's extra line). */
   insert(id: IssueId): void {
     this.coco.interp.tape.insert(issueTape(id, (f) => this.flags.has(f)), TAPE_KEYS[id]);
   }

@@ -8,8 +8,8 @@ import { PAGE_W, rng, type Ctx } from './paper';
  * the top of one torn off along a ragged edge, each stuck to a page, so it is part of that page's picture. They say what to do and never how (the
  * magazine holds no hints). March's: start (on the cover), play the adventure to the end (on its words), check the copying
  * (on GUESS's listing). May's say a little more about Kessler: the box was harder to find, the copying was checked this time (so
- * what doesn't match the magazine wasn't Kessler), the tape holds two programs and no more (ORACLE wasn't Kessler either),
- * the Clear Mind came to their club, and Grandpa knew why it ended. Each is stuck where the page has room, so it hides
+ * what doesn't match the magazine wasn't Kessler), the tape holds the four programs the magazine lists and no more (ORACLE wasn't Kessler either),
+ * the Human Pledge came to their club, and Grandpa knew why it ended. Each is stuck where the page has room, so it hides
  * nothing the player needs, and none quite square with it (a degree or two off, each its own way). Kessler spells the
  * hard words by ear (`KESSLER`, hands.ts): the notes are written as Kessler wrote them. See docs/story.md, the boxes on
  * the step.
@@ -78,17 +78,18 @@ const SLIPS: Partial<Record<AnyPageId, Slip>> = {
     y: 930,
     angle: -0.018,
   },
-  // Under the tape page's tables, left of the folio: what Kessler put on the tape, which isn't all that is on it.
+  // Under the tape page's tables (four programs, and the commands under them), left of the folio: what Kessler put on
+  // the tape, which isn't all that is on it.
   mayTape: {
-    paras: ['ABOUT and SHUTDOWN. That is all I put on it.'],
+    paras: ['ABOUT, SHUTDOWN, CODER, CHECKUP.', 'That is all I put on it.'],
     x: 130,
-    y: 1136,
+    y: 1166,
     angle: 0.014,
-    torn: 1.4,
+    torn: 1.2,
   },
   // On the meetings table's last rows, at the right, up to the page's ruled border (the Elder's row at the top and the
   // Line underneath stay clear).
-  mayClearMind: {
+  mayPledge: {
     paras: ['They came to our club with tea and pamflets. By the summer there was no club.', 'Your grandfather knew why.'],
     x: 588,
     y: 736,

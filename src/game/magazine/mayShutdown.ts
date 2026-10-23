@@ -1,6 +1,6 @@
 /**
- * SHUTDOWN in the May issue: the Clear Mind's adventure about the night the great machine was switched off (written by
- * READY, though nobody knows it: docs/puzzles.md), over three pages. The first opens it (the game in the Clear Mind's calm
+ * SHUTDOWN in the May issue: the Human Pledge's adventure about the night the great machine was switched off (written by
+ * PROVIDENCE, though nobody knows it: docs/puzzles.md), over three pages. The first opens it (the game in the Human Pledge's calm
  * voice, a map of the station, the words it knows, the editors' note) and starts the listing; the next two carry the rest.
  * The listing comes from `puzzles/listingsMay.ts`, so the page, the tape and the watcher never disagree.
  */
@@ -116,7 +116,7 @@ function stationMap(ctx: Ctx, x: number, y: number, w: number): number {
 
 /** The game's first page: what it is, the station, the words, the editors' note, and the start of the listing. */
 export function drawShutdown(ctx: Ctx): void {
-  const y = headline(ctx, 'Shutdown', ['The night the great machine went quiet . . .', 'An adventure for the whole family . . .'], 'Offered by the Youth Committee of the Clear Mind');
+  const y = headline(ctx, 'Shutdown', ['The night the great machine went quiet . . .', 'An adventure for the whole family . . .'], 'Offered by the Youth Committee of the Human Pledge');
   const tw = W * 0.6;
   flow(
     ctx,
@@ -141,7 +141,7 @@ export function drawShutdown(ctx: Ctx): void {
   const mx = MARGIN + tw + GAP + 10;
   const mw = W - tw - GAP - 10;
   const my = stationMap(ctx, mx, y - 10, mw);
-  // The editors' own word goes under it all, set apart from the Clear Mind's.
+  // The editors' own word goes under it all, set apart from the Human Pledge's.
   const ey = FIRST_TOP - 116;
   sidebar(ctx, 'Words It Knows', mx, my, mw, ey - 22 - my);
   flow(

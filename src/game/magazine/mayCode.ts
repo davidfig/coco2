@@ -96,6 +96,7 @@ export function drawSecret(ctx: Ctx): void {
       ctx,
       [
         { text: 'Write the numbers in DATA lines, 0 between words and -1 at the end. RUN it with the decoder, then CSAVE it: anyone with this magazine can read it.', before: 0, align: 'left' },
+        { text: 'Counting letters is slow work. CODER, on this month’s tape, does it for you: type a message and it prints the DATA line to type in.', align: 'left' },
       ],
       sw - 40,
     ),
@@ -106,13 +107,14 @@ export function drawSecret(ctx: Ctx): void {
   );
 }
 
-/** The May tape: what the magazine says is on it. */
+/** The May tape: what the magazine says is on it (the decoder is not: typing it into SHUTDOWN is the point). */
 export const drawMayTape = (ctx: Ctx): void =>
   tapePage(
     ctx,
     [
       ['ABOUT', 'What is on the tape, and how to load it.'],
       ['SHUTDOWN', `Pull the plug (page ${pageNo('mayShutdown')}). Our message is in its DATA (page ${pageNo('maySecret')}).`],
+      ['CODER', `Type a message, get it back in our code as a DATA line (page ${pageNo('maySecret')}).`],
+      ['CHECKUP', `The Human Pledge’s three questions for your system (page ${pageNo('mayHealthy')}).`],
     ],
-    'Two programs this month, and we are sorry it is not more. The decoder on page ' + pageNo('maySecret') + ' is not on the tape: it is three lines, and typing it into SHUTDOWN is the whole point.',
   );

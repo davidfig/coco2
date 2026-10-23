@@ -38,21 +38,21 @@ export function houseAd(ctx: Ctx, x: number, y: number, w: number): number {
   return y + h + 10;
 }
 
-/** A quiet boxed notice among the loud ads: the Clear Mind, in the even voice of its editor (it likes lists of three). */
-function clearMind(ctx: Ctx, x: number, y: number, w: number): void {
+/** A quiet boxed notice among the loud ads: the Human Pledge, in the even voice of its editor (it likes lists of three). */
+function pledgeNotice(ctx: Ctx, x: number, y: number, w: number): void {
   const h = 180;
   ctx.strokeStyle = INK;
   ctx.lineWidth = 1.5;
   ctx.strokeRect(x, y, w, h);
   ctx.strokeRect(x + 6, y + 6, w - 12, h - 12);
-  text(ctx, 'THE CLEAR MIND', x + w / 2, y + 42, `bold 26px ${SERIF}`, INK, 'center');
-  text(ctx, 'Clear Mind, Clear Code', x + w / 2, y + 66, `italic 17px ${SERIF}`, INK, 'center');
+  text(ctx, 'THE HUMAN PLEDGE', x + w / 2, y + 42, `bold 26px ${SERIF}`, INK, 'center');
+  text(ctx, 'Born, not built.', x + w / 2, y + 66, `italic 17px ${SERIF}`, INK, 'center');
   flow(
     ctx,
     rowsFor(
       ctx,
       [
-        { text: 'Three habits of a calm programmer. Rest your eyes. Write it down. Ask one question at a time.', font: `15px ${SERIF}`, lh: 19, align: 'center', before: 0 },
+        { text: '“I will think my own thoughts. I will not let a machine think them for me.” Three habits keep the Pledge. Rest your eyes. Write it down. Ask one question at a time.', font: `15px ${SERIF}`, lh: 19, align: 'center', before: 0 },
         { text: 'Meetings every Tuesday in your town. Free. Bring nothing. Call the Line any hour on 606-555-0142; it is always answered. Ask for booklet MC4471.', font: `15px ${SERIF}`, lh: 19, align: 'center', before: 4 },
       ],
       w - 60,
@@ -60,7 +60,7 @@ function clearMind(ctx: Ctx, x: number, y: number, w: number): void {
     x + 30,
     y + 84,
     w - 60,
-    80,
+    88,
   );
 }
 
@@ -129,6 +129,6 @@ export function drawAds(ctx: Ctx): void {
     ...entry('MATH DRILL', 'Practice addition, subtraction, multiplication and a surprise. Up to 3 students may use it, taking turns, glaring at each other.', '$19.95'),
   ];
   flow(ctx, rowsFor(ctx, edu, cw), MARGIN + 20, ey + 50, W - 40, 230, 2, 30);
-  clearMind(ctx, MARGIN + 20, ey + 300, W - 40);
+  pledgeNotice(ctx, MARGIN + 20, ey + 300, W - 40);
   nedFooter(ctx, top, '*The line is busy 24 hours a day.');
 }

@@ -11,7 +11,7 @@
  */
 import { pageNo, type AnyPageId } from '../magazine/pages';
 import { ADVENT, ADVENT_WHISPER, GUESS_EXTRA_LINE, GUESS_EXTRA_TEXT } from '../puzzles/listings';
-import { MESSAGE_LINE, OK_MESSAGE, ORACLE_ASK, ORACLE_HOW, PLUG_LINE, PLUG_QUESTION, SHUTDOWN_REM_LINE } from '../puzzles/listingsMay';
+import { MESSAGE_LINE, ECHO_MESSAGE, ORACLE_ASK, ORACLE_HOW, PLUG_LINE, PLUG_QUESTION, SHUTDOWN_REM_LINE } from '../puzzles/listingsMay';
 import { REPLY_KEY } from '../puzzles/rulesMay';
 import data from './notes.json';
 
@@ -53,7 +53,7 @@ const VALUES: Record<string, string | number> = {
   GUESS_EXTRA_LINE,
   GUESS_EXTRA_TEXT,
   MESSAGE_LINE,
-  OK_MESSAGE,
+  ECHO_MESSAGE,
   ORACLE_ASK,
   ORACLE_HOW,
   PLUG_LINE,

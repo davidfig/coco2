@@ -5,7 +5,7 @@ import { pageNo } from './pages';
 import { cableShot, eraserShot } from './mayProducts';
 import { Ctx, PAGE_H, PAGE_W, SANS, SERIF, text } from './paper';
 
-// May's inside back cover: two half-page ads again. THE HERMIT, a cable that connects to nothing, takes the Clear Mind's
+// May's inside back cover: two half-page ads again. THE HERMIT, a cable that connects to nothing, takes the Human Pledge's
 // advice to heart in green and black on cream; CLOAD-A-MATIC is back in its black on red, selling erasers and tapes with
 // nothing on them.
 

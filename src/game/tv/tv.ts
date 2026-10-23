@@ -151,7 +151,7 @@ export class Tv {
 
   /**
    * The picture starts to collapse as if the set had been switched off, falls to a hot line, and opens again: the story's
-   * (OK flinching), never the knobs'. The set stays on throughout.
+   * (ECHO flinching), never the knobs'. The set stays on throughout.
    */
   flinch(): void {
     if (this.powerTime < 0) return;

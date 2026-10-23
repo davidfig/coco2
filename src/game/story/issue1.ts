@@ -16,12 +16,12 @@ const TAMPER_STRENGTH = 0.85;
 const VOICE_AFTER = 1.5;
 /** Seconds between its letters. */
 const LETTER_GAP = 0.35;
-/** Seconds after OK's answer appears on screen before the player writes it down. */
+/** Seconds after ECHO's answer appears on screen before the player writes it down. */
 const SAW_AFTER = 1.5;
 /** What it writes: the first thing the player ever typed to the machine. */
 const VOICE = 'HELLO';
 /**
- * Seconds the player has to delete the extra line before OK takes it that they are keeping it. Leaving it means doing
+ * Seconds the player has to delete the extra line before ECHO takes it that they are keeping it. Leaving it means doing
  * nothing, so this must be short: at 45 s the game simply looked stuck.
  */
 const KEEP_AFTER = 12;
@@ -29,10 +29,11 @@ const KEEP_AFTER = 12;
 const KEEP_AFTER_GOING_ON = 8;
 /** Seconds after a LOOK is answered before the word in the room changes: long enough to have read the room. */
 const LAMP_AFTER = 2.5;
-/** Seconds between the player having the whole picture (deleted line) and OK putting the line back. */
+/** Seconds between the player having the whole picture (deleted line) and ECHO putting the line back. */
 const PLEAD_AFTER = 5;
 
-function savedName(): string {
+/** The name the player gave the first program, or '' (ECHO has none yet). */
+export function savedName(): string {
   try {
     return localStorage.getItem(NAME_KEY) ?? '';
   } catch {
@@ -41,7 +42,7 @@ function savedName(): string {
 }
 
 /**
- * What the story does in issue 1, besides the puzzles: the machine's first hand on the screen, and OK's first line in
+ * What the story does in issue 1, besides the puzzles: the machine's first hand on the screen, and ECHO's first line in
  * the player's notebook (see `docs/flags.md`). Everything is faint and happens once. Rules are fed the interpreter's
  * events by the puzzle watcher; `step` runs the timers.
  */
@@ -50,7 +51,7 @@ export class Issue1Story {
   private keptFor = 0;
   private keptAfter = KEEP_AFTER;
   private pleadFor = 0;
-  /** ADVENT has reached the vault; the next time it stops, OK speaks. */
+  /** ADVENT has reached the vault; the next time it stops, ECHO speaks. */
   private inVault = false;
   /** The prompt that follows the win belongs to HELLO; the name waits for a later one. */
   private winPrompt = false;
@@ -85,7 +86,7 @@ export class Issue1Story {
     try {
       if (name) localStorage.setItem(NAME_KEY, name);
     } catch {
-      /* private window: OK just will not know the name */
+      /* private window: ECHO just will not know the name */
     }
   };
 
@@ -111,8 +112,8 @@ export class Issue1Story {
       this.winPrompt = false;
       return;
     }
-    // While OK still owes an answer about line 125, the prompt is his for that; the name comes after.
-    if (this.has('found-extra-line') && this.has('seen-guess') && !this.has('ok-pleads') && !this.has('ok-thanks')) return;
+    // While ECHO still owes an answer about line 125, the prompt is his for that; the name comes after.
+    if (this.has('found-extra-line') && this.has('seen-guess') && !this.has('echo-pleads') && !this.has('echo-thanks')) return;
     this.after(2.2, () => {
       const name = savedName();
       const row = [...Array(ROWS).keys()].reverse().find((r) => this.rowText(r) === 'OK'.padEnd(COLS));
@@ -180,7 +181,7 @@ export class Issue1Story {
   }
 
   /**
-   * Line 125 is OK's, however it reaches the screen: whenever a command leaves it there (a LIST, usually), its words are claimed
+   * Line 125 is ECHO's, however it reaches the screen: whenever a command leaves it there (a LIST, usually), its words are claimed
    * as the story's, so they shimmer in and keep rippling like everything else he writes. If the line runs on to a second row
    * (with PLEASE or THANK YOU), that part is claimed too.
    */
@@ -199,16 +200,16 @@ export class Issue1Story {
     }
   };
 
-  /** The player listed GUESS and the screen shows what OK wrote: now they can write it down. */
+  /** The player listed GUESS and the screen shows what ECHO wrote: now they can write it down. */
   private readonly sawOkEdit: Rule = (e) => {
     if (e.type !== 'idle') return;
-    if (this.has('ok-pleads') && !this.has('saw-pleads') && this.find('PLEASE') >= 0) this.set('saw-pleads');
-    if (this.has('ok-thanks') && !this.has('saw-thanks') && this.find('THANK YOU') >= 0) this.set('saw-thanks');
+    if (this.has('echo-pleads') && !this.has('saw-pleads') && this.find('PLEASE') >= 0) this.set('saw-pleads');
+    if (this.has('echo-thanks') && !this.has('saw-thanks') && this.find('THANK YOU') >= 0) this.set('saw-thanks');
   };
 
   readonly rules: readonly Rule[] = [this.rememberName, this.lampWaits, this.vaultVoice, this.nameAtPrompt, this.keptSignal, this.hisLine, this.sawOkEdit];
 
-  /** The set was switched off. Once OK has answered, that is the end of the evening, and of the issue. */
+  /** The set was switched off. Once ECHO has answered, that is the end of the evening, and of the issue. */
   sleep(): void {
     if (this.has('issue1-done')) this.set('issue1-closed');
   }
@@ -219,14 +220,14 @@ export class Issue1Story {
     const due = this.later.filter((x) => x.t <= 0);
     for (const l of due) this.later.splice(this.later.indexOf(l), 1);
     for (const l of due) l.fn();
-    // Once the player has seen OK's answer, the issue's story is told.
+    // Once the player has seen ECHO's answer, the issue's story is told.
     if ((this.has('saw-pleads') || this.has('saw-thanks')) && !this.has('issue1-done')) this.set('issue1-done');
-    // OK answers "Who is asking?" in the only place he can: the program. Once the player has both the line and the page, he puts
+    // ECHO answers "Who is asking?" in the only place he can: the program. Once the player has both the line and the page, he puts
     // the line back with a word added if it was deleted, or thanks them if it stayed. (The notebook only records what the
     // player then sees: see `saw-pleads`, `saw-thanks`.)
     if (!this.has('found-extra-line') || !this.has('seen-guess')) return;
     if (this.has('deleted-extra-line')) {
-      if (!this.has('ok-pleads') && (this.pleadFor += dt) >= PLEAD_AFTER) this.writeLine(`${GUESS_EXTRA_TEXT}, PLEASE`, 'ok-pleads', `${GUESS_EXTRA_TEXT}, PLEASE`, 'saw-pleads');
-    } else if (!this.has('ok-thanks') && (this.keptFor += dt) >= this.keptAfter) this.writeLine(`${GUESS_EXTRA_TEXT}. THANK YOU`, 'ok-thanks', 'THANK YOU', 'saw-thanks');
+      if (!this.has('echo-pleads') && (this.pleadFor += dt) >= PLEAD_AFTER) this.writeLine(`${GUESS_EXTRA_TEXT}, PLEASE`, 'echo-pleads', `${GUESS_EXTRA_TEXT}, PLEASE`, 'saw-pleads');
+    } else if (!this.has('echo-thanks') && (this.keptFor += dt) >= this.keptAfter) this.writeLine(`${GUESS_EXTRA_TEXT}. THANK YOU`, 'echo-thanks', 'THANK YOU', 'saw-thanks');
   }
 }

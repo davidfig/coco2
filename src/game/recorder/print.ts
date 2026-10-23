@@ -18,8 +18,8 @@ const LABEL_ROW = LABEL_H + 16;
 /** What each cassette's maker (M. Kessler, in pencil) wrote on it: the title over the window, its date in marker beside it, and under it. */
 const LABELS: readonly { title: string; date: string; under: readonly string[] }[] = [
   { title: 'RAINBOW ON TAPE', date: 'MARCH 86', under: ['Copied by hand, for you. Mistakes are mine.', '- M. Kessler'] },
-  { title: 'RAINBOW ON TAPE', date: 'MAY 86', under: ['ABOUT   SHUTDOWN'] },
-  { title: 'RAINBOW ON TAPE', date: 'JULY 86', under: ['ABOUT   REGISTER'] },
+  { title: 'RAINBOW ON TAPE', date: 'MAY 86', under: ['ABOUT   SHUTDOWN   CODER   CHECKUP'] },
+  { title: 'RAINBOW ON TAPE', date: 'JULY 86', under: ['ABOUT   REGISTER   COUNTER   GOODBYE'] },
 ];
 /** The texture's height: the top, and the rows of labels under it. */
 export const PRINT_H = LABEL_Y + Math.ceil(LABELS.length / 2) * LABEL_ROW;

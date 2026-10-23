@@ -23,7 +23,7 @@ const sayHello: Rule = (() => {
 })();
 
 /**
- * The name the player has just given the tutorial's program, as OK keeps it: at its greeting line, with exactly that program in
+ * The name the player has just given the tutorial's program, as ECHO keeps it: at its greeting line, with exactly that program in
  * memory. '' at any other moment, or when the answer was empty, so a bare RUN or ENTER alone does not count.
  */
 export function firstProgramName(e: BasicEvent, interp: Interpreter): string {

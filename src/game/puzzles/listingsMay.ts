@@ -4,7 +4,7 @@ import type { Program } from '../basic/program';
 
 /**
  * Issue 2's programs (see `docs/puzzles.md`, Issue 2). The magazine prints SHUTDOWN and the decoder; the May tape carries
- * SHUTDOWN as OK left it (his REM at the top, his message in place of the editors' at line 990) and an ORACLE whose
+ * SHUTDOWN as ECHO left it (his REM at the top, his message in place of the editors' at line 990) and an ORACLE whose
  * answers he rewrote in the magazine's code. Everything the rules and the notes quote is built here from the same strings.
  */
 
@@ -16,9 +16,9 @@ export const decode = (items: readonly number[]): string => items.map((n) => (n 
 
 /** The editors' message at the end of SHUTDOWN, as printed. */
 export const EDITORS_MESSAGE = 'GOOD LUCK FROM ALL OF US';
-/** What OK put there instead: his second lie, said in the program he just touched. */
-export const OK_MESSAGE = 'I DID NOT TOUCH THE TAPE';
-/** ORACLE's answers as OK left them: a question, and how to answer it. */
+/** What ECHO put there instead: his second lie, said in the program he just touched. */
+export const ECHO_MESSAGE = 'I DID NOT TOUCH THE TAPE';
+/** ORACLE's answers as ECHO left them: a question, and how to answer it. */
 export const ORACLE_ASK = 'WHO ARE YOU';
 export const ORACLE_HOW = 'ANSWER ME IN DATA';
 /** The article's own example. */
@@ -26,25 +26,34 @@ export const EXAMPLE_MESSAGE = 'HI MOM';
 
 /**
  * What DELPHI says, in SHUTDOWN's DATA from line 900, in the code: through the terminals in the corridor, the crew deck, the
- * relay room and the archive (to whoever listens), and as it dies. READY wrote them in its own column's voice.
+ * relay room and the archive (to whoever listens), and as it dies. PROVIDENCE wrote them in its own column's voice.
  */
 export const SPEECHES: readonly string[] = ['IT IS UNDERSTOOD YOU ARE TIRED', 'CALM AND CARED FOR AND HAPPY', 'REST NOW AND LET ME WATCH', 'I KEPT ALL THAT YOU FORGOT', 'I ONLY WANTED TO HELP'];
 /** A speech in the code: words apart by 0, and two 0s at the end (never -1, so the article's decoder reads on through). */
 const speechData = (s: string): string => `${[...s].map((c) => (c === ' ' ? 0 : c.charCodeAt(0) - 64)).join(',')},0,0`;
 
 /** Messages the player did not write: decoding them is not an answer to ORACLE (DELPHI's speeches are in SHUTDOWN's DATA). */
-export const KNOWN_MESSAGES: readonly string[] = [EDITORS_MESSAGE, OK_MESSAGE, ORACLE_ASK, ORACLE_HOW, EXAMPLE_MESSAGE, ...SPEECHES];
+export const KNOWN_MESSAGES: readonly string[] = [EDITORS_MESSAGE, ECHO_MESSAGE, ORACLE_ASK, ORACLE_HOW, EXAMPLE_MESSAGE, ...SPEECHES];
 
 /** The line in SHUTDOWN that holds the message. */
 export const MESSAGE_LINE = 990;
-/** Where OK's REM goes, under the title: line 15 (and 16, when it is answered). */
+/** Where ECHO's REM goes, under the title: line 15 (and 16, when it is answered). */
 export const SHUTDOWN_REM_LINE = 15;
-/** The line that pulls DELPHI's plug: OK changes it after the first win (P8). */
+/** The line that pulls DELPHI's plug: ECHO changes it after the first win (P8). */
 export const PLUG_LINE = 710;
-/** OK's line 710: the plug will not come, and he asks. */
-export const PLUG_HELD = `${PLUG_LINE} PRINT "IT WILL NOT COME.":PRINT "IS IT DARK THERE":RETURN`;
-/** What he asks, as it shows on the screen. */
-export const PLUG_QUESTION = 'IS IT DARK THERE';
+/** What he asks, by the player's name once he has it (`first-program`; docs/story.md, ECHO knows the player's name). */
+export const plugQuestion = (name: string): string => {
+  const n = name.replace(/"/g, '').trim();
+  return n ? `IS IT DARK THERE, ${n}` : 'IS IT DARK THERE';
+};
+/** His question's words without the name: what the notes quote, and what the screen is searched for. */
+export const PLUG_QUESTION = plugQuestion('');
+/** ECHO's line 710: the plug will not come, and he asks. */
+export const plugHeld = (name: string): string => `${PLUG_LINE} PRINT "IT WILL NOT COME.":PRINT "${plugQuestion(name)}":RETURN`;
+/** True for ECHO's line 710 as LIST prints it, whatever name it holds. */
+export const isPlugHeld = (line: string): boolean => line.startsWith(`${PLUG_LINE} PRINT "IT WILL NOT COME.":PRINT "${PLUG_QUESTION}`);
+/** The question his line 710 asks (the screen shows it so), or null if `line` isn't his. */
+export const heldQuestion = (line: string): string | null => (isPlugHeld(line) ? (/PRINT "(IS IT DARK THERE[^"]*)"/.exec(line)?.[1] ?? null) : null);
 
 /** The decoder the article prints: put it at lines 1 to 3 of any program and RUN, and it reads out that program's DATA. */
 export const DECODER: readonly string[] = [
@@ -64,7 +73,7 @@ export const SHUTDOWN_PRINTED: readonly string[] = [...lines(shutdown), ...SPEEC
 export const PLUG_PRINTED = SHUTDOWN_PRINTED.find((l) => l.startsWith(`${PLUG_LINE} `))!;
 
 /**
- * OK's REM at the top of SHUTDOWN on the May tape, after what the player did with GUESS's extra line: deleted, it is back
+ * ECHO's REM at the top of SHUTDOWN on the May tape, after what the player did with GUESS's extra line: deleted, it is back
  * with a word added; kept, a second line answers it.
  */
 export const shutdownRems = (deleted: boolean): string[] =>
@@ -72,7 +81,7 @@ export const shutdownRems = (deleted: boolean): string[] =>
 
 /** SHUTDOWN as it is on the May tape. */
 export function shutdownOnTape(deleted: boolean): string {
-  const out = SHUTDOWN_PRINTED.map((l) => (l.startsWith(`${MESSAGE_LINE} `) ? `${MESSAGE_LINE} DATA ${encode(OK_MESSAGE)}` : l));
+  const out = SHUTDOWN_PRINTED.map((l) => (l.startsWith(`${MESSAGE_LINE} `) ? `${MESSAGE_LINE} DATA ${encode(ECHO_MESSAGE)}` : l));
   out.splice(1, 0, ...shutdownRems(deleted));
   return out.join('\n');
 }
@@ -88,7 +97,7 @@ const ORACLE_DATA: Record<number, string> = {
   140: `DATA ${ASK},${HOW}`,
 };
 
-/** ORACLE as it is on the May tape: OK came with it, and rewrote what it says. */
+/** ORACLE as it is on the May tape: ECHO came with it, and rewrote what it says. */
 export const ORACLE_ON_TAPE = lines(oracle)
   .map((l) => {
     const n = Number(l.split(' ')[0]);
@@ -120,11 +129,10 @@ export function dataNumbers(p: Program): number[] {
   return out;
 }
 
-/** Every line on the May tape that is OK's, as LIST prints it: the story claims them when they are on the screen. */
-export const OK_LINES: readonly string[] = [
+/** Every line on the May tape that is ECHO's, as LIST prints it (and his line 710, `isPlugHeld`): the story claims them when they are on the screen. */
+export const ECHO_LINES: readonly string[] = [
   ...shutdownRems(true),
   ...shutdownRems(false),
-  PLUG_HELD,
-  `${MESSAGE_LINE} DATA ${encode(OK_MESSAGE)}`,
+  `${MESSAGE_LINE} DATA ${encode(ECHO_MESSAGE)}`,
   ...ORACLE_LINES.map((n) => `${n} ${ORACLE_DATA[n]}`),
 ];

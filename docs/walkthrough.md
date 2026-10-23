@@ -484,7 +484,7 @@ OK
 
 **26. Leaves line 125 alone, and thinks** (0:34)
 
-- flag `ok-thanks` (0:45)
+- flag `echo-thanks` (0:45)
 - **story** row 14: `OK` → `THANK YOU` (0:45)
 - flag `saw-thanks` (0:47)
 - flag `issue1-done` (0:47)
@@ -609,7 +609,7 @@ OK
 - notes ~~Line 990: just numbers. The code, May p.7~~
 - notes + 990 says: I DID NOT TOUCH THE TAPE
 - notes + Is 990 the same on May p.10? ❓
-- notes + The rest of the DATA is DELPHI talking. Sounds like the Clear Mind page
+- notes + The rest of the DATA is DELPHI talking. Sounds like the Human Pledge page
 - notes + What else is on this tape? CLOAD, watch the F ❓
 
 **35. Turns to SHUTDOWN's last page, May p.10** (1:00)
@@ -786,13 +786,13 @@ THE ONLY EXIT IS SOUTH.
 
 > PULL PLUG
 IT WILL NOT COME.
-IS IT DARK THERE
+IS IT DARK THERE, ALEX
 
 >
 ```
 
 - flag `plug-held` (1:10)
-- notes + Played again. The plug won't come out. IS IT DARK THERE?
+- notes + Played again. The plug won't come out. IS IT DARK THERE? It said my name
 - notes + Line 710 isn't the one on May p.10. Put it back? ❓
 
 ### Issue 2: the choice (pulled)
@@ -904,7 +904,7 @@ Only the parts that differ from the main route.
 ```
 
 - flag `deleted-extra-line` (0:34)
-- flag `ok-pleads` (0:39)
+- flag `echo-pleads` (0:39)
 - **story** row 13: `OK` → `IS ANYONE READING THIS, PLEASE` (0:39)
 - flag `saw-pleads` (0:41)
 - flag `issue1-done` (0:41)
@@ -1012,7 +1012,7 @@ OK
 - notes ~~Line 990: just numbers. The code, May p.7~~
 - notes + 990 says: I DID NOT TOUCH THE TAPE
 - notes + Is 990 the same on May p.10? ❓
-- notes + The rest of the DATA is DELPHI talking. Sounds like the Clear Mind page
+- notes + The rest of the DATA is DELPHI talking. Sounds like the Human Pledge page
 - notes + What else is on this tape? CLOAD, watch the F ❓
 
 **35. Turns to SHUTDOWN's last page, May p.10** (0:53)

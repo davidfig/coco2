@@ -1,7 +1,7 @@
 /**
  * May's marketplace: Nifty Ned's catalogue again, made over for the lower limit. The tape copier has gone and left its
- * gap (the editor did not fill it), the products have learned the Clear Mind's advice, and the quiet notice at the
- * foot has gone to the Clear Mind's own page: a woodworker's case for putting a computer away has taken its place.
+ * gap (the editor did not fill it), the products have learned the Human Pledge's advice, and the quiet notice at the
+ * foot has gone to the Human Pledge's own page: a woodworker's case for putting a computer away has taken its place.
  */
 import { entry, nedFooter, nedMasthead } from './ads';
 import { Ctx, INK, MARGIN, PAGE_H, PAGE_W, SANS, SERIF, colWidth, flow, rowsFor, text } from './paper';

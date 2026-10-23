@@ -18,7 +18,7 @@ import { drawMayBackCover } from './mayBackCover';
 import { drawMayInsideBack } from './mayInsideBack';
 import { drawMayInsideFront } from './mayInsideFront';
 import { drawMayNed } from './mayNed';
-import { drawClearMind, drawHealthy, drawMayContents, drawMayEditorial } from './mayArticles';
+import { drawHealthy, drawMayContents, drawMayEditorial, drawPledge } from './mayArticles';
 import { drawMayTape, drawSecret } from './mayCode';
 import { drawShutdown, drawShutdownEnd, drawShutdownList } from './mayShutdown';
 import { drawMayClassifieds, drawMayLetters } from './mayLetters';
@@ -70,7 +70,7 @@ const PAGES: Record<AnyPageId, PageDef> = {
   mayShutdownList: { draw: drawShutdownList },
   mayShutdownEnd: { draw: drawShutdownEnd },
   mayTape: { draw: drawMayTape },
-  mayClearMind: { draw: drawClearMind },
+  mayPledge: { draw: drawPledge },
   mayClassifieds: { draw: drawMayClassifieds },
   mayMarketplace: { draw: drawMayNed },
   mayInsideBack: { draw: drawMayInsideBack, colour: true },
@@ -86,7 +86,7 @@ const PAGES: Record<AnyPageId, PageDef> = {
   julyRegister: { draw: julyDraft('julyRegister') },
   julyRegisterList: { draw: julyDraft('julyRegisterList') },
   julyTape: { draw: julyDraft('julyTape') },
-  julyClearMind: { draw: julyDraft('julyClearMind') },
+  julyPledge: { draw: julyDraft('julyPledge') },
   julySermon: { draw: julyDraft('julySermon') },
   julyClassifieds: { draw: julyDraft('julyClassifieds') },
   julyMarketplace: { draw: julyDraft('julyMarketplace') },

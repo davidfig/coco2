@@ -1,15 +1,16 @@
 import { HeadlessCoco } from '../coco/headless';
 import { pageOfLine, LISTING_FITS } from '../magazine/mayShutdown';
-import { MESSAGE_LINE, PLUG_HELD, PLUG_LINE, PLUG_PRINTED, PLUG_QUESTION } from '../puzzles/listingsMay';
+import { MESSAGE_LINE, PLUG_LINE, PLUG_PRINTED, PLUG_QUESTION, plugHeld } from '../puzzles/listingsMay';
 import { ISSUE_2_RULES } from '../puzzles/rulesMay';
 import { PuzzleWatcher } from '../puzzles/watcher';
 import { MAY_TAPE_KEY, mayTape } from '../tapes';
 import { expect, test } from '../../test/check';
+import { NAME_KEY } from './issue1';
 import { Issue2Story } from './issue2';
 
 /** The May tape in, issue 2 under way, and the story and its puzzles watching; `flinches` counts the set's flinches. */
 function may() {
-  localStorage.clear(); // OK's change to the tape is kept there
+  localStorage.clear(); // ECHO's change to the tape is kept there
   const coco = new HeadlessCoco();
   coco.interp.tape.insert(mayTape(true), MAY_TAPE_KEY);
   const flags = new Set<string>(['issue2-waiting']);
@@ -27,16 +28,27 @@ function may() {
 
 const WALK = 'TAKE UNIT\nE\nN\nN\nREST IT\nWATCH IT\nKEEP IT SMALL\n';
 
-test('SHUTDOWN story: the first win flinches the set, then OK changes line 710 in memory and on the tape', () => {
+test('SHUTDOWN story: the first win flinches the set, then ECHO changes line 710 in memory and on the tape', () => {
   const { coco, flags, counter, wait } = may();
   coco.type(`CLOAD "SHUTDOWN"\nRUN\n${WALK}PULL PLUG\n`);
   expect(flags.has('door-asked') && flags.has('rules-spoken') && flags.has('shutdown-won')).toBe(true);
   expect(counter.flinches).toBe(1);
   wait(0.1);
   expect(flags.has('plug-changed')).toBe(true);
-  expect(coco.interp.program.list()).toContain(PLUG_HELD);
+  expect(coco.interp.program.list()).toContain(plugHeld(''));
   coco.type('NEW\nCLOAD "SHUTDOWN"\n');
-  expect(coco.interp.program.list()).toContain(PLUG_HELD);
+  expect(coco.interp.program.list()).toContain(plugHeld(''));
+});
+
+test("SHUTDOWN story: ECHO asks by the player's name, once he has it", () => {
+  const { coco, flags, wait } = may();
+  localStorage.setItem(NAME_KEY, 'ALEX');
+  coco.type(`CLOAD "SHUTDOWN"\nRUN\n${WALK}PULL PLUG\n`);
+  wait(0.1);
+  expect(coco.interp.program.list()).toContain(plugHeld('ALEX'));
+  coco.type(`RUN\n${WALK}PULL PLUG\n`);
+  expect(coco.text()).toContain('IS IT DARK THERE, ALEX');
+  expect(flags.has('plug-held')).toBe(true);
 });
 
 test('SHUTDOWN story: the plug held, then put back and pulled', () => {

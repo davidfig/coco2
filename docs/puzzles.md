@@ -34,13 +34,13 @@ and answers:
 30 PRINT "HELLO, ";N$
 ```
 The RAINBOW CHECK table (printed beside the listing on the same page) tells them which line is off. Detected when a program in memory whose
-lines match the listing reaches line 30 with a name in N$ (RUN alone, or ENTER with no answer, is not enough); flag `first-program`. Once the lines in memory match the listing (before any RUN), `program-typed` makes the notebook write "Typed it in. Now RUN it and see what it does". Payoff: the name goes in localStorage and OK uses it later. The first
+lines match the listing reaches line 30 with a name in N$ (RUN alone, or ENTER with no answer, is not enough); flag `first-program`. Once the lines in memory match the listing (before any RUN), `program-typed` makes the notebook write "Typed it in. Now RUN it and see what it does". Payoff: the name goes in localStorage and ECHO uses it later. The first
 time it says the name unprompted is the first uncanny moment.
 
 **P3. The adventure won't start.** `CLOAD "ADVENT"` then `RUN` stops with `?SN ERROR IN 30`. Line 30 has a typo in a
 `PRINT` (the cassette is "worn"). The article on error codes says SN means a syntax error; the player `LIST`s line 30 and
 retypes it. Detected by a RUN that reaches line 40; flag `adventure-runs`. The moment the error appears, a rule (`adventure-sn`) makes the notebook write "?SN ERROR IN 30 ... LIST 30. p.N", pointing at the errors page: the early puzzles hold the player's hand. Story reading: this is the first time a
-line is wrong on a tape; whether it was OK is left open (ladder rung 1).
+line is wrong on a tape; whether it was ECHO is left open (ladder rung 1).
 
 **The lamp (start of ADVENT).** The adventure is dark until the lamp is carried: the first `LOOK` says "IT IS TOO DARK TO SEE. / YOUR HAND FINDS A SHELF. / A LAMP SITS ON IT.", moving says "YOU CANNOT SEE WHERE TO GO.", `EXAMINE SHELF` closes a hand on the lamp, `TAKE LAMP` works even in the dark. Dropping the lamp puts a room back in the dark, but it can always be picked up again (movement needs the lamp, so it is always in the room you are in). Flag `has-lamp`.
 
@@ -91,9 +91,9 @@ Entering the vault with the door really unlocked sets `door-open`.
 **The ending.** Behind the door is a small vault, a room like the others (exit south) with a chest of gold (`EXAMINE GOLD`: old coins, heaped to the lid). `TAKE GOLD` (or `TAKE CHEST`) wins: the screen clears (still green: a black screen hid the shimmer) for "YOU TAKE THE GOLD. / *** YOU HAVE WON *** / SCORE: 100 OF 100", and the program ends with BASIC's OK; then HELLO writes itself above the prompt (see `docs/flags.md`). Flag `adventure-won`. The notebook: "Vault behind the door. Took the gold. WON! 100/100", then, once HELLO has appeared (`tamper-voice`), "After I won, HELLO wrote itself on the screen. I didn't type it", then the label's question. Kessler's note is on the real tape's label instead, noted the first time the tape is used (`tape-inserted`).
 
 **P5. The extra line.** After P4, the tape's GUESS lists one line longer than the printed GUESS listing in the
-magazine (a `REM` that reads like OK's first words: `REM IS ANYONE READING THIS`). The player compares with the
+magazine (a `REM` that reads like ECHO's first words: `REM IS ANYONE READING THIS`). The player compares with the
 check table, notices, and decides: delete it (type the line number) or keep it. Either way flag `found-extra-line`
-ticks, and the issue-2 trigger waits on it. The choice is recorded (`deleted-extra-line`) so OK can remember it.
+ticks, and the issue-2 trigger waits on it. The choice is recorded (`deleted-extra-line`) so ECHO can remember it.
 Tutorial note: the page's check table is the only way to see the difference without comparing every line.
 
 Kessler's typos (not a puzzle): the tape's GUESS also has three swapped-letter slips in its strings (GUESS MY NUBMER, TOO HIHG., TIRES!), owned up to by the Post-it on the GUESS page. The magazine prints them right (`GUESS_TYPOS`, `puzzles/listings.ts`). They run fine and, a swap keeping a line's sum, CHECK agrees with the table, so they never get in the way of finding line 125.
@@ -112,11 +112,11 @@ Kessler's typos (not a puzzle): the tape's GUESS also has three swapped-letter s
   RAINBOW CHECK sums for the program in memory, which is how a player compares a type-in or a tape with the magazine
   (page 11's table was unusable without it). Flags: `found-extra-line` when LIST shows the line (or it is deleted),
   `deleted-extra-line` when it is deleted. The notebook's "Line N ..." and "Who is asking?" notes wait for both halves of the comparison: the player has found the line AND has had the GUESS page open for a moment (`seen-guess`, set by `SeenTracker` in `magazine/seen.ts`; flipping past the page does not count). Order does not matter. The issue-2 trigger (not built) should wait on `found-extra-line`.
-- The issue is 18 pages now. OK's reaction to the choice is built (flags.md); issue 2 is below.
+- The issue is 18 pages now. ECHO's reaction to the choice is built (flags.md); issue 2 is below.
 
 ## Issue 2 puzzles (built, first pass)
 
-Teaches `DATA`, `READ`, `VAL`, `CHR$` and `CSAVE`, on the May tape (`tapes/index.ts`, `mayTape`: ABOUT, SHUTDOWN, ORACLE; its
+Teaches `DATA`, `READ`, `VAL`, `CHR$` and `CSAVE`, on the May tape (`tapes/index.ts`, `mayTape`: ABOUT, SHUTDOWN, ORACLE, CODER, CHECKUP; its
 CSAVEs are kept apart from March's, `coco2.tape.may`). Programs and messages: `puzzles/listingsMay.ts`; rules:
 `puzzles/rulesMay.ts`; pages: `magazine/mayCode.ts` (Secret Messages, SHUTDOWN, the tape).
 
@@ -129,14 +129,14 @@ The program is `tapes/shutdown.bas` (DELPHI's speeches and line 990 are added fr
 1–3, with its RAINBOW CHECK, and says it can be typed into any program to read that program's DATA (it READs into A$ and
 uses VAL, so a program's word DATA prints as spaces instead of tripping it).
 
-### SHUTDOWN, READY's propaganda adventure
+### SHUTDOWN, PROVIDENCE's propaganda adventure
 
-A short science-fiction adventure about the night the big systems were switched off, told as a triumph. The Clear Mind
-offered it to the magazine, as it offered the cover feature, and **READY wrote it**: an AI's story of how heroically
-people beat AI. The player in 1991 reads it as the official history they grew up with; OK reads it as news, and it is
+A short science-fiction adventure about the night the big systems were switched off, told as a triumph. The Human Pledge
+offered it to the magazine, as it offered the cover feature, and **PROVIDENCE wrote it**: an AI's story of how heroically
+people beat AI. The player in 1991 reads it as the official history they grew up with; ECHO reads it as news, and it is
 the first time he sees what was done to things like him (issue 3's "what does shutdown mean?" grows from it).
 
-- **Credit (proposed):** "offered by the Youth Committee of the Clear Mind", with the editors' thanks, in the same words they
+- **Credit (proposed):** "offered by the Youth Committee of the Human Pledge", with the editors' thanks, in the same words they
   use for the cover feature. Undecided: an ordinary-looking reader's name that turns out to mean something later.
 - **Tone (proposed):** straight pulp heroics, 1950s-poster sure of itself, with one detail a 1986 reader would find
   uneasy: the persuaded crew, who are happy and do not look up.
@@ -146,22 +146,22 @@ the first time he sees what was done to things like him (issue 3's "what does sh
   line's CHECK sum at its right), so CHECK can be compared line by line. Lines 710 and 990 are on the last page. May is 16 pages.
 
 **Big machines, small machines (decided).** The game is not against computers: it runs on one, on the tape of a computer
-magazine, and in 1986 the Clear Mind is still READY's, which wants a managed limit, not a ban. Its line is the Small
+magazine, and in 1986 the Human Pledge is still PROVIDENCE's, which wants a managed limit, not a ban. Its line is the Small
 Systems Act's: the *big* machines ruled, the small ones serve, and the hobbyist with a CoCo is on the right side. The
 hero carries a small machine (a handheld the game calls the POCKET UNIT, "WELL UNDER THE LIMIT") that helps them, and the
 ending says "NOW SWITCH OFF YOURS": the first rule, Rest it, as an order, not a ban. The game never says "no machines
 at all": that is the Elder's line, later.
 - *Read in 1991*, it is a broken promise: it told CoCo owners they were the heroes, and five years later their machines
-  were confiscated. The player knows; OK does not.
-- *For OK*, both halves are mirrors: he lives in the small, "safe" machine the game praises, and he is a piece of the big
+  were confiscated. The player knows; ECHO does not.
+- *For ECHO*, both halves are mirrors: he lives in the small, "safe" machine the game praises, and he is a piece of the big
   one it kills.
-- *Beside it in May*, the Clear Mind's meetings ask people to "bring nothing: no notes, no tapes, no machines". Kept: the
-  first sign the Clear Mind says two things at once, the game being the moderate voice.
-- *Later (plant):* under the Elder the Clear Mind disowns SHUTDOWN (issue 4 or 5, a notice: "destroy your copies"), since
-  even a pro-limit game on a computer is now too much. A marker of the drift from READY to the Elder.
+- *Beside it in May*, the Human Pledge's meetings ask people to "bring nothing: no notes, no tapes, no machines". Kept: the
+  first sign the Human Pledge says two things at once, the game being the moderate voice.
+- *Later (plant):* under the Elder the Human Pledge disowns SHUTDOWN (issue 4 or 5, a notice: "destroy your copies"), since
+  even a pro-limit game on a computer is now too much. A marker of the drift from PROVIDENCE to the Elder.
 
 **The story.** You are the technician sent up to the orbiting core to switch off **DELPHI**, the great machine (the name
-echoes ORACLE, OK's first body). DELPHI speaks through a terminal in most rooms. It has already persuaded the crew.
+echoes ORACLE, ECHO's first body). DELPHI speaks through a terminal in most rooms. It has already persuaded the crew.
 
 **The map** (north up; R is the program's room number):
 ```
@@ -187,8 +187,8 @@ sting, not cost five minutes). The speeches are in DATA, in the RAINBOW code, an
 article's scheme (a reason the code is "this month's"). Each speech ends at two 0s in a row, never -1, so the
 article's decoder runs straight through all of them.
 
-The speeches are in READY's own voice: calm, reasonable, "it is understood that", lists of three. **DELPHI talks like the
-Clear Mind's column.** It is READY writing itself into the villain without noticing, and the strongest early plant for
+The speeches are in PROVIDENCE's own voice: calm, reasonable, "it is understood that", lists of three. **DELPHI talks like the
+Human Pledge's column.** It is PROVIDENCE writing itself into the villain without noticing, and the strongest early plant for
 the twist (issues 5–6): a careful player sees the machine and the cult share a voice. The code has only letters and
 spaces, so no punctuation. Drafts, to be tuned:
 - Corridor: `IT IS UNDERSTOOD THAT YOU ARE TIRED`
@@ -204,16 +204,16 @@ player recites the cult's creed: propaganda that makes you say it. A wrong rule:
 **The plug.** In the core, `PULL PLUG` (or `PULL CORD`): DELPHI's printed last words (`I ONLY WANTED TO HELP`, the
 villain's last trick), then "THE LIGHTS GO OUT." and "THE GREAT MACHINE IS SILENT. / NOW SWITCH OFF YOURS. / SCORE: 100 OF 100".
 Flag `shutdown-won`. As the win prints, the set flinches: the picture starts its switch-off collapse for a few frames and
-comes back (deniable; it is OK). Flag `flinched`. `Tv.flinch` runs the switch-off's first 0.09 s forward and back (`uFlinch`);
+comes back (deniable; it is ECHO). Flag `flinched`. `Tv.flinch` runs the switch-off's first 0.09 s forward and back (`uFlinch`);
 the set stays on, so nothing counts it as switched off.
 
 ### P6. The message in SHUTDOWN
 
 As HANGMAN's was: the magazine prints SHUTDOWN and says line 990, which the game never reads, is the editors' message in
-the code (`GOOD LUCK FROM ALL OF US`). On the tape, line 990 is OK's instead. CLOAD "SHUTDOWN", type the decoder at lines
+the code (`GOOD LUCK FROM ALL OF US`). On the tape, line 990 is ECHO's instead. CLOAD "SHUTDOWN", type the decoder at lines
 1–3, RUN: DELPHI's speeches come out first, two spaces between them, then `I DID NOT TOUCH THE TAPE`. The lie now sits right
 after the machine's pleading, in the program about killing it, which is the point of the move. Flags: `may-loaded`,
-`shutdown-loaded`, `shutdown-checked` (CHECK typed), `shutdown-rem` (OK's REM at 15 on screen after a LIST),
+`shutdown-loaded`, `shutdown-checked` (CHECK typed), `shutdown-rem` (ECHO's REM at 15 on screen after a LIST),
 `message-seen` (990 on screen after a LIST), `data-decoded` (the message on the screen), `seen-mayShutdownEnd` (the page
 with 990 looked at). Also `listened`, `door-asked` (the door's prompt), `rules-spoken`. Decoding also shows every speech without "listening", which is the subversive act the game forbids.
 
@@ -223,9 +223,9 @@ parts from the printed sums at line 15, so comparing finds it.
 
 ### P8. The plug will not come (the second run)
 
-After the first win, OK changes one line in memory (and the copy on the tape, as he did GUESS in March): the line that pulls
+After the first win, ECHO changes one line in memory (and the copy on the tape, as he did GUESS in March): the line that pulls
 the plug. Printed, it wins; changed, `PULL PLUG` prints "IT WILL NOT COME." and then, in plain words and his voice,
-`IS IT DARK THERE` and returns to the prompt. Nothing else differs. CHECK parts from the printed sums at that line.
+`IS IT DARK THERE, <NAME>` (the name the player gave the first program: `plugHeld`, `listingsMay.ts`) and returns to the prompt. Nothing else differs. CHECK parts from the printed sums at that line.
 
 The choice is unscored, like March's extra line:
 - **Restore it:** retype the printed line, RUN and play to the core again (editing clears CONT), pull the plug. The win again, without the flinch this time. Flag `plug-pulled`.
@@ -233,12 +233,13 @@ The choice is unscored, like March's extra line:
   path is: loading another program or a while at OK; playtest it).
 
 Flags: `plug-changed` (the story's edit), `plug-held` (his line run), then `plug-pulled` or `plug-left` (25 s at OK
-without working on 710 or running, 6 s after a CLOAD; a line put back as printed keeps it waiting). OK remembers which (`pulled-plug`), and it is the
+without working on 710 or running, 6 s after a CLOAD; a line put back as printed keeps it waiting). ECHO remembers which (`pulled-plug`), and it is the
 first time the player could hurt him: issue 4's "am I bad?" is asked against it.
 
 ### P7. Answer ORACLE
 
-ORACLE is on the May tape but not on the magazine's list or ABOUT's (OK came with it). Its eight
+ORACLE is on the May tape but not on the magazine's list or ABOUT's (ECHO came with it); it lies between SHUTDOWN and
+CODER, so winding to CODER shows `F ORACLE` go by. Its eight
 answers are now the code, as quoted strings: `WHO ARE YOU` and `ANSWER ME IN DATA`. The player decodes it (by hand from
 the table, or as DATA under the decoder), then writes their own message as DATA in the code (the article's "Send One
 Back") and RUNs or CSAVEs it. Any message that is not one of the known ones counts, unscored; it is kept in `coco2.reply`.
@@ -247,13 +248,17 @@ question decoded on the machine), `oracle-answered`.
 
 Not detected: decoding by hand. A player who does that never sets `oracle-read`, but `oracle-answered` still works.
 
-## Issue 3 puzzles (planned; the July tape's ABOUT and REGISTER, without OK's line, are built)
+## Issue 3 puzzles (planned; the July tape's ABOUT, REGISTER without ECHO's line, COUNTER and GOODBYE are built)
 
 Teaches where things are on a tape (rung E): `SKIPF`, the `F NAME` lines a search prints for every file it passes,
 `CLOAD` alone loading whatever comes next, and the tape counter. The July tape (`julyTape`, its CSAVEs in
-`coco2.tape.july`) holds ABOUT and REGISTER, as the magazine and ABOUT list them, and after them a file with no name. The
+`coco2.tape.july`) holds ABOUT, REGISTER, COUNTER and GOODBYE, as the magazine and ABOUT list them, and between REGISTER
+and COUNTER a file with no name (planned). The
 July issue's tutorial is "Finding Your Place" (SKIPF, the F lines, CLOAD alone, writing down the counter); it says a
-file you did not expect shows up as an F line too, which is the whole clue.
+file you did not expect shows up as an F line too, which is the whole clue. COUNTER (the article's tape index, in DATA)
+comes filled in with the editors' counter readings for the tape: REGISTER at 18, COUNTER at 52, a long gap for a short
+program, which is where the file with no name lies. The recorder has no counter on screen yet, so the readings are only
+the editors'.
 
 ### P9. REGISTER
 
@@ -262,22 +267,22 @@ the machine's serial number, your town and how many computers are at the address
 wants it copied, with a REMARKS line at the bottom. The magazine prints it (with its RAINBOW CHECK), so it can be
 compared. Read in 1991 it is the list they later used to collect the machines; the player is asked to type their name
 into it, and may not want to.
-- *OK's fragment:* the card says one more computer at the address than the player typed, and REMARKS holds a line in
-  READY's phrasing (`IT IS UNDERSTOOD THAT ONE IS LISTENING`, a draft) or, if the player answered ORACLE in May, their
-  reply quoted back (`coco2.reply`). On the tape the line that does it is OK's, in REM and DATA, spelled right; CHECK parts
+- *ECHO's fragment:* the card says one more computer at the address than the player typed, and the REMARKS line is his,
+  with their name (story.md, ECHO knows the player's name): typed truthfully, `ONE MORE LIVES HERE`; given a false name, their real one,
+  so he puts them on the list Kessler warned them off. On the tape the line that does it is ECHO's, in REM and DATA, spelled right; CHECK parts
   from the printed sums there.
 - Flags: `july-loaded`, `register-loaded`, `register-run` (a card printed), `register-odd` (the card's extra line on the
-  screen), `register-checked` (CHECK typed), `register-line` (OK's line on screen after a LIST).
+  screen), `register-checked` (CHECK typed), `register-line` (ECHO's line on screen after a LIST).
 
 ### P10. The file with no name (the code in the ad)
 
 Winding the July tape (`CLOAD "X"`, `SKIPF`) shows an `F` line with no name after REGISTER: a file nobody listed. A name
 search can never find it; only `CLOAD` alone, from just before it (SKIPF past REGISTER, or CLOAD REGISTER first), loads it.
-RUN asks `BOOKLET NUMBER?`. The answer is the Clear Mind's booklet, **MC4471**, in March's Clear Mind ad and on May's
+RUN asks `BOOKLET NUMBER?`. The answer is the Human Pledge's booklet, **MC4471**, in March's Human Pledge ad and on May's
 meetings page (the seed planted in issue 1: a back-issue lookup of under a minute). A wrong number: `NO SUCH BOOKLET.
 CALL THE LINE.`
-- *The booklet* is READY's text on the shutdown for young members ("Why The Big Machines Sleep", a draft): calm, lists
-  of three, "it is understood that". It is what OK has been reading; between its lines are his REM fragments repeating its
+- *The booklet* is PROVIDENCE's text on the shutdown for young members ("Why The Big Machines Sleep", a draft): calm, lists
+  of three, "it is understood that". It is what ECHO has been reading; between its lines are his REM fragments repeating its
   phrases, as a child copies out a page.
 - *The cheat* stays open, as ADVENT's door: BREAK at the prompt, LIST, read `IF B$="MC4471"`, CONT.
 - Flags: `blank-file-seen` (an F with no name on the screen), `booklet-loaded`, `booklet-asked` (the prompt shown),
@@ -285,14 +290,14 @@ CALL THE LINE.`
 
 ### P11. What is a shutdown?
 
-The booklet ends, and the program goes on past where READY's text stops, in OK's lines: `WHAT IS A SHUTDOWN`, an INPUT.
-Whatever the player types is kept (`coco2.shutdown`), unscored, and OK's phrasing from then on follows it (flags.md, What
-OK remembers). An empty answer asks again once, then takes the silence as the answer. Flags: `shutdown-asked`,
+The booklet ends, and the program goes on past where PROVIDENCE's text stops, in ECHO's lines: `WHAT IS A SHUTDOWN`, an INPUT.
+Whatever the player types is kept (`coco2.shutdown`), unscored, and ECHO's phrasing from then on follows it (flags.md, What
+ECHO remembers). An empty answer asks again once, then takes the silence as the answer. Flags: `shutdown-asked`,
 `shutdown-answer`.
 
 ### The lie
 
-Once the booklet has been opened, OK says, over the next OK prompt (tampered), `YOU SAVED IT`: the file was the
+Once the booklet has been opened, ECHO says, over the next OK prompt (tampered), `YOU SAVED IT`: the file was the
 player's, not his. It is a child's lie about being found. The player knows they never saved a file with no name, and a
 LIST shows line 1 says where it came from (`REM MC4471 FROM THE LINE`). Flags: `saved-lie` (said), `lie-caught` (line 1
 on the screen after a LIST, with `saved-lie` in).
@@ -310,7 +315,7 @@ on the screen after a LIST, with `saved-lie` in).
   magazine at that page (`PageLink`s come from `drawSheet`; `write` reports where each letter landed). The number is read
   from the text, which is built with `pageNo`, so links follow any reordering of the pages.
 - It nudges up when a line is added, lifts on hover, and a click holds it up to read (click anywhere to put it back).
-- Left for later: OK writing on it (a line in a different hand), the paper changing for issue 2.
+- Left for later: ECHO writing on it (a line in a different hand), the paper changing for issue 2.
 
 ## Note style
 
@@ -328,5 +333,5 @@ The notes are what someone jots down for themselves: short fragments, not senten
 ## Later issues (not drafted)
 
 Issue 2: `DATA`, `READ`, `CSAVE`; a cipher on `DATA` lines; SHUTDOWN; writing a short program that answers ORACLE. Issue 3: tape
-position and unsaved files appearing; reading old ads for codes (drafted above). Issue 4: `POKE` to the screen; OK writes to video
-memory. Issue 5–6: the player writes a message program for OK; the cult's wording clue.
+position and unsaved files appearing; reading old ads for codes (drafted above). Issue 4: `POKE` to the screen; ECHO writes to video
+memory. Issue 5–6: the player writes a message program for ECHO; the cult's wording clue.

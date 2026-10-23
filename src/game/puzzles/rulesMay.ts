@@ -1,11 +1,11 @@
 import type { Interpreter } from '../basic/interpreter';
 import type { Program } from '../basic/program';
-import { KNOWN_MESSAGES, MESSAGE_LINE, OK_MESSAGE, ORACLE_ASK, ORACLE_HOW, PLUG_HELD, PLUG_LINE, SHUTDOWN_REM_LINE, dataNumbers, decode, isOracle, isShutdown } from './listingsMay';
+import { KNOWN_MESSAGES, MESSAGE_LINE, ECHO_MESSAGE, ORACLE_ASK, ORACLE_HOW, PLUG_LINE, SHUTDOWN_REM_LINE, dataNumbers, decode, isOracle, isPlugHeld, isShutdown } from './listingsMay';
 import { screenText } from './rules';
 import { MAY_TAPE_KEY } from '../tapes';
 import type { Rule } from './watcher';
 
-/** Where the player's answer to ORACLE is kept (OK reads it; later issues may use it). */
+/** Where the player's answer to ORACLE is kept (ECHO reads it; later issues may use it). */
 export const REPLY_KEY = 'coco2.reply';
 
 /**
@@ -53,20 +53,20 @@ const shutdownLoaded: Rule = (e, ctx) => {
   if (e.type === 'idle' && ctx.has('issue2-waiting') && isShutdown(ctx.interp.program)) ctx.set('shutdown-loaded');
 };
 
-/** CHECK with SHUTDOWN in memory: the sums part from the magazine's at OK's REM. */
+/** CHECK with SHUTDOWN in memory: the sums part from the magazine's at ECHO's REM. */
 const shutdownChecked: Rule = (e, ctx) => {
   if (e.type === 'direct' && /^\s*CHECK\s*$/i.test(e.text) && ctx.has('issue2-waiting') && isShutdown(ctx.interp.program)) ctx.set('shutdown-checked');
 };
 
-/** OK's REM under SHUTDOWN's title was on the screen after a LIST. */
+/** ECHO's REM under SHUTDOWN's title was on the screen after a LIST. */
 const shutdownRem = seenInListing(isShutdown, SHUTDOWN_REM_LINE, (m) => firstRow(m, SHUTDOWN_REM_LINE), 'shutdown-rem');
 
-/** Line 990 (the message, as OK left it) was on the screen after a LIST. */
+/** Line 990 (the message, as ECHO left it) was on the screen after a LIST. */
 const messageSeen = seenInListing(isShutdown, MESSAGE_LINE, (m) => firstRow(m, MESSAGE_LINE), 'message-seen');
 
 /**
  * Lines of SHUTDOWN that mean something when they run: a terminal listened to (570), the core door asking for the Three
- * Rules (825) and opening (850), the plug pulled and the game won (780), and the plug held by OK's line 710.
+ * Rules (825) and opening (850), the plug pulled and the game won (780), and the plug held by ECHO's line 710.
  */
 const shutdownPlayed: Rule = (e, ctx) => {
   if (e.type !== 'line' || !ctx.has('issue2-waiting') || !isShutdown(ctx.interp.program)) return;
@@ -74,12 +74,12 @@ const shutdownPlayed: Rule = (e, ctx) => {
   else if (e.num === 825) ctx.set('door-asked');
   else if (e.num === 850) ctx.set('rules-spoken');
   else if (e.num === 780) ctx.set(ctx.has('plug-held') ? 'plug-pulled' : 'shutdown-won');
-  else if (e.num === PLUG_LINE && ctx.has('shutdown-won') && ctx.interp.program.list().includes(PLUG_HELD)) ctx.set('plug-held');
+  else if (e.num === PLUG_LINE && ctx.has('shutdown-won') && ctx.interp.program.list().some(isPlugHeld)) ctx.set('plug-held');
 };
 
-/** The decoder printed OK's message: the player has read it. */
+/** The decoder printed ECHO's message: the player has read it. */
 const dataDecoded: Rule = (e, ctx) => {
-  if (e.type === 'idle' && ctx.has('issue2-waiting') && shows(ctx.interp, OK_MESSAGE)) ctx.set('data-decoded');
+  if (e.type === 'idle' && ctx.has('issue2-waiting') && shows(ctx.interp, ECHO_MESSAGE)) ctx.set('data-decoded');
 };
 
 /** The tape went past ORACLE, or loaded it: it is on the May tape, which the magazine does not list. */
@@ -87,7 +87,7 @@ const oraclePassed: Rule = (e, ctx) => {
   if (e.type === 'idle' && ctx.has('issue2-waiting') && ctx.interp.tape.seen.has('ORACLE')) ctx.set('oracle-passed');
 };
 
-/** ORACLE gave one of OK's answers, in the code. */
+/** ORACLE gave one of ECHO's answers, in the code. */
 const oracleAsked: Rule = (e, ctx) => {
   if (e.type !== 'line' || e.num !== 100 || !ctx.has('issue2-waiting') || !isOracle(ctx.interp.program)) return;
   if (/\d/.test(String(ctx.interp.vars.get({ name: 'A$' })))) ctx.set('oracle-asked');
@@ -119,7 +119,7 @@ const oracleAnswered: Rule = (e, ctx) => {
   try {
     localStorage.setItem(REPLY_KEY, reply.slice(0, 40));
   } catch {
-    /* private window: OK reads it all the same */
+    /* private window: ECHO reads it all the same */
   }
   ctx.set('oracle-answered');
 };

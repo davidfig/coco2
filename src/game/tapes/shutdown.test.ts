@@ -1,13 +1,13 @@
 import { HeadlessCoco } from '../coco/headless';
 import { checkSum } from '../basic/checksum';
-import { DECODER, OK_MESSAGE, PLUG_HELD, PLUG_QUESTION, SHUTDOWN_PRINTED, SPEECHES } from '../puzzles/listingsMay';
+import { DECODER, ECHO_MESSAGE, PLUG_QUESTION, SHUTDOWN_PRINTED, SPEECHES, plugHeld } from '../puzzles/listingsMay';
 import { playerMessage } from '../puzzles/rulesMay';
 import { MAY_TAPE_KEY, mayTape } from '.';
 import { expect, test } from '../../test/check';
 
 /** A CoCo with the May cassette in. */
 function may(deleted = true): HeadlessCoco {
-  localStorage.clear(); // a story test may have left OK's change on the tape
+  localStorage.clear(); // a story test may have left ECHO's change on the tape
   const coco = new HeadlessCoco();
   coco.interp.tape.insert(mayTape(deleted), MAY_TAPE_KEY);
   return coco;
@@ -81,18 +81,18 @@ test('SHUTDOWN: pulling the plug wins, with DELPHI\'s last words', () => {
 
 test('SHUTDOWN: with OK\'s line 710 the plug will not come', () => {
   const coco = may().type('CLOAD "SHUTDOWN"\n');
-  coco.interp.program.set(710, PLUG_HELD.slice(4));
+  coco.interp.program.set(710, plugHeld('ALEX').slice(4));
   coco.type('RUN\n');
   play(coco, ...WALK);
   const held = play(coco, 'PULL PLUG');
   expect(held).toContain('IT WILL NOT COME.');
-  expect(held).toContain(PLUG_QUESTION);
+  expect(held).toContain(`${PLUG_QUESTION}, ALEX`);
 });
 
 test('SHUTDOWN: the decoder reads DELPHI, then OK\'s lie, and none of it is an answer to ORACLE', () => {
   const coco = may().type(`CLOAD "SHUTDOWN"\n${DECODER.join('\n')}\nRUN\n`);
   const out = coco.transcript().map((l) => l.padEnd(32)).join('');
   for (const s of SPEECHES) expect(out).toContain(s.split(' ')[0]);
-  expect(out.replace(/ +/g, ' ')).toContain(OK_MESSAGE);
+  expect(out.replace(/ +/g, ' ')).toContain(ECHO_MESSAGE);
   expect(playerMessage(coco.interp.program)).toBe(null);
 });

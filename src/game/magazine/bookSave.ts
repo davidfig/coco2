@@ -16,12 +16,17 @@ export interface Save {
   page: AnyPageId;
 }
 
+/** Old flag names, and what they are now. */
+const RENAMED: Record<string, string> = { 'ok-pleads': 'echo-pleads', 'ok-thanks': 'echo-thanks' };
+
 export function readSave(): Partial<Save> {
   try {
     const raw = JSON.parse(localStorage.getItem(SAVE_KEY) ?? 'null') as Partial<Save> | null;
     if (raw?.issue && !(raw.issue in ISSUES)) delete raw.issue;
     const ids: readonly AnyPageId[] = ISSUES[raw?.issue ?? 'march'];
     if (raw?.page && !ids.includes(raw.page)) delete raw.page;
+    // Flags renamed since (the one on the tapes was OK before he was ECHO): a save from then keeps its story.
+    if (raw?.flags) raw.flags = raw.flags.map((f) => RENAMED[f] ?? f);
     return raw ?? {};
   } catch {
     return {}; // unreadable save: start fresh

@@ -294,5 +294,5 @@ export function drawMayCover(ctx: Ctx): void {
   line(ctx, `DATA, READ and a code to crack, page ${pageNo('maySecret')}`, STRIP + 54, 436, '#dfe8ff', 26);
   line(ctx, 'Keeping Your Small System Healthy', STRIP + 50, 1110, '#ffffff', 34);
   line(ctx, `On tape: SHUTDOWN, page ${pageNo('mayShutdown')}`, STRIP + 50, 1152, '#dfe8ff', 28);
-  line(ctx, `A Quiet Hour: the Clear Mind meets, page ${pageNo('mayClearMind')}`, STRIP + 50, 1190, '#dfe8ff', 28);
+  line(ctx, `A Quiet Hour: the Human Pledge meets, page ${pageNo('mayPledge')}`, STRIP + 50, 1190, '#dfe8ff', 28);
 }
